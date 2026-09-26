@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* Styles pour la carte interactive Leaflet Salvezza */
+.leaflet-container {
+  font-family: inherit;
+  width: 100%;
+  height: 100%;
+}
+
+.salvezza-leaflet-tooltip {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12) !important;
+  color: #0f172a !important;
+  padding: 6px 10px !important;
+}
+
+.salvezza-leaflet-tooltip::before {
+  border-top-color: #cbd5e1 !important;
+}
+
+@media print {
+  /* Masquer les éléments interactifs et hors document d'impression */
+  nav, header, footer, button, .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 10pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Si la modale d'impression est ouverte, afficher son document de manière fluide */
+  .printable-report {
+    display: block !important;
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Éviter les coupures de blocs au milieu d'un tableau */
+  tr, .avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Liens en texte normal à l'impression */
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+}

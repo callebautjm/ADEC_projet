@@ -1,0 +1,347 @@
+/**
+ * Types & Data Models for the ADEC 2026 Support Schemes Portal
+ * Cullettività di Corsica / Agence de Développement Économique de la Corse
+ */
+
+export type CompanySize = 'TPE' | 'PE' | 'PME' | 'GRANDE';
+
+export type LegalForm = 
+  | 'SARL_EURL' 
+  | 'SAS_SASU' 
+  | 'SA' 
+  | 'COMMERCIANT_ARTISAN_EI' 
+  | 'MICRO_ENTREPRISE' 
+  | 'ASSOCIATION_ESS' 
+  | 'SIAE' 
+  | 'COOPERATIVE_SCOP_SCIC' 
+  | 'SCI' 
+  | 'PROFESSION_LIBERALE'
+  | 'AUTRE';
+
+export type ActivitySector =
+  | 'INDUSTRIE'
+  | 'COMMERCE'
+  | 'ARTISANAT'
+  | 'SERVICES'
+  | 'ESS'
+  | 'AGRICULTURE_PECHE_SYLVICULTURE'
+  | 'HEBERGEMENT_TOURISTIQUE'
+  | 'FINANCE_IMMOBILIER'
+  | 'AUTRE';
+
+export type NeedCategory =
+  | 'CREATION_ENTREPRISE'
+  | 'RESILIENCE_CHOC'
+  | 'SINISTRE_CATASTROPHE'
+  | 'RESTRUCTURATION_REBOND'
+  | 'RURALITE_PROXIMITE'
+  | 'EMPLOI_RSE'
+  | 'INNOVATION_AMORCAGE'
+  | 'INNOVATION_DEVELOPPEMENT'
+  | 'INNOVATION_RD_STRUCTURANT'
+  | 'INVESTISSEMENT_DEVELOPPEMENT'
+  | 'INVESTISSEMENT_STRUCTURANT'
+  | 'REPRISE_TRANSMISSION'
+  | 'ESS_SOLIDARITE'
+  | 'INTERNATIONAL_EXPORT'
+  | (string & {});
+
+export interface MandataireSocial {
+  type?: 'personne_physique' | 'personne_morale' | string;
+  nom?: string;
+  prenom?: string;
+  denomination?: string;
+  fonction?: string;
+  dateNaissance?: string;
+  nationalite?: string;
+}
+
+export interface ApiEntrepriseComplianceData {
+  dgfip?: {
+    attestationFiscale?: {
+      status: 'ok' | 'refus_de_delivrance' | 'non_disponible' | 'erreur';
+      libelle?: string;
+      documentUrl?: string;
+      expiresIn?: number;
+      dateDelivrance?: string;
+      message?: string;
+    };
+    chiffresAffaires?: Array<{
+      chiffreAffaires: number;
+      dateFinExercice: string;
+      annee?: string;
+    }>;
+    liassesFiscales?: {
+      year?: string;
+      totalBilan?: number;
+      resultatNet?: number;
+      regimeImposition?: string;
+      raw?: any;
+    };
+  };
+  urssaf?: {
+    attestationVigilance?: {
+      status: 'ok' | 'refus_de_delivrance' | 'non_disponible' | 'erreur';
+      libelle?: string;
+      documentUrl?: string;
+      dateDelivrance?: string;
+      message?: string;
+    };
+  };
+  infogreffe?: {
+    mandatairesSociaux?: MandataireSocial[];
+    extraitKbis?: {
+      status?: string;
+      numeroRcs?: string;
+      greffe?: string;
+      dateImmatriculationRcs?: string;
+      dateDebutActivite?: string;
+      observationsGreffier?: string[];
+      raw?: any;
+    };
+  };
+  rne?: {
+    status?: 'ok' | 'non_inscrit' | 'non_disponible';
+    documentUrl?: string;
+    publicPortalUrl?: string;
+    dateImmatriculationRne?: string;
+    registre?: string;
+    raw?: any;
+  };
+  insee?: {
+    nonDiffusible?: boolean;
+    accessLevel?: string;
+    dateDernierTraitement?: string;
+  };
+}
+
+export type CorsicaLocationType =
+  | 'RURAL_SALVEZZA_UNDER_1000' // Territoire rural ou de montagne (Zonage SALVEZZA & commune < 1 000 hab)
+  | 'POLE_RURAL_STRUCTURANT'    // Pôle rural structurant / Bassin intérieur (1 000 à 8 000 hab : Corte, Sartène, Ghisonaccia...)
+  | 'QPV'                       // Quartier Prioritaire de la Politique de la Ville (Ajaccio, Bastia, Porto-Vecchio)
+  | 'URBAIN_LITTORAL'           // Pôle urbain et littoral (Ajaccio, Bastia, agglomérations CAPA / CAB)
+  | 'AUTRE_CORSE'               // Autre commune de Corse (rétro-compatibilité)
+  | 'HORS_CORSE';               // Établissement situé hors de Corse
+
+export type SalvezzaConstraintScore = 'de 3 à 3,5' | 'de 3,5 à 4' | 'au dessus de 4';
+
+export interface SalvezzaCommune {
+  nom: string;
+  nomCorse: string;
+  codeCommune: string; // e.g. 2A011, 2B002
+  departement: '2A' | '2B';
+  scoreContrainte: SalvezzaConstraintScore;
+  altitudeSup350m: boolean;
+}
+
+export interface CompanyProfile {
+  name: string;
+  siret?: string;
+  siren?: string;
+  legalForm: LegalForm;
+  size: CompanySize;
+  headcount: number;
+  headcountTranche?: string;
+  annualRevenue: number; // in euros
+  balanceSheetTotal: number; // in euros
+  locationType: CorsicaLocationType;
+  qpvNeighborhood?: string;
+  communeName?: string;
+  communeCode?: string;
+  salvezzaCommune?: SalvezzaCommune;
+  postalCode?: string;
+  city?: string;
+  address?: string;
+  nafCode?: string;
+  nafLabel?: string;
+  creationDate?: string;
+  creationDateSource?: 'api_insee' | 'api_entreprise' | 'manual' | 'unknown';
+  creationYear?: number;
+  companyAgeLabel?: string;
+  companyAgeMonths?: number;
+  isHeadOffice?: boolean;
+  administrativeStatus?: string;
+  enterpriseCategory?: string;
+  mandataires?: MandataireSocial[];
+  complianceData?: ApiEntrepriseComplianceData;
+  rawApiData?: any;
+  isEstablishedInCorsica: boolean;
+  hasMainExploitationInCorsica: boolean;
+  sector: ActivitySector;
+  isSeasonalActivity: boolean; // less than 8 months/year
+  isFranchiseOrAffiliate: boolean;
+  isUnderFiveYears: boolean; // registered < 5 years
+  hasDistributedProfits: boolean;
+  isFromMergerOrConcentration: boolean;
+  registeredSinceAtLeast12Months: boolean; // for target in transmission
+}
+
+export interface RegulatoryStatus {
+  isUpToDateTaxSocial: boolean;
+  hasValidDebtRepaymentPlan: boolean; // plan d'étalement ou d'apurement valide
+  isInInsolvencyOrBankruptcy: boolean; // liquidation / cessation des paiements incompatible
+  isCompanyInDifficultyEU: boolean; // Perte de plus de la moitié du capital, sauvegarde ou redressement
+  hasPriorAdecUnfulfilledObligations: boolean; // non-respect CSF, pièces justificatives non fournies
+  hasAdecPriorBreachOfContract: boolean; // non-respect convention antérieure ADEC
+  hasPendingPublicRecoveryOrder: boolean; // procédure de recouvrement d'aide publique non régularisée
+  hasBenefitedRescueAidPast10Years: boolean; // aide sauvetage/restructuration sur 10 ans
+  deMinimisPast3Years: number; // Montant total aides de minimis sur 3 ans glissants
+  hasExecutiveFraudHistory: boolean;
+  hasOutgoingDividendsDuringDistress: boolean;
+}
+
+export interface QualitativeAnswers {
+  q1_nonDelocalisableValueAdded: boolean; // Activité de production biens/services non délocalisables, VA et emplois durables (hors saisonnier, hors commerce, hors renouvellement)
+  q2_ecologicalEnergyDigitalTransition: boolean; // Transition écologique, numérique, énergétique significative
+  q3_innovativeTechnologicalOrSocial: boolean; // Innovant (technologique, social, produits, procédés, organisation)
+  q4_ruralOrQpvZone: boolean; // Située en zone rurale ou quartier prioritaire politique de la ville
+  q5_strategicFiliereOrAdecAccompanied: boolean; // Filière, écosystème ou action de revitalisation stratégique déjà accompagnée par l'ADEC
+  q6_clusterThreeCompanies: boolean; // Grappe d'au moins 3 entreprises se regroupant (filière / coopératif)
+  q7_internationalizationCorsicaRadiance: boolean; // Contribution à l'internationalisation ou au rayonnement économique de la Corse
+  q8_corsicanLanguageAndCulture: boolean; // Valorise la langue et la culture corse
+}
+
+export interface ProjectFinancials {
+  selectedNeedCategories: NeedCategory[];
+  projectDescription: string;
+  totalEstimatedBudgetHT: number;
+  eligibleExpensesBreakdown?: {
+    materialModernization?: number;
+    equipmentEcoEnergy?: number;
+    digitalInvestments?: number;
+    premisesLayout?: number;
+    trainingCosts?: number;
+    externalConsultingAndStudies?: number;
+    rdPersonnelCosts?: number;
+    rdInstrumentsAndDepreciation?: number;
+    rdPatentsAndIP?: number;
+    reconstitutionStocksSinistre?: number;
+    repriseFondsCommerceOuParts?: number;
+    cleanVehicles?: {
+      type: 'UTILITAIRE_LIGHT' | 'FOURGON' | 'POIDS_LOURD';
+      costHT: number;
+      scrappageOldVehicleProof: boolean;
+    };
+    internationalSalonsProspection?: number;
+    internationalInternshipCount?: number;
+    internationalDestination?: 'FRANCE' | 'EUROMED' | 'GRAND_LARGE';
+    generalOperatingCostsDirect?: number;
+  };
+  insuranceCompensationAmount?: number; // Pour Rinascita (à déduire)
+  companyOwnContributionAmount?: number; // Pour Ribumbà
+  hasBankPartnerCommitted?: boolean; // Pour Reprise / Ribumbà
+}
+
+export interface FullQuestionnaireState {
+  company: CompanyProfile;
+  regulatory: RegulatoryStatus;
+  qualitative: QualitativeAnswers;
+  financials: ProjectFinancials;
+}
+
+export interface SchemeRateMatrix {
+  tpeMaxRate?: number; // e.g. 0.70 for 70%
+  peMaxRate?: number;  // e.g. 0.60
+  pmeMaxRate?: number; // e.g. 0.50
+  flatAmount?: {
+    min: number;
+    max: number;
+    label: string;
+    specialBonus?: {
+      amount: number;
+      label: string;
+    };
+  };
+  cleanVehiclesRates?: {
+    utilitaireLightCap: number; // 3000 €
+    fourgonCap: number;         // 7000 €
+    poidsLourdCap: number;       // 10000 €
+    rate: number;                // 0.15
+  };
+  travelAllowances?: {
+    franceSalon: number;        // 600 €
+    euromed: number;            // 800 €
+    grandLarge: number;         // 1600 €
+  };
+  floorAmount: number;          // Typically 5 000 €
+  ceilingAmount: number;        // Typically 300 000 € (de minimis ou encadrement RDI)
+}
+
+export interface SchemeProcedure {
+  portalUrl: string;
+  submissionMethod: string;
+  decisionBody: string;
+  requiredDocuments: string[];
+  mandatoryCommitments: string[];
+  controlDurationYears: number;
+}
+
+export interface DispositifScheme {
+  id: string;
+  code: string;
+  name: string;
+  subtitle: string;
+  documentSourceId: string;
+  category: 'Pattu Risilienzia è Territorii' | 'Guide des Aides - Évaluation Qualitative' | 'Base Personnalisée';
+  legalBasis: string;
+  governingDeliberation?: string;
+  requiresQualitativeEvaluation: boolean;
+  objective: string;
+  targetBeneficiariesSummary: string;
+  allowedSizes: CompanySize[];
+  allowedSectors: ActivitySector[];
+  excludedSectors: ActivitySector[];
+  excludedLegalForms: LegalForm[];
+  specificRequirements: string[];
+  eligibleExpenseCategories: string[];
+  ineligibleExpenseCategories: string[];
+  rates: SchemeRateMatrix;
+  procedure: SchemeProcedure;
+  sourceDocumentPages: string;
+  isActive: boolean;
+}
+
+export interface EvaluationResultItem {
+  scheme: DispositifScheme;
+  isEligible: boolean;
+  isConditionallyEligible: boolean; // e.g. lacks qualitative score but other criteria pass
+  matchScore: number; // 0 to 100%
+  reasons: string[];
+  ineligibilityMotifs: string[];
+  qualitativeScore: number; // 0 to 8
+  meetsQualitativeThreshold: boolean;
+  estimatedSubsidyAmount: number;
+  applicableRatePercent: number;
+  subsidyCalculationDetails: string;
+  warningNotes: string[];
+  salvezzaBonusApplied?: boolean;
+  salvezzaBonusDetails?: string;
+}
+
+export interface ComprehensiveEvaluationReport {
+  timestamp: string;
+  companyName: string;
+  totalRecommendedSchemes: number;
+  eligibleSchemes: EvaluationResultItem[];
+  conditionalSchemes: EvaluationResultItem[];
+  ineligibleSchemes: EvaluationResultItem[];
+  qualitativeTotalYes: number;
+  qualitativeValidated: boolean;
+  deMinimisAvailableRemaining: number;
+  overallDiagnosisSummary: string;
+  suggestedActionPlan: string[];
+  isSalvezzaEligibleCommune?: boolean;
+  salvezzaCommune?: SalvezzaCommune;
+}
+
+export interface DocumentaryDatabaseMetadata {
+  id: string;
+  title: string;
+  version: string;
+  issuer: string;
+  dateAdopted: string;
+  description: string;
+  isOfficialBase: boolean;
+  schemesCount: number;
+  schemes: DispositifScheme[];
+}

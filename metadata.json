@@ -1,0 +1,6 @@
+{
+  "name": "ADEC - Dispositif d'Accompagnement & Aides aux Entreprises de Corse",
+  "description": "Portail interactif officiel de diagnostic d'éligibilité, simulateur d'aides et accompagnement personnalisé basé sur le Guide des Aides ADEC et le Pattu Risilienzia è Territorii de la Collectivité de Corse.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
