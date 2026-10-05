@@ -45,6 +45,7 @@ import {
 import { determineCompanySize } from '../../services/engine';
 import { fetchEntrepriseBySiret, fetchBodaccBySiren, getStoredApiEntrepriseToken, isValidLuhn } from '../../services/apiEntreprise';
 import { ApiEntrepriseModal } from '../ApiEntrepriseModal';
+import { BeneficiairesEffectifsPanel } from './BeneficiairesEffectifsPanel';
 import { ComplianceAttestationsModal } from '../ComplianceAttestationsModal';
 import {
   AttestationType,
@@ -124,6 +125,12 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
       setDownloadSuccessNotice(null);
     }, 5000);
   };
+
+  // Attestations officielles DGFiP / URSSAF délivrées via API Entreprise (mêmes sources que l'étape 2)
+  const dgfipOk = data.complianceData?.dgfip?.attestationFiscale?.status === 'ok';
+  const urssafOk = data.complianceData?.urssaf?.attestationVigilance?.status === 'ok';
+  const dgfipDocumentUrl = data.complianceData?.dgfip?.attestationFiscale?.documentUrl;
+  const urssafDocumentUrl = data.complianceData?.urssaf?.attestationVigilance?.documentUrl;
 
   // Mandataires sociaux et dirigeants déclarés
   const currentMandataires: MandataireSocial[] =
@@ -911,10 +918,16 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                           <Landmark className="w-3 h-3 text-indigo-600" />
                           DGFiP · Fiscalité
                         </span>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-0.5">
-                          <Check className="w-3 h-3" />
-                          À jour
-                        </span>
+                        {dgfipOk ? (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-0.5">
+                            <Check className="w-3 h-3" />
+                            À jour
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-full border border-slate-200">
+                            Non certifié
+                          </span>
+                        )}
                       </div>
 
                       <div>
@@ -933,15 +946,28 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                     </div>
 
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadAttestation('dgfip')}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-[11px] font-semibold transition shrink-0 shadow-2xs cursor-pointer"
-                        title="Télécharger l'attestation fiscale au format PDF"
-                      >
-                        <Download className="w-3 h-3" />
-                        <span>Télécharger PDF</span>
-                      </button>
+                      {dgfipDocumentUrl ? (
+                        <a
+                          href={dgfipDocumentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-[11px] font-semibold transition shrink-0 shadow-2xs cursor-pointer"
+                          title="Télécharger l'attestation fiscale officielle délivrée par la DGFiP (API Entreprise)"
+                        >
+                          <Download className="w-3 h-3" />
+                          <span>Télécharger PDF</span>
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[11px] font-semibold shrink-0 cursor-not-allowed"
+                          title="Aucune attestation fiscale délivrée : lancez une recherche SIRET avec un jeton API Entreprise habilité"
+                        >
+                          <Download className="w-3 h-3" />
+                          <span>Non disponible</span>
+                        </button>
+                      )}
 
                       <a
                         href="https://cfspro.impots.gouv.fr"
@@ -963,10 +989,16 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                           <ShieldCheck className="w-3 h-3 text-emerald-600" />
                           URSSAF · Social
                         </span>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-0.5">
-                          <Check className="w-3 h-3" />
-                          Conforme
-                        </span>
+                        {urssafOk ? (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-0.5">
+                            <Check className="w-3 h-3" />
+                            Conforme
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-full border border-slate-200">
+                            Non certifié
+                          </span>
+                        )}
                       </div>
 
                       <div>
@@ -985,15 +1017,28 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                     </div>
 
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadAttestation('urssaf')}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-semibold transition shrink-0 shadow-2xs cursor-pointer"
-                        title="Télécharger l'attestation de vigilance URSSAF au format PDF"
-                      >
-                        <Download className="w-3 h-3" />
-                        <span>Télécharger PDF</span>
-                      </button>
+                      {urssafDocumentUrl ? (
+                        <a
+                          href={urssafDocumentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-semibold transition shrink-0 shadow-2xs cursor-pointer"
+                          title="Télécharger l'attestation de vigilance officielle délivrée par l'URSSAF (API Entreprise)"
+                        >
+                          <Download className="w-3 h-3" />
+                          <span>Télécharger PDF</span>
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[11px] font-semibold shrink-0 cursor-not-allowed"
+                          title="Aucune attestation de vigilance délivrée : lancez une recherche SIRET avec un jeton API Entreprise habilité"
+                        >
+                          <Download className="w-3 h-3" />
+                          <span>Non disponible</span>
+                        </button>
+                      )}
 
                       <a
                         href="https://www.urssaf.fr"
@@ -1799,6 +1844,8 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
               </div>
             </div>
           )}
+
+          <BeneficiairesEffectifsPanel data={data.complianceData?.beneficiairesEffectifs} />
         </div>
       </div>
 

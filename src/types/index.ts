@@ -65,6 +65,62 @@ export interface RneAdresse {
   complement?: string | null;
 }
 
+/** Répartition d'une détention (en %), telle que renvoyée par l'API INPI */
+export interface BeRepartition {
+  detention?: boolean;
+  total?: number;
+  pleine_propriete?: number;
+  nue_propriete?: number;
+  usufruit?: number;
+}
+
+/** Modalités de contrôle d'un bénéficiaire effectif (schéma API Entreprise v3) */
+export interface BeModalites {
+  detention_de_capital?: {
+    parts_totale?: number;
+    parts_directes?: BeRepartition;
+    parts_indirectes?: {
+      detention?: boolean;
+      par_indivision?: BeRepartition;
+      via_personnes_morales?: BeRepartition;
+    };
+  };
+  vocation_a_devenir_titulaire_de_parts?: {
+    parts_directes?: BeRepartition;
+    parts_indirectes?: {
+      par_indivision?: BeRepartition;
+      via_personnes_morales?: BeRepartition;
+    };
+  };
+  droits_de_vote?: {
+    total?: number;
+    directes?: BeRepartition;
+    indirectes?: {
+      detention?: boolean;
+      par_indivision?: BeRepartition;
+      via_personnes_morales?: BeRepartition;
+    };
+  };
+  pouvoirs_de_controle?: {
+    decision_ag?: boolean;
+    nommage_membres_conseil_administratif?: boolean;
+    autres?: boolean;
+  };
+  representant_legal?: boolean;
+  representant_legal_placement_sans_gestion_deleguee?: boolean;
+}
+
+export interface BeneficiaireEffectif {
+  uuid?: string;
+  nom?: string;
+  nomUsage?: string | null;
+  prenoms?: string[];
+  dateNaissance?: { annee?: string; mois?: string };
+  nationalite?: string;
+  paysResidence?: string;
+  modalites?: BeModalites;
+}
+
 export interface RneEtablissement {
   siret?: string;
   typeEtablissement?: string;
@@ -166,6 +222,11 @@ export interface ApiEntrepriseComplianceData {
     diffusionInsee?: boolean;
     observations?: RneObservation[];
     raw?: any;
+  };
+  beneficiairesEffectifs?: {
+    status: 'ok' | 'aucun' | 'non_habilite' | 'non_disponible';
+    httpStatus?: number;
+    items: BeneficiaireEffectif[];
   };
   insee?: {
     nonDiffusible?: boolean;

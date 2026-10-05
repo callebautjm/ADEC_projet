@@ -427,7 +427,7 @@ async function startServer() {
             }
           };
 
-          const [urssafRes, dgfipAttestRes, dgfipCaRes, infogreffeRes, dgfipLiassesRes, inpiRneRes, infogreffeKbisRes] = await Promise.allSettled([
+          const [urssafRes, dgfipAttestRes, dgfipCaRes, infogreffeRes, dgfipLiassesRes, inpiRneRes, infogreffeKbisRes, inpiBeneficiairesRes] = await Promise.allSettled([
             // URSSAF : Attestation de vigilance v4
             fetchSubEndpoint(`https://entreprise.api.gouv.fr/v4/urssaf/unites_legales/${siren}/attestation_vigilance?${makeParamString('urssaf')}`),
             // DGFIP : Attestation fiscale v4
@@ -441,7 +441,9 @@ async function startServer() {
             // INPI : Extrait RNE (identité, dirigeants, établissements, observations + PDF) v3
             fetchSubEndpoint(`https://entreprise.api.gouv.fr/v3/inpi/rne/unites_legales/${siren}/extrait_rne?${makeParamString('inpi-rne')}`),
             // Infogreffe : Extrait RCS / Kbis v3
-            fetchSubEndpoint(`https://entreprise.api.gouv.fr/v3/infogreffe/rcs/unites_legales/${siren}/extrait_kbis?${makeParamString('infogreffe-kbis')}`)
+            fetchSubEndpoint(`https://entreprise.api.gouv.fr/v3/infogreffe/rcs/unites_legales/${siren}/extrait_kbis?${makeParamString('infogreffe-kbis')}`),
+            // INPI : Bénéficiaires effectifs RNE v3 (habilitation spécifique requise)
+            fetchSubEndpoint(`https://entreprise.api.gouv.fr/v3/inpi/rne/unites_legales/${siren}/beneficiaires_effectifs?${makeParamString('inpi-be')}`)
           ]);
 
           // Assemblage structuré des données de conformité
@@ -703,6 +705,31 @@ async function startServer() {
           }
 
           compliance.rne.observations = rneObservations;
+
+          // INPI : Bénéficiaires effectifs (identité + modalités de contrôle)
+          if (inpiBeneficiairesRes.status === 'fulfilled' && inpiBeneficiairesRes.value.ok && Array.isArray(inpiBeneficiairesRes.value.data)) {
+            const items = inpiBeneficiairesRes.value.data.map((item: any) => {
+              const b = item.data || item;
+              return {
+                uuid: b.beneficiaire_uuid,
+                nom: b.nom,
+                nomUsage: b.nom_usage,
+                prenoms: Array.isArray(b.prenoms) ? b.prenoms : [],
+                dateNaissance: b.date_naissance,
+                nationalite: b.nationalite,
+                paysResidence: b.pays_residence,
+                modalites: b.modalites
+              };
+            });
+            compliance.beneficiairesEffectifs = { status: items.length > 0 ? 'ok' : 'aucun', items };
+          } else {
+            const httpStatus = inpiBeneficiairesRes.status === 'fulfilled' ? inpiBeneficiairesRes.value.status : undefined;
+            compliance.beneficiairesEffectifs = {
+              status: httpStatus === 401 || httpStatus === 403 ? 'non_habilite' : httpStatus === 404 ? 'aucun' : 'non_disponible',
+              httpStatus,
+              items: []
+            };
+          }
 
           // BODACC : Avis officiels (DILA / Journal Officiel)
           compliance.bodacc = await fetchBodaccData(siren);
