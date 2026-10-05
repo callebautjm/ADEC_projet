@@ -160,6 +160,25 @@ export const StepRegulatory: React.FC<StepRegulatoryProps> = ({ data, compliance
           Situation financière & Procédures collectives
         </label>
 
+        {complianceData?.bodacc && (
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`w-2 h-2 rounded-full ${complianceData.bodacc.hasProcedureCollective ? 'bg-red-500' : 'bg-emerald-500'}`} />
+              <span className="font-semibold text-slate-800">
+                Statut officiel BODACC (API DILA) :
+              </span>
+              <span className={complianceData.bodacc.hasProcedureCollective ? 'text-red-700 font-bold' : 'text-emerald-700 font-bold'}>
+                {complianceData.bodacc.hasProcedureCollective ? 'Procédure collective active' : 'In bonis (Aucune procédure collective en cours)'}
+              </span>
+            </div>
+            {complianceData.bodacc.dernierAvisDate && (
+              <span className="text-[11px] text-slate-500 font-mono hidden sm:inline">
+                Dernier avis : {complianceData.bodacc.dernierAvisDate}
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="space-y-2.5">
           <label className="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition">
             <input

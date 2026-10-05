@@ -4,19 +4,25 @@
  */
 
 import React, { useState } from 'react';
-import { FullQuestionnaireState } from '../../types';
+import { FullQuestionnaireState, DossierProjectAnalysis } from '../../types';
 import { StepCompany } from './StepCompany';
 import { StepRegulatory } from './StepRegulatory';
 import { StepProjectNeed } from './StepProjectNeed';
 import { StepQualitative } from './StepQualitative';
 import { StepBudgetSimulator } from './StepBudgetSimulator';
-import { ArrowLeft, ArrowRight, CheckCircle2, Building2, ShieldAlert, Target, Award, Calculator } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Building2, ShieldAlert, Target, Award, Calculator, Sparkles } from 'lucide-react';
 import { determineCompanySize } from '../../services/engine';
+import { ProjectSheetPreloader } from '../Dossier/ProjectSheetPreloader';
 
 interface QuestionnaireWizardProps {
   state: FullQuestionnaireState;
   setState: React.Dispatch<React.SetStateAction<FullQuestionnaireState>>;
   onSubmitEvaluation: () => void;
+  activeDossier?: DossierProjectAnalysis | null;
+  onAnalysisComplete?: (analysis: DossierProjectAnalysis) => void;
+  onRemoveDossier?: () => void;
+  apiToken?: string;
+  recipientSiret?: string;
 }
 
 const STEPS = [
@@ -30,7 +36,12 @@ const STEPS = [
 export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
   state,
   setState,
-  onSubmitEvaluation
+  onSubmitEvaluation,
+  activeDossier = null,
+  onAnalysisComplete = () => {},
+  onRemoveDossier = () => {},
+  apiToken,
+  recipientSiret
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
 
@@ -57,7 +68,18 @@ export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
   );
 
   return (
-    <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
+    <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6 space-y-6">
+      {/* Accélérateur Fiche Projet ADEC (Optionnel : préremplit le simulateur en 1 clic) */}
+      <ProjectSheetPreloader
+        questionnaireState={state}
+        activeDossier={activeDossier}
+        onAnalysisComplete={onAnalysisComplete}
+        onRemoveDossier={onRemoveDossier}
+        onRunImmediateEvaluation={onSubmitEvaluation}
+        apiToken={apiToken}
+        recipientSiret={recipientSiret}
+      />
+
       {/* Stepper Header - Navigation moderne et colorée par étapes */}
       <div className="mb-6 bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs">
         <div className="flex items-center justify-between relative">

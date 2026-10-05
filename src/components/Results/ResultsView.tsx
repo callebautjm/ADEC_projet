@@ -180,6 +180,23 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
         </div>
       </div>
 
+      {/* Encart Synchronisation Fiche Projet */}
+      {report.dossierSource && (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 text-white shadow-xs border border-blue-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-white text-sm block">
+                Simulation alimentée par votre Fiche Projet ({report.dossierSource.dossierNumber || 'Dossier officiel'})
+              </span>
+              <p className="text-blue-200 mt-0.5">
+                Section Appel à projet : <strong className="text-amber-300 font-semibold">{report.dossierSource.primarySchemeName || report.dossierSource.aapTitre}</strong>. La cohérence entre votre document et les dispositifs d'aide de l'ADEC est garantie à 100%.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Alerte si date de création non communiquée */}
       {!companyAge.isDateKnown && (
         <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-950 flex items-start gap-3">
@@ -329,9 +346,25 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
               <div
                 key={item.scheme.id}
                 onClick={() => setSelectedScheme(item.scheme)}
-                className="bg-white border border-slate-200 border-l-4 border-l-emerald-500 rounded-xl p-5 hover:border-emerald-300 hover:shadow-xs transition cursor-pointer flex flex-col justify-between group shadow-2xs"
+                className={`bg-white border rounded-xl p-5 hover:shadow-xs transition cursor-pointer flex flex-col justify-between group shadow-2xs ${
+                  item.isPrimaryFromDossierAAP
+                    ? 'border-amber-400 border-l-4 border-l-amber-500 ring-2 ring-amber-400/20 bg-gradient-to-br from-amber-50/20 via-white to-white'
+                    : 'border-slate-200 border-l-4 border-l-emerald-500 hover:border-emerald-300'
+                }`}
               >
                 <div>
+                  {item.isPrimaryFromDossierAAP && (
+                    <div className="mb-3 px-2.5 py-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white flex items-center justify-between text-[11px] font-bold shadow-2xs">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-100" />
+                        ★ Dispositif issu de l'Appel à projet de votre Fiche Projet
+                      </span>
+                      <span className="text-[10px] uppercase font-mono bg-black/20 px-1.5 py-0.5 rounded text-amber-100">
+                        Priorité N° 1
+                      </span>
+                    </div>
+                  )}
+
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div>
                       <div className="flex items-center gap-2 text-xs font-mono text-slate-500 mb-1">

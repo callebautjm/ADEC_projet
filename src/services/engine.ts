@@ -162,6 +162,8 @@ export function evaluateCompanyEligibility(
   const deMinimisLimit = 300000;
   const deMinimisRemaining = Math.max(0, deMinimisLimit - (regulatory.deMinimisPast3Years || 0));
 
+  const dossierAapSchemeId = state.dossierSource?.primarySchemeId;
+
   const eligibleSchemes: EvaluationResultItem[] = [];
   const conditionalSchemes: EvaluationResultItem[] = [];
   const ineligibleSchemes: EvaluationResultItem[] = [];
@@ -590,11 +592,17 @@ export function evaluateCompanyEligibility(
     // 10. CLASSIFICATION FINALE DE L'ÉLIGIBILITÉ
     // =========================================================================
     const isQualOk = !scheme.requiresQualitativeEvaluation || qualValidated;
+    const isPrimaryFromDossierAAP = Boolean(dossierAapSchemeId && scheme.id === dossierAapSchemeId);
+
+    if (isPrimaryFromDossierAAP) {
+      reasons.unshift(`★ DISPOSITIF RETENU PAR VOTRE FICHE PROJET (Section Appel à projet : ${state.dossierSource?.aapTitre || scheme.name})`);
+    }
+
     const itemResult: EvaluationResultItem = {
       scheme,
       isEligible: ineligibilityMotifs.length === 0 && !qualitativeBlocksEligibility,
       isConditionallyEligible: ineligibilityMotifs.length === 0 && qualitativeBlocksEligibility,
-      matchScore: ineligibilityMotifs.length === 0 ? (isQualOk ? 100 : 75) : Math.max(10, 60 - ineligibilityMotifs.length * 15),
+      matchScore: isPrimaryFromDossierAAP ? 100 : (ineligibilityMotifs.length === 0 ? (isQualOk ? 100 : 75) : Math.max(10, 60 - ineligibilityMotifs.length * 15)),
       reasons,
       ineligibilityMotifs,
       qualitativeScore: qualScore,
@@ -604,7 +612,8 @@ export function evaluateCompanyEligibility(
       subsidyCalculationDetails,
       warningNotes,
       salvezzaBonusApplied,
-      salvezzaBonusDetails
+      salvezzaBonusDetails,
+      isPrimaryFromDossierAAP
     };
 
     if (itemResult.isEligible) {
@@ -616,13 +625,24 @@ export function evaluateCompanyEligibility(
     }
   }
 
-  // Tri par montant décroissant
-  eligibleSchemes.sort((a, b) => b.estimatedSubsidyAmount - a.estimatedSubsidyAmount);
-  conditionalSchemes.sort((a, b) => b.estimatedSubsidyAmount - a.estimatedSubsidyAmount);
+  // Tri : Placer prioritairement le dispositif issu de l'Appel à projet (Fiche Projet), puis par montant décroissant
+  eligibleSchemes.sort((a, b) => {
+    if (a.isPrimaryFromDossierAAP && !b.isPrimaryFromDossierAAP) return -1;
+    if (!a.isPrimaryFromDossierAAP && b.isPrimaryFromDossierAAP) return 1;
+    return b.estimatedSubsidyAmount - a.estimatedSubsidyAmount;
+  });
+
+  conditionalSchemes.sort((a, b) => {
+    if (a.isPrimaryFromDossierAAP && !b.isPrimaryFromDossierAAP) return -1;
+    if (!a.isPrimaryFromDossierAAP && b.isPrimaryFromDossierAAP) return 1;
+    return b.estimatedSubsidyAmount - a.estimatedSubsidyAmount;
+  });
 
   // Synthèse globale personnalisée
   let overallDiagnosisSummary = '';
-  if (eligibleSchemes.length > 0) {
+  if (state.dossierSource?.aapTitre) {
+    overallDiagnosisSummary = `Diagnostic synchronisé avec votre Fiche Projet (${state.dossierSource.dossierNumber || 'Dossier ADEC'}). Le dispositif prioritaire identifié dans l'Appel à projet (« ${state.dossierSource.primarySchemeName || state.dossierSource.aapTitre} ») a été analysé et retenu, accompagné de ${eligibleSchemes.length - 1} intervention(s) complémentaire(s) éligible(s).`;
+  } else if (eligibleSchemes.length > 0) {
     overallDiagnosisSummary = `Votre entreprise est éligible à ${eligibleSchemes.length} dispositif(s) d’accompagnement officiel(s) de l’ADEC, pour un potentiel estimé d’aide publique de ${eligibleSchemes.reduce((acc, curr) => acc + curr.estimatedSubsidyAmount, 0).toLocaleString('fr-FR')} € (dans le respect des règles de non-cumul et du plafond de minimis de 300 000 €).`;
   } else if (conditionalSchemes.length > 0) {
     overallDiagnosisSummary = `Votre entreprise remplit l’ensemble des conditions administratives pour ${conditionalSchemes.length} dispositif(s), mais nécessite de valider au moins 3 critères « OUI » à l’évaluation qualitative préalable (Délibération N° 21/177 AC).`;
@@ -661,6 +681,13 @@ export function evaluateCompanyEligibility(
     overallDiagnosisSummary,
     suggestedActionPlan: actionPlan,
     isSalvezzaEligibleCommune: Boolean(salvezzaCommune),
-    salvezzaCommune: salvezzaCommune || undefined
+    salvezzaCommune: salvezzaCommune || undefined,
+    dossierSource: state.dossierSource ? {
+      dossierNumber: state.dossierSource.dossierNumber,
+      sourceDocumentName: state.dossierSource.sourceDocumentName,
+      aapTitre: state.dossierSource.aapTitre,
+      primarySchemeId: state.dossierSource.primarySchemeId,
+      primarySchemeName: state.dossierSource.primarySchemeName
+    } : undefined
   };
 }

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Database, FileText, CheckCircle2, RotateCcw, Key } from 'lucide-react';
+import { Database, FileText, CheckCircle2, RotateCcw, Key, Calculator } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: 'questionnaire' | 'results' | 'explorer' | 'database';
@@ -13,6 +13,7 @@ interface HeaderProps {
   onOpenTokenModal?: () => void;
   onOpenSalvezzaModal?: () => void;
   hasResults: boolean;
+  hasDossier: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,8 +30,8 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={() => setActiveTab('questionnaire')}
-            className="text-left group flex items-center gap-2.5 transition"
-            aria-label="Accueil ADEC Corse"
+            className="text-left group flex items-center gap-2.5 transition cursor-pointer"
+            aria-label="Accueil ADEC Corse - Simulateur d'aides"
           >
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 text-white flex items-center justify-center font-bold text-xs tracking-wider shadow-xs ring-1 ring-blue-500/20">
               ADEC
@@ -50,32 +51,33 @@ export const Header: React.FC<HeaderProps> = ({
         <nav className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
           <button
             onClick={() => setActiveTab('questionnaire')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'questionnaire'
-                ? 'bg-white text-blue-900 shadow-2xs'
+                ? 'bg-white text-blue-900 shadow-2xs font-bold'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
             }`}
           >
-            Questionnaire
+            <Calculator className="w-3.5 h-3.5 text-blue-600" />
+            <span>Simulateur d'Aides</span>
           </button>
 
           {hasResults && (
             <button
               onClick={() => setActiveTab('results')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'results'
                   ? 'bg-emerald-600 text-white shadow-2xs'
                   : 'text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50'
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Résultats</span>
+              <span>Rapport d'Aides & Interventions</span>
             </button>
           )}
 
           <button
             onClick={() => setActiveTab('explorer')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'explorer'
                 ? 'bg-white text-blue-900 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
@@ -87,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             onClick={() => setActiveTab('database')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'database'
                 ? 'bg-white text-blue-900 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
@@ -104,7 +106,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenTokenModal}
               title="Configurer l'habilitation API Entreprise (DGFIP, URSSAF, Infogreffe)"
-              className="px-2.5 py-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors text-xs flex items-center gap-1.5 border border-slate-200/80 shadow-2xs font-medium"
+              className="px-2.5 py-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors text-xs flex items-center gap-1.5 border border-slate-200/80 shadow-2xs font-medium cursor-pointer"
             >
               <Key className="w-3.5 h-3.5 text-slate-500" />
               <span className="hidden sm:inline">API Entreprise</span>
@@ -115,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onResetQuestionnaire}
               title="Réinitialiser le dossier"
-              className="p-1.5 sm:px-2.5 sm:py-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors text-xs flex items-center gap-1.5 border border-slate-200/80"
+              className="p-1.5 sm:px-2.5 sm:py-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors text-xs flex items-center gap-1.5 border border-slate-200/80 cursor-pointer"
               aria-label="Nouveau dossier"
             >
               <RotateCcw className="w-3.5 h-3.5 text-slate-400" />

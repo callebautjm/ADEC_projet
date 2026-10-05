@@ -10,9 +10,10 @@ import { QuestionnaireWizard } from './components/Questionnaire/QuestionnaireWiz
 import { ResultsView } from './components/Results/ResultsView';
 import { DocumentaryExplorerView } from './components/DocumentaryExplorer/DocumentaryExplorerView';
 import { DatabaseManagerView } from './components/DatabaseManager/DatabaseManagerView';
-import { FullQuestionnaireState, ComprehensiveEvaluationReport } from './types';
+import { FullQuestionnaireState, ComprehensiveEvaluationReport, DossierProjectAnalysis } from './types';
 import { evaluateCompanyEligibility } from './services/engine';
-import { ShieldCheck, ArrowRight, BookOpen, Sparkles, Building2, CheckCircle2, Mountain } from 'lucide-react';
+import { synchronizeQuestionnaireFromDossier } from './utils/dossierSynchronizer';
+import { ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { ApiEntrepriseModal } from './components/ApiEntrepriseModal';
 import { SalvezzaCommunesModal } from './components/Salvezza/SalvezzaCommunesModal';
 
@@ -26,7 +27,16 @@ const INITIAL_QUESTIONNAIRE_STATE: FullQuestionnaireState = {
     companyAgeLabel: 'Ancienneté indéterminée (date non renseignée)',
     companyAgeMonths: undefined,
     legalForm: 'SARL_EURL',
+    natureJuridiqueCode: '5499',
+    natureJuridiqueLibelle: 'Société à responsabilité limitée (SARL)',
+    capitalSocial: 50000,
+    capitalSocialFormatted: '50 000 €',
+    tvaIntracommunautaire: 'FR42849201948',
+    enterpriseCategory: 'PME',
+    enterpriseCategoryYear: '2024',
     headcount: 6,
+    headcountTranche: '3 à 5 salariés',
+    caractereEmployeur: 'Employeur actif (6 salariés)',
     annualRevenue: 480000,
     balanceSheetTotal: 320000,
     size: 'TPE',
@@ -37,8 +47,37 @@ const INITIAL_QUESTIONNAIRE_STATE: FullQuestionnaireState = {
     city: 'Corte',
     communeName: 'Corte',
     communeCode: '2B096',
+    address: '12 Cours Paoli',
     salvezzaCommune: undefined,
     sector: 'ARTISANAT',
+    nafCode: '10.71C',
+    nafLabel: 'Boulangerie et boulangerie-pâtisserie',
+    sectionActivite: 'C - Industrie manufacturière',
+    departementCode: '2B',
+    regionCode: '94',
+    epciCode: '200073153',
+    nombreEtablissements: 1,
+    nombreEtablissementsOuverts: 1,
+    coordonneesGps: { latitude: '42.3056', longitude: '9.1517' },
+    dateDerniereMiseAJourInsee: '2026-01-15',
+    dateDerniereMiseAJourRne: '2026-02-15',
+    statutDiffusion: 'O',
+    conventionCollective: {
+      idcc: 'IDCC 1500',
+      hasConvention: true,
+      listeIdcc: ['1500']
+    },
+    labelsAndCertifications: {
+      isBio: true,
+      idBio: [98412],
+      isEss: false,
+      isSocieteMission: false,
+      isRge: false,
+      isQualiopi: false,
+      hasAideAdeme: false,
+      hasAideMinimis: false,
+      isEgaproRenseignee: false
+    },
     isSeasonalActivity: false,
     isFranchiseOrAffiliate: false,
     isUnderFiveYears: true,
@@ -86,6 +125,27 @@ const INITIAL_QUESTIONNAIRE_STATE: FullQuestionnaireState = {
       insee: {
         nonDiffusible: false,
         accessLevel: 'Accès complet habilité (unités légales et établissements dont non diffusibles)'
+      },
+      bodacc: {
+        status: 'ok',
+        hasProcedureCollective: false,
+        annoncesCount: 1,
+        dernierAvisDate: '15/02/2026',
+        dernierAvisType: 'Immatriculation principale au RNE & In bonis',
+        synthese: 'Entreprise in bonis. Aucune mention de sauvegarde, redressement ou liquidation judiciaire au BODACC.',
+        annonces: [
+          {
+            id: 'BODACC-A-20260032-104',
+            dateParution: '2026-02-15',
+            numeroAnnonce: 104,
+            numeroParution: '20260032',
+            typeAvis: 'Immatriculation principale au RNE',
+            familleAvis: 'Créations',
+            tribunal: 'Greffe du Tribunal de Commerce de Bastia',
+            description: 'Immatriculation principale au RNE. Exploitation artisanale.',
+            publicationUrl: 'https://annuaire-entreprises.data.gouv.fr/justificatif/849201948'
+          }
+        ]
       }
     }
   },
@@ -129,10 +189,18 @@ const INITIAL_QUESTIONNAIRE_STATE: FullQuestionnaireState = {
 const MainAppContent: React.FC = () => {
   const { allActiveSchemes } = useDatabases();
   const [activeTab, setActiveTab] = useState<'questionnaire' | 'results' | 'explorer' | 'database'>('questionnaire');
+  const [dossierAnalysis, setDossierAnalysis] = useState<DossierProjectAnalysis | null>(null);
   const [questionnaireState, setQuestionnaireState] = useState<FullQuestionnaireState>(INITIAL_QUESTIONNAIRE_STATE);
   const [report, setReport] = useState<ComprehensiveEvaluationReport | null>(null);
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
   const [isSalvezzaModalOpen, setIsSalvezzaModalOpen] = useState(false);
+
+  const handleDossierAnalysisComplete = (analysis: DossierProjectAnalysis) => {
+    setDossierAnalysis(analysis);
+    const syncedState = synchronizeQuestionnaireFromDossier(analysis, questionnaireState);
+    setQuestionnaireState(syncedState);
+    setActiveTab('questionnaire');
+  };
 
   const handleRunEvaluation = () => {
     const calculatedReport = evaluateCompanyEligibility(questionnaireState, allActiveSchemes);
@@ -142,8 +210,10 @@ const MainAppContent: React.FC = () => {
   };
 
   const handleResetQuestionnaire = () => {
+    setDossierAnalysis(null);
     setQuestionnaireState({
       ...INITIAL_QUESTIONNAIRE_STATE,
+      dossierSource: undefined,
       company: {
         ...INITIAL_QUESTIONNAIRE_STATE.company,
         name: '',
@@ -185,6 +255,7 @@ const MainAppContent: React.FC = () => {
         onOpenTokenModal={() => setIsTokenModalOpen(true)}
         onOpenSalvezzaModal={() => setIsSalvezzaModalOpen(true)}
         hasResults={report !== null}
+        hasDossier={dossierAnalysis !== null}
       />
 
       <ApiEntrepriseModal
@@ -219,6 +290,7 @@ const MainAppContent: React.FC = () => {
       />
 
       <main className="flex-1">
+        {/* PARCOURS UNIQUE DE SIMULATION ET DIAGNOSTIC */}
         {activeTab === 'questionnaire' && (
           <div className="space-y-6">
             {/* Context Banner : sobre, institutionnel et aéré */}
@@ -254,6 +326,15 @@ const MainAppContent: React.FC = () => {
               state={questionnaireState}
               setState={setQuestionnaireState}
               onSubmitEvaluation={handleRunEvaluation}
+              activeDossier={dossierAnalysis}
+              onAnalysisComplete={handleDossierAnalysisComplete}
+              onRemoveDossier={() => {
+                setDossierAnalysis(null);
+                setQuestionnaireState((prev) => ({
+                  ...prev,
+                  dossierSource: undefined
+                }));
+              }}
             />
           </div>
         )}

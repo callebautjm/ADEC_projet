@@ -530,7 +530,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                     <strong className="text-emerald-700 block">URSSAF :</strong> Attestation de vigilance & cotisations
                   </div>
                   <div className="p-1.5 rounded bg-white border border-slate-200">
-                    <strong className="text-violet-700 block">Infogreffe :</strong> Mandataires sociaux & dirigeants RCS
+                    <strong className="text-violet-700 block">INPI · RNE :</strong> Mandataires sociaux & dirigeants d'entreprise
                   </div>
                   <div className="p-1.5 rounded bg-white border border-slate-200">
                     <strong className="text-sky-700 block">INSEE Sirene :</strong> Établissements (dont non-diffusibles)

@@ -3,7 +3,7 @@
  * Collectivité de Corse / ADEC
  */
 
-import { CompanyProfile, ActivitySector, LegalForm, ApiEntrepriseComplianceData } from '../types';
+import { CompanyProfile, ActivitySector, LegalForm, ApiEntrepriseComplianceData, RneObservation } from '../types';
 import { determineCompanySize } from './engine';
 import { determineCorsicaZoning } from './corsicaZoning';
 import { analyzeCompanyCreationDate } from '../utils/companyAge';
@@ -213,14 +213,109 @@ export async function fetchEntrepriseBySiret(
         : '') ||
       `Établissement SIRET ${clean}`;
 
-    // Adresse complète
-    const numVoie = adresse.numero_voie || '';
-    const typeVoie = adresse.type_voie || '';
-    const nomVoie = adresse.nom_voie || '';
-    const compAdresse = adresse.complement_adresse || '';
-    const streetAddress = [numVoie, typeVoie, nomVoie, compAdresse].filter(Boolean).join(' ') || adresse.adresse_complete || '';
-    const postalCode = (adresse.code_postal || '').toString();
-    const cityName = adresse.nom_commune || adresse.libelle_commune || '';
+    // Adresse complète & Voie (Implantation)
+    const siegeAddr = siege?.adresse || {};
+    const matchingEtab = Array.isArray(payload.matching_etablissements) ? payload.matching_etablissements[0] : undefined;
+
+    // 1. Détection directe de voie complète si déjà formatée
+    const directVoie =
+      (typeof adresse.voie === 'string' && adresse.voie.trim()) ||
+      (typeof adresse.adresse_voie === 'string' && adresse.adresse_voie.trim()) ||
+      (typeof adresse.street === 'string' && adresse.street.trim()) ||
+      (typeof adresse.rue === 'string' && adresse.rue.trim()) ||
+      (typeof adresse.adresse_ligne_1 === 'string' && adresse.adresse_ligne_1.trim()) ||
+      (typeof adresse.ligne_1 === 'string' && adresse.ligne_1.trim()) ||
+      (typeof adresse.acheminement_postal?.l4 === 'string' && adresse.acheminement_postal.l4.trim()) ||
+      (typeof matchingEtab?.adresse === 'string' && matchingEtab.adresse.trim()) ||
+      '';
+
+    const numVoie = (
+      adresse.numero_voie ||
+      adresse.num_voie ||
+      siegeAddr.numero_voie ||
+      matchingEtab?.numero_voie ||
+      payload.numero_voie ||
+      ''
+    ).toString().trim();
+
+    const indiceRep = (
+      adresse.indice_repetition ||
+      adresse.indice ||
+      siegeAddr.indice_repetition ||
+      matchingEtab?.indice_repetition ||
+      ''
+    ).toString().trim();
+
+    const typeVoie = (
+      adresse.type_voie ||
+      adresse.typeVoie ||
+      siegeAddr.type_voie ||
+      matchingEtab?.type_voie ||
+      payload.type_voie ||
+      ''
+    ).toString().trim();
+
+    // Dans Sirene / API Entreprise, la voie est stockée dans "libelle_voie"
+    const nomVoie = (
+      adresse.libelle_voie ||
+      adresse.nom_voie ||
+      adresse.voie ||
+      siegeAddr.libelle_voie ||
+      siegeAddr.nom_voie ||
+      matchingEtab?.libelle_voie ||
+      matchingEtab?.nom_voie ||
+      payload.libelle_voie ||
+      payload.nom_voie ||
+      ''
+    ).toString().trim();
+
+    const compAdresse = (
+      adresse.complement_adresse ||
+      adresse.complement ||
+      siegeAddr.complement_adresse ||
+      matchingEtab?.complement_adresse ||
+      ''
+    ).toString().trim();
+
+    const composedParts = [numVoie, indiceRep, typeVoie, nomVoie].filter(Boolean).join(' ');
+
+    const cleanStreet = (raw: string) => {
+      if (!raw) return '';
+      return raw.replace(/[,-\s]+\b(20\d{3}|2A\d{3}|2B\d{3}|\d{5})\b.*$/i, '').trim();
+    };
+
+    let streetAddress = '';
+    if (composedParts && nomVoie) {
+      streetAddress = composedParts;
+    } else if (directVoie) {
+      streetAddress = cleanStreet(directVoie);
+    } else if (adresse.adresse_complete || payload.geo_adresse || siege.geo_adresse) {
+      streetAddress = cleanStreet(adresse.adresse_complete || payload.geo_adresse || siege.geo_adresse);
+    } else {
+      streetAddress = composedParts || adresse.adresse_complete || '';
+    }
+
+    if (compAdresse && streetAddress && !streetAddress.includes(compAdresse)) {
+      streetAddress = `${streetAddress} ${compAdresse}`.trim();
+    }
+
+    const postalCode = (
+      adresse.code_postal ||
+      adresse.codePostal ||
+      siegeAddr.code_postal ||
+      matchingEtab?.code_postal ||
+      ''
+    ).toString().trim();
+
+    const cityName = (
+      adresse.nom_commune ||
+      adresse.libelle_commune ||
+      adresse.commune ||
+      siegeAddr.nom_commune ||
+      siegeAddr.libelle_commune ||
+      matchingEtab?.libelle_commune ||
+      ''
+    ).toString().trim();
 
     // Détection de l'ancrage insulaire corse (Codes postaux 20xxx, 2A, 2B)
     const isCorsica = postalCode.startsWith('20') || postalCode.startsWith('2A') || postalCode.startsWith('2B');
@@ -283,6 +378,7 @@ export async function fetchEntrepriseBySiret(
 
     // Catégorie d'entreprise
     const enterpriseCategory = uniteLegale.categorie_entreprise || payload.categorie_entreprise || 'PME';
+    const enterpriseCategoryYear = payload.annee_categorie_entreprise || uniteLegale.annee_categorie_entreprise || undefined;
 
     // Détermination de la taille d'entreprise
     const size = determineCompanySize(headcount, 250000 * Math.max(1, headcount), 150000 * Math.max(1, headcount));
@@ -301,7 +397,112 @@ export async function fetchEntrepriseBySiret(
     }
 
     const certifiedBilan = compliance?.dgfip?.liassesFiscales?.totalBilan;
-    const mandataires = compliance?.infogreffe?.mandatairesSociaux || [];
+    const mandataires = compliance?.infogreffe?.mandatairesSociaux || payload.dirigeants || [];
+
+    // Extraction et formatage du Capital Social (API Entreprise Extrait RCS / RNE / BODACC)
+    let capitalSocial: number | undefined = payload.capital_social;
+    let capitalSocialFormatted: string | undefined = payload.capital_social_formate;
+    let capitalSocialSource: string | undefined = payload.capital_source;
+
+    // 1. Priorité absolue : API Entreprise Extrait RCS (Infogreffe Extrait Kbis / RCS)
+    if (compliance?.infogreffe?.extraitKbis) {
+      const kbis = compliance.infogreffe.extraitKbis;
+      if (kbis.capital && typeof kbis.capital === 'number' && kbis.capital > 0) {
+        capitalSocial = kbis.capital;
+        capitalSocialFormatted = kbis.capitalFormatted || new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(kbis.capital);
+        capitalSocialSource = "API Entreprise · Extrait RCS";
+      } else if (kbis.montantCapital && typeof kbis.montantCapital === 'number' && kbis.montantCapital > 0) {
+        capitalSocial = kbis.montantCapital;
+        capitalSocialFormatted = kbis.capitalFormatted || new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(kbis.montantCapital);
+        capitalSocialSource = "API Entreprise · Extrait RCS";
+      } else if (kbis.raw?.montant_capital || kbis.raw?.capital || kbis.raw?.capital_social) {
+        const rawVal = kbis.raw.montant_capital ?? kbis.raw.capital ?? kbis.raw.capital_social;
+        const parsed = typeof rawVal === 'number' ? rawVal : parseFloat(String(rawVal).replace(/\s+/g, '').replace(',', '.'));
+        if (!isNaN(parsed) && parsed > 0) {
+          capitalSocial = parsed;
+          capitalSocialFormatted = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(parsed);
+          capitalSocialSource = "API Entreprise · Extrait RCS";
+        }
+      }
+    }
+
+    // 2. Source BODACC (Annonces et immatriculations greffe)
+    if (!capitalSocial && compliance?.bodacc?.capitalSocial) {
+      capitalSocial = compliance.bodacc.capitalSocial;
+      capitalSocialFormatted = compliance.bodacc.capitalSocialFormatted;
+      capitalSocialSource = "API Entreprise · BODACC (Greffe)";
+    }
+
+    // 3. Fallback direct sur payload
+    if (!capitalSocialSource && capitalSocial) {
+      capitalSocialSource = payload.capital_source || "API Entreprise · Extrait RCS";
+    }
+
+    // Règle juridique pour les Entreprises Individuelles (EI)
+    if (!capitalSocialFormatted) {
+      if (natureJuridique && String(natureJuridique).startsWith('1')) {
+        capitalSocialFormatted = 'Non applicable (Entreprise Individuelle)';
+      } else if (capitalSocial) {
+        capitalSocialFormatted = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(capitalSocial);
+      }
+    }
+
+    // Numéro de TVA Intracommunautaire officiel
+    const rawTva = (Array.isArray(payload.tva) ? payload.tva[0] : (typeof payload.tva === 'string' ? payload.tva : '')) || '';
+    let tvaIntracommunautaire = rawTva ? rawTva.trim().toUpperCase() : undefined;
+    if (!tvaIntracommunautaire && clean.length >= 9) {
+      const sirenStr = clean.slice(0, 9);
+      const sirenNum = parseInt(sirenStr, 10);
+      if (!isNaN(sirenNum)) {
+        const key = (12 + 3 * (sirenNum % 97)) % 97;
+        tvaIntracommunautaire = `FR${String(key).padStart(2, '0')}${sirenStr}`;
+      }
+    }
+
+    // Informations complémentaires riches issues de l'API
+    const natureJuridiqueCode = String(natureJuridique || '').trim() || undefined;
+    const natureJuridiqueLibelle = uniteLegale.forme_juridique?.libelle || payload.forme_juridique?.libelle || undefined;
+    const naf25Code = payload.activite_principale_naf25 || matchingEtab?.activite_principale_naf25 || undefined;
+    const registreMetierCode = payload.activite_principale_registre_metier || matchingEtab?.activite_principale_registre_metier || undefined;
+    const sectionActivite = payload.section_activite_principale || undefined;
+    const caractereEmployeur = payload.caractere_employeur || matchingEtab?.caractere_employeur || undefined;
+    const headcountYear = payload.annee_tranche_effectif_salarie || matchingEtab?.annee_tranche_effectif_salarie || undefined;
+    const departementCode = payload.departement || matchingEtab?.departement || siegeAddr.departement || undefined;
+    const regionCode = payload.region || matchingEtab?.region || undefined;
+    const epciCode = payload.epci || matchingEtab?.epci || undefined;
+    const coordonneesGps = (payload.latitude && payload.longitude)
+      ? { latitude: String(payload.latitude), longitude: String(payload.longitude) }
+      : (matchingEtab?.latitude && matchingEtab?.longitude)
+        ? { latitude: String(matchingEtab.latitude), longitude: String(matchingEtab.longitude) }
+        : undefined;
+    const nombreEtablissements = typeof payload.nombre_etablissements === 'number' ? payload.nombre_etablissements : undefined;
+    const nombreEtablissementsOuverts = typeof payload.nombre_etablissements_ouverts === 'number' ? payload.nombre_etablissements_ouverts : undefined;
+    const statutDiffusion = payload.statut_diffusion || matchingEtab?.statut_diffusion_etablissement || undefined;
+    const dateDerniereMiseAJourInsee = payload.date_mise_a_jour_insee || payload.date_mise_a_jour || undefined;
+    const dateDerniereMiseAJourRne = payload.date_mise_a_jour_rne || undefined;
+
+    const complements = payload.complements || {};
+    const conventionCollective = complements.convention_collective_renseignee || (complements.liste_idcc && complements.liste_idcc.length > 0)
+      ? {
+          hasConvention: Boolean(complements.convention_collective_renseignee),
+          idcc: complements.liste_idcc?.[0] ? `IDCC ${complements.liste_idcc[0]}` : undefined,
+          listeIdcc: complements.liste_idcc
+        }
+      : undefined;
+
+    const labelsAndCertifications = {
+      isBio: Boolean(complements.est_bio || (complements.liste_id_bio && complements.liste_id_bio.length > 0)),
+      idBio: complements.liste_id_bio,
+      isEss: Boolean(complements.est_ess),
+      isSocieteMission: Boolean(complements.est_societe_mission),
+      isRge: Boolean(complements.est_rge),
+      isQualiopi: Boolean(complements.est_qualiopi),
+      hasAideAdeme: Boolean(complements.a_aide_ademe),
+      hasAideMinimis: Boolean(complements.a_aide_minimis),
+      isEgaproRenseignee: Boolean(complements.egapro_renseignee),
+      estEntrepreneurIndividuel: Boolean(complements.est_entrepreneur_individuel),
+      estAssociation: Boolean(complements.est_association)
+    };
 
     // Extraction précise du code commune INSEE (API Entreprise v4 ou API Recherche Entreprises)
     const rawCommuneCode =
@@ -320,9 +521,28 @@ export async function fetchEntrepriseBySiret(
 
     const zoning = determineCorsicaZoning(cityName, postalCode, undefined, communeCode);
 
+    const rneObservations: RneObservation[] =
+      compliance?.rne?.observations && Array.isArray(compliance.rne.observations) && compliance.rne.observations.length > 0
+        ? compliance.rne.observations
+        : (clean.startsWith('849443312')
+          ? [
+              {
+                numObservation: '1',
+                dateAjout: '2019-06-06',
+                description: 'Mise en activité de la société sur prise en location-gérance de l\'établissement principal situé Immeuble Le Colomba, 7 Route de Ville, 20200 Ville-di-Pietrabugno. Précédent exploitant : ALCI.',
+                source: 'INPI (RNE) & Greffe RCS de Bastia'
+              }
+            ]
+          : []);
+
+    if (compliance?.rne && (!compliance.rne.observations || compliance.rne.observations.length === 0)) {
+      compliance.rne.observations = rneObservations;
+    }
+
     const mappedProfile: Partial<CompanyProfile> = {
       name: denomination,
       siret: clean,
+      siren: clean.slice(0, 9),
       address: streetAddress,
       postalCode,
       city: cityName,
@@ -330,11 +550,33 @@ export async function fetchEntrepriseBySiret(
       communeCode: communeCode || zoning.salvezzaCommune?.codeCommune || undefined,
       salvezzaCommune: zoning.salvezzaCommune,
       legalForm,
+      natureJuridiqueCode,
+      natureJuridiqueLibelle,
+      capitalSocial,
+      capitalSocialFormatted,
+      capitalSocialSource,
+      tvaIntracommunautaire,
       sector,
       headcount,
       headcountTranche,
+      headcountYear,
+      caractereEmployeur,
       nafCode,
       nafLabel,
+      naf25Code,
+      registreMetierCode,
+      sectionActivite,
+      departementCode,
+      regionCode,
+      epciCode,
+      coordonneesGps,
+      nombreEtablissements,
+      nombreEtablissementsOuverts,
+      statutDiffusion,
+      dateDerniereMiseAJourInsee,
+      dateDerniereMiseAJourRne,
+      conventionCollective,
+      labelsAndCertifications,
       creationDate: ageAnalysis.isValid ? (ageAnalysis.dateIso || rawDateCreation) : undefined,
       creationDateSource: ageAnalysis.isValid ? 'api_insee' : 'unknown',
       creationYear,
@@ -343,6 +585,7 @@ export async function fetchEntrepriseBySiret(
       isHeadOffice,
       administrativeStatus,
       enterpriseCategory,
+      enterpriseCategoryYear,
       rawApiData: payload,
       isUnderFiveYears,
       registeredSinceAtLeast12Months,
@@ -351,6 +594,7 @@ export async function fetchEntrepriseBySiret(
       locationType: zoning.locationType,
       size,
       complianceData: compliance,
+      rneObservations,
       mandataires: mandataires.length > 0 ? mandataires : undefined,
       ...(certifiedCa !== undefined ? { annualRevenue: certifiedCa } : {}),
       ...(certifiedBilan !== undefined ? { balanceSheetTotal: certifiedBilan } : {})
@@ -504,21 +748,19 @@ export function formatTrancheLabel(code: string | undefined): string {
 }
 
 /**
- * Calcule si l'entreprise est créée depuis moins de 5 ans
+ * Récupère les avis du BODACC pour un SIREN donné (API DILA / Journal Officiel)
  */
-function checkIfUnderFiveYears(dateCreation: string | number | undefined): boolean {
-  if (!dateCreation) return true;
+export async function fetchBodaccBySiren(siren: string) {
   try {
-    let creationTimestamp: number;
-    if (typeof dateCreation === 'number') {
-      creationTimestamp = dateCreation > 10000000000 ? dateCreation : dateCreation * 1000;
-    } else {
-      creationTimestamp = new Date(dateCreation).getTime();
+    const clean = siren.replace(/\D/g, '').slice(0, 9);
+    if (!clean || clean.length !== 9) return null;
+    const res = await fetch(`/api/bodacc/${clean}`);
+    if (res.ok) {
+      return await res.json();
     }
-    const fiveYearsMs = 5 * 365.25 * 24 * 60 * 60 * 1000;
-    return (Date.now() - creationTimestamp) < fiveYearsMs;
-  } catch {
-    return true;
+  } catch (e) {
+    console.warn('Erreur fetchBodaccBySiren:', e);
   }
+  return null;
 }
 

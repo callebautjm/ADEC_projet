@@ -319,14 +319,18 @@ export const PrintDiagnosticModal: React.FC<PrintDiagnosticModalProps> = ({
     <tr>
       <th>Forme Juridique</th>
       <td>${company.legalForm}</td>
+      <th>Capital Social</th>
+      <td><strong>${company.capitalSocialFormatted || (company.capitalSocial ? `${new Intl.NumberFormat('fr-FR').format(company.capitalSocial)} €` : (company.legalForm === 'COMMERCIANT_ARTISAN_EI' || company.legalForm === 'MICRO_ENTREPRISE' ? 'Non applicable (EI)' : 'Non renseigné'))}</strong></td>
+    </tr>
+    <tr>
       <th>Catégorie Calculée</th>
       <td><strong>${company.size}</strong> (${company.headcount} ETP)</td>
+      <th>Chiffre d'Affaires Retenu</th>
+      <td>${company.annualRevenue ? company.annualRevenue.toLocaleString('fr-FR') + ' € HT' : 'Non précisé'}</td>
     </tr>
     <tr>
       <th>Commune & Localisation</th>
-      <td>${company.city || 'Corse'} (${company.postalCode || ''})</td>
-      <th>Chiffre d'Affaires Retenu</th>
-      <td>${company.annualRevenue ? company.annualRevenue.toLocaleString('fr-FR') + ' € HT' : 'Non précisé'}</td>
+      <td colspan="3">${company.city || 'Corse'} (${company.postalCode || ''})</td>
     </tr>
     <tr>
       <th>Implantation en Corse</th>
@@ -371,9 +375,9 @@ export const PrintDiagnosticModal: React.FC<PrintDiagnosticModalProps> = ({
       <td>${company.complianceData?.urssaf?.attestationVigilance?.libelle || 'Attestation de vigilance délivrée'}</td>
     </tr>
     <tr>
-      <td><strong>Infogreffe</strong></td>
-      <td>Mandataires Sociaux (RCS)</td>
-      <td><span class="badge">Inscrits au RCS</span></td>
+      <td><strong>INPI · RNE</strong></td>
+      <td>Mandataires Sociaux (RNE)</td>
+      <td><span class="badge">Inscrits au RNE</span></td>
       <td>${company.mandataires && company.mandataires.length > 0 ? company.mandataires.map(m => (m.prenom ? m.prenom + ' ' : '') + (m.nom || m.denomination) + ' (' + (m.fonction || 'Dirigeant') + ')').join(', ') : 'Qualité à agir certifiée'}</td>
     </tr>
     <tr>
@@ -732,7 +736,7 @@ export const PrintDiagnosticModal: React.FC<PrintDiagnosticModalProps> = ({
                 </div>
                 <div className="p-2 rounded bg-slate-50 border border-slate-200 flex items-center justify-between">
                   <div>
-                    <strong className="text-slate-900 block">Infogreffe (Mandataires RCS)</strong>
+                    <strong className="text-slate-900 block">INPI (Mandataires RNE)</strong>
                     <span className="text-slate-600">{company.mandataires && company.mandataires.length > 0 ? `${company.mandataires[0].nom} (${company.mandataires[0].fonction})` : 'Dirigeant légal habilité'}</span>
                   </div>
                   <span className="px-1.5 py-0.5 rounded bg-violet-100 text-violet-800 font-bold shrink-0">Conforme</span>

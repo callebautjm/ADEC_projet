@@ -8,6 +8,7 @@ import { useDatabases } from '../../context/DatabaseContext';
 import { DispositifScheme } from '../../types';
 import { QUALITATIVE_EVALUATION_QUESTIONS } from '../../data/adecOfficialData';
 import { DispositifDetailModal } from '../Results/DispositifDetailModal';
+import { ExportGuideAidesModal } from './ExportGuideAidesModal';
 import {
   BookOpen,
   Search,
@@ -18,12 +19,15 @@ import {
   ChevronRight,
   Shield,
   Layers,
-  Scale
+  Scale,
+  Printer,
+  Download
 } from 'lucide-react';
 
 export const DocumentaryExplorerView: React.FC = () => {
   const { allActiveSchemes } = useDatabases();
   const [selectedScheme, setSelectedScheme] = useState<DispositifScheme | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'ANNEXE1' | 'GUIDE2026'>('ALL');
   const [activeTab, setActiveTab] = useState<'dispositifs' | 'evaluation_methodologie'>('dispositifs');
@@ -50,19 +54,33 @@ export const DocumentaryExplorerView: React.FC = () => {
     <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 space-y-6">
       {/* Header */}
       <div className="bg-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-sm">
-        <div className="max-w-3xl">
-          <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 mb-1">
-            <BookOpen className="w-4 h-4" />
-            <span>Répertoire Officiel Dématérialisé</span>
-            <span>·</span>
-            <span>Version 2026</span>
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 mb-1">
+              <BookOpen className="w-4 h-4" />
+              <span>Répertoire Officiel Dématérialisé</span>
+              <span>·</span>
+              <span>Version 2026</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Guide des Aides de l’ADEC & Pattu Risilienzia
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+              Consultez le texte intégral des dispositifs de soutien aux entreprises adoptés par la Collectivité de Corse : objectifs, bénéficiaires, exclusions expresses, dépenses éligibles, intensités et seuils financiers.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Guide des Aides de l’ADEC & Pattu Risilienzia
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
-            Consultez le texte intégral des dispositifs de soutien aux entreprises adoptés par la Collectivité de Corse : objectifs, bénéficiaires, exclusions expresses, dépenses éligibles, intensités et seuils financiers.
-          </p>
+
+          <div className="shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsExportModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition active:scale-98"
+              title="Créer un export PDF officiel de l'ensemble des fiches d'aides synthétisées pour la communication et les usagers"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Créer l'Export PDF des Fiches (Communication)</span>
+            </button>
+          </div>
         </div>
 
         {/* Tab switch */}
@@ -258,6 +276,13 @@ export const DocumentaryExplorerView: React.FC = () => {
       <DispositifDetailModal
         scheme={selectedScheme}
         onClose={() => setSelectedScheme(null)}
+      />
+
+      {/* Modal d'export PDF de synthèse pour la communication */}
+      <ExportGuideAidesModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        schemes={allActiveSchemes}
       />
     </div>
   );

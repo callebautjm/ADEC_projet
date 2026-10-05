@@ -56,6 +56,14 @@ export interface MandataireSocial {
   nationalite?: string;
 }
 
+export interface RneObservation {
+  id?: string;
+  numObservation?: string;
+  dateAjout?: string;
+  description: string;
+  source?: string;
+}
+
 export interface ApiEntrepriseComplianceData {
   dgfip?: {
     attestationFiscale?: {
@@ -94,6 +102,10 @@ export interface ApiEntrepriseComplianceData {
       status?: string;
       numeroRcs?: string;
       greffe?: string;
+      capital?: number;
+      capitalFormatted?: string;
+      montantCapital?: number;
+      deviseCapital?: string;
       dateImmatriculationRcs?: string;
       dateDebutActivite?: string;
       observationsGreffier?: string[];
@@ -104,14 +116,40 @@ export interface ApiEntrepriseComplianceData {
     status?: 'ok' | 'non_inscrit' | 'non_disponible';
     documentUrl?: string;
     publicPortalUrl?: string;
+    annoncesUrl?: string;
     dateImmatriculationRne?: string;
     registre?: string;
+    observations?: RneObservation[];
     raw?: any;
   };
   insee?: {
     nonDiffusible?: boolean;
     accessLevel?: string;
     dateDernierTraitement?: string;
+  };
+  bodacc?: {
+    status?: 'ok' | 'aucune_annonce' | 'procedure_collective' | 'non_disponible';
+    hasProcedureCollective?: boolean;
+    annoncesCount?: number;
+    dernierAvisDate?: string;
+    dernierAvisType?: string;
+    capitalSocial?: number;
+    capitalSocialFormatted?: string;
+    synthese?: string;
+    annonces?: Array<{
+      id?: string;
+      dateParution?: string;
+      numeroAnnonce?: number | string;
+      numeroParution?: string;
+      typeAvis?: string;
+      familleAvis?: string;
+      tribunal?: string;
+      commercant?: string;
+      ville?: string;
+      description?: string;
+      jugement?: string;
+      publicationUrl?: string;
+    }>;
   };
 }
 
@@ -139,9 +177,13 @@ export interface CompanyProfile {
   siret?: string;
   siren?: string;
   legalForm: LegalForm;
+  natureJuridiqueCode?: string;
+  natureJuridiqueLibelle?: string;
   size: CompanySize;
   headcount: number;
   headcountTranche?: string;
+  headcountYear?: string;
+  caractereEmployeur?: boolean | string;
   annualRevenue: number; // in euros
   balanceSheetTotal: number; // in euros
   locationType: CorsicaLocationType;
@@ -152,8 +194,35 @@ export interface CompanyProfile {
   postalCode?: string;
   city?: string;
   address?: string;
+  departementCode?: string;
+  regionCode?: string;
+  epciCode?: string;
+  coordonneesGps?: { latitude?: string; longitude?: string };
+  nombreEtablissements?: number;
+  nombreEtablissementsOuverts?: number;
   nafCode?: string;
   nafLabel?: string;
+  naf25Code?: string;
+  registreMetierCode?: string;
+  sectionActivite?: string;
+  conventionCollective?: {
+    idcc?: string;
+    hasConvention?: boolean;
+    listeIdcc?: string[];
+  };
+  labelsAndCertifications?: {
+    isBio?: boolean;
+    idBio?: number[];
+    isEss?: boolean;
+    isSocieteMission?: boolean;
+    isRge?: boolean;
+    isQualiopi?: boolean;
+    hasAideAdeme?: boolean;
+    hasAideMinimis?: boolean;
+    isEgaproRenseignee?: boolean;
+    estEntrepreneurIndividuel?: boolean;
+    estAssociation?: boolean;
+  };
   creationDate?: string;
   creationDateSource?: 'api_insee' | 'api_entreprise' | 'manual' | 'unknown';
   creationYear?: number;
@@ -161,9 +230,18 @@ export interface CompanyProfile {
   companyAgeMonths?: number;
   isHeadOffice?: boolean;
   administrativeStatus?: string;
+  statutDiffusion?: string;
+  dateDerniereMiseAJourInsee?: string;
+  dateDerniereMiseAJourRne?: string;
+  capitalSocial?: number;
+  capitalSocialFormatted?: string;
+  capitalSocialSource?: string;
+  tvaIntracommunautaire?: string;
   enterpriseCategory?: string;
+  enterpriseCategoryYear?: string;
   mandataires?: MandataireSocial[];
   complianceData?: ApiEntrepriseComplianceData;
+  rneObservations?: RneObservation[];
   rawApiData?: any;
   isEstablishedInCorsica: boolean;
   hasMainExploitationInCorsica: boolean;
@@ -237,6 +315,13 @@ export interface FullQuestionnaireState {
   regulatory: RegulatoryStatus;
   qualitative: QualitativeAnswers;
   financials: ProjectFinancials;
+  dossierSource?: {
+    dossierNumber?: string;
+    sourceDocumentName?: string;
+    aapTitre?: string;
+    primarySchemeId?: string;
+    primarySchemeName?: string;
+  };
 }
 
 export interface SchemeRateMatrix {
@@ -316,6 +401,7 @@ export interface EvaluationResultItem {
   warningNotes: string[];
   salvezzaBonusApplied?: boolean;
   salvezzaBonusDetails?: string;
+  isPrimaryFromDossierAAP?: boolean;
 }
 
 export interface ComprehensiveEvaluationReport {
@@ -332,6 +418,13 @@ export interface ComprehensiveEvaluationReport {
   suggestedActionPlan: string[];
   isSalvezzaEligibleCommune?: boolean;
   salvezzaCommune?: SalvezzaCommune;
+  dossierSource?: {
+    dossierNumber?: string;
+    sourceDocumentName?: string;
+    aapTitre?: string;
+    primarySchemeId?: string;
+    primarySchemeName?: string;
+  };
 }
 
 export interface DocumentaryDatabaseMetadata {
@@ -345,3 +438,88 @@ export interface DocumentaryDatabaseMetadata {
   schemesCount: number;
   schemes: DispositifScheme[];
 }
+
+export interface DossierInterventionProposal {
+  id: string;
+  type: 'DISPOSITIF_FINANCIER_DIRECT' | 'ACCOMPAGNEMENT_TECHNIQUE' | 'TRANSITION_NUMERIQUE' | 'BONIFICATION_TERRITORIALE' | 'SOUTIEN_EMPLOI';
+  title: string;
+  dispositifId?: string;
+  dispositifName?: string;
+  isPrimaryFromAAP: boolean; // TRUE si provient directement de la section "Appel à projet"
+  reasoning: string;
+  rateEstimated?: number;
+  rateEstimatedLabel?: string;
+  estimatedAmountHT?: number;
+  eligibleExpensesSummary?: string;
+  recommendedActions: string[];
+  legalBasis?: string;
+}
+
+export interface DossierProjectAnalysis {
+  dossierNumber?: string;
+  sourceDocumentName?: string;
+  analysisDate: string;
+  analysisEngineNotice?: string;
+
+  // Volet 1 : Données d'identification de l'entreprise
+  company: {
+    siret?: string;
+    siren?: string;
+    name?: string;
+    legalForm?: string;
+    nafCode?: string;
+    nafLabel?: string;
+    creationDate?: string;
+    headcount?: number;
+    annualRevenue?: number;
+    balanceSheetTotal?: number;
+    address?: {
+      street?: string;
+      postalCode?: string;
+      city?: string;
+      communeInsee?: string;
+    };
+    contact?: {
+      fullName?: string;
+      role?: string;
+      email?: string;
+      phone?: string;
+    };
+    dirigeantsMandataires?: MandataireSocial[];
+  };
+
+  // Volet 2 : Section Appel à projet (règle obligatoire)
+  appelAProjet: {
+    isRenseigne: boolean;
+    titre?: string;
+    reference?: string;
+    dateLimite?: string;
+    dispositifCibleSuggere?: string;
+    dispositifNameSuggere?: string;
+    details?: string;
+  };
+
+  // Volet 3 : Projet & Besoins de l'entreprise
+  project: {
+    title?: string;
+    summary?: string;
+    contextAndGenesis?: string;
+    objectives?: string[];
+    location?: string;
+    startDate?: string;
+    endDate?: string;
+    needsCategories?: string[];
+    investmentProgram?: Array<{
+      category: string;
+      description: string;
+      estimatedAmountHT?: number;
+    }>;
+    totalBudgetHT?: number;
+    subventionRequestedHT?: number;
+  };
+
+  // Données enrichies de l'API Entreprise (si SIRET valide trouvé)
+  enrichedCompanyData?: any;
+  compliance?: ApiEntrepriseComplianceData;
+}
+
