@@ -426,14 +426,25 @@ export async function fetchEntrepriseBySiret(
       }
     }
 
-    // 2. Source BODACC (Annonces et immatriculations greffe)
+    // 2. Repli sur le capital déclaré dans l'attestation d'immatriculation RNE
+    if (!capitalSocial && compliance?.rne?.capitalSocial) {
+      capitalSocial = compliance.rne.capitalSocial;
+      capitalSocialFormatted = compliance.rne.capitalSocialFormatted || new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'EUR',
+        maximumFractionDigits: 0
+      }).format(capitalSocial);
+      capitalSocialSource = compliance.rne.capitalSocialSource || 'API Entreprise · Extrait RNE (INPI)';
+    }
+
+    // 3. Source BODACC (Annonces et immatriculations greffe)
     if (!capitalSocial && compliance?.bodacc?.capitalSocial) {
       capitalSocial = compliance.bodacc.capitalSocial;
       capitalSocialFormatted = compliance.bodacc.capitalSocialFormatted;
       capitalSocialSource = "API Entreprise · BODACC (Greffe)";
     }
 
-    // 3. Fallback direct sur payload
+    // 4. Fallback direct sur payload
     if (!capitalSocialSource && capitalSocial) {
       capitalSocialSource = payload.capital_source || "API Entreprise · Extrait RCS";
     }
@@ -524,16 +535,7 @@ export async function fetchEntrepriseBySiret(
     const rneObservations: RneObservation[] =
       compliance?.rne?.observations && Array.isArray(compliance.rne.observations) && compliance.rne.observations.length > 0
         ? compliance.rne.observations
-        : (clean.startsWith('849443312')
-          ? [
-              {
-                numObservation: '1',
-                dateAjout: '2019-06-06',
-                description: 'Mise en activité de la société sur prise en location-gérance de l\'établissement principal situé Immeuble Le Colomba, 7 Route de Ville, 20200 Ville-di-Pietrabugno. Précédent exploitant : ALCI.',
-                source: 'INPI (RNE) & Greffe RCS de Bastia'
-              }
-            ]
-          : []);
+        : [];
 
     if (compliance?.rne && (!compliance.rne.observations || compliance.rne.observations.length === 0)) {
       compliance.rne.observations = rneObservations;

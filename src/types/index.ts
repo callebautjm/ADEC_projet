@@ -54,13 +54,37 @@ export interface MandataireSocial {
   fonction?: string;
   dateNaissance?: string;
   nationalite?: string;
+  communeResidence?: string;
+}
+
+export interface RneAdresse {
+  voie?: string;
+  code_postal?: string;
+  commune?: string;
+  pays?: string;
+  complement?: string | null;
+}
+
+export interface RneEtablissement {
+  siret?: string;
+  typeEtablissement?: string;
+  statut?: 'actif' | 'fermé' | string;
+  dateDebutActivite?: string;
+  natureEtablissement?: string;
+  activitePrincipale?: string;
+  autreActivite?: string | null;
+  adresse?: RneAdresse;
 }
 
 export interface RneObservation {
   id?: string;
+  fournisseur?: string;
+  numero?: string;
+  date?: string;
+  texte?: string;
   numObservation?: string;
   dateAjout?: string;
-  description: string;
+  description?: string;
   source?: string;
 }
 
@@ -119,6 +143,27 @@ export interface ApiEntrepriseComplianceData {
     annoncesUrl?: string;
     dateImmatriculationRne?: string;
     registre?: string;
+    capitalSocial?: number;
+    capitalSocialFormatted?: string;
+    capitalSocialSource?: string;
+    denomination?: string | null;
+    dateDebutActivite?: string | null;
+    formeJuridique?: { code: string; libelle: string };
+    natureEntreprise?: 'COMMERCIALE' | 'ARTISANALE' | 'AGRICOLE' | 'LIBERALE' | string;
+    objetSocial?: string | null;
+    codeApe?: { code: string; libelle: string };
+    associeUnique?: boolean;
+    dateClotureExercice?: string | null;
+    datePremiereClotureExercice?: string | null;
+    dateFinPersonne?: string | null;
+    detailCessation?: string | null;
+    dissolution?: { date?: string; poursuite_activite?: boolean; avec_liquidation?: boolean } | null;
+    adresseSiege?: RneAdresse;
+    dirigeants?: MandataireSocial[];
+    etablissements?: RneEtablissement[];
+    etablissementsFermesTotal?: number;
+    diffusionCommerciale?: boolean;
+    diffusionInsee?: boolean;
     observations?: RneObservation[];
     raw?: any;
   };

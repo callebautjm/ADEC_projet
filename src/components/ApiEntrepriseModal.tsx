@@ -76,6 +76,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
     source?: string;
   } | null>(null);
   const [saveSuccessNotice, setSaveSuccessNotice] = useState<boolean>(false);
+  const [isConfirmingClear, setIsConfirmingClear] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -179,8 +180,6 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
       setSaveSuccessNotice(false);
     }, 2500);
   };
-
-  const [isConfirmingClear, setIsConfirmingClear] = useState<boolean>(false);
 
   const handleClear = () => {
     if (!isConfirmingClear) {

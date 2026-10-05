@@ -133,8 +133,8 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
       ? data.complianceData.infogreffe.mandatairesSociaux
       : [];
 
-  // Observations au RNE (INPI / Greffe RCS)
-  const currentObservations = data.rneObservations || data.complianceData?.rne?.observations || [];
+  // Observations issues de l'attestation d'immatriculation RNE (INPI)
+  const currentObservations = data.complianceData?.rne?.observations || [];
 
   const [isMandataireModalOpen, setIsMandataireModalOpen] = useState(false);
   const [editingMandataireIndex, setEditingMandataireIndex] = useState<number | null>(null);
@@ -1165,23 +1165,23 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                             <div className="flex items-center justify-between flex-wrap gap-2">
                               <div className="flex items-center gap-2">
                                 <span className="px-2 py-0.5 rounded text-[10px] font-black bg-blue-50 text-blue-800 border border-blue-200">
-                                  Observation {obs.numObservation ? `n° ${obs.numObservation}` : `#${idx + 1}`}
+                                  Observation {(obs.numero || obs.numObservation) ? `n° ${obs.numero || obs.numObservation}` : `#${idx + 1}`}
                                 </span>
-                                {obs.source && (
+                                {(obs.fournisseur || obs.source) && (
                                   <span className="text-[10px] text-slate-500 font-medium">
-                                    Source : {obs.source}
+                                    Source : {obs.fournisseur || obs.source}
                                   </span>
                                 )}
                               </div>
-                              {obs.dateAjout && (
+                              {(obs.date || obs.dateAjout) && (
                                 <span className="text-[11px] text-slate-600 font-mono">
-                                  Date d'inscription : <strong>{obs.dateAjout}</strong>
+                                  Date d'inscription : <strong>{obs.date || obs.dateAjout}</strong>
                                 </span>
                               )}
                             </div>
 
                             <p className="text-[11px] text-slate-800 leading-relaxed font-mono bg-slate-50 p-2.5 rounded border border-slate-100">
-                              {obs.description}
+                              {obs.texte || obs.description}
                             </p>
                           </div>
                         ))}

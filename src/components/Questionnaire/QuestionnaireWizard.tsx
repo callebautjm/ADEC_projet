@@ -13,6 +13,7 @@ import { StepBudgetSimulator } from './StepBudgetSimulator';
 import { ArrowLeft, ArrowRight, CheckCircle2, Building2, ShieldAlert, Target, Award, Calculator, Sparkles } from 'lucide-react';
 import { determineCompanySize } from '../../services/engine';
 import { ProjectSheetPreloader } from '../Dossier/ProjectSheetPreloader';
+import { applyCompanyUpdate } from '../../utils/dossierSynchronizer';
 
 interface QuestionnaireWizardProps {
   state: FullQuestionnaireState;
@@ -137,31 +138,7 @@ export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
         {currentStep === 1 && (
           <StepCompany
             data={state.company}
-            onChange={(updated) =>
-              setState((prev) => {
-                const newCompany = { ...prev.company, ...updated };
-                let newRegulatory = prev.regulatory;
-                let newQualitative = prev.qualitative;
-
-                if (updated.complianceData) {
-                  const dgfipOk = updated.complianceData.dgfip?.attestationFiscale?.status === 'ok';
-                  const urssafOk = updated.complianceData.urssaf?.attestationVigilance?.status === 'ok';
-                  if (dgfipOk && urssafOk) {
-                    newRegulatory = { ...newRegulatory, isUpToDateTaxSocial: true };
-                  }
-                }
-
-                if (updated.locationType !== undefined) {
-                  const isRuralOrQpv =
-                    updated.locationType === 'RURAL_SALVEZZA_UNDER_1000' ||
-                    updated.locationType === 'POLE_RURAL_STRUCTURANT' ||
-                    updated.locationType === 'QPV';
-                  newQualitative = { ...newQualitative, q4_ruralOrQpvZone: isRuralOrQpv };
-                }
-
-                return { ...prev, company: newCompany, regulatory: newRegulatory, qualitative: newQualitative };
-              })
-            }
+            onChange={(updated) => setState((prev) => applyCompanyUpdate(prev, updated))}
           />
         )}
 

@@ -7,6 +7,7 @@
  */
 
 import {
+  CompanyProfile,
   DossierProjectAnalysis,
   FullQuestionnaireState,
   LegalForm,
@@ -18,6 +19,38 @@ import {
 import { determineCompanySize, SCHEME_TARGET_NEEDS } from '../services/engine';
 import { findSalvezzaCommuneByCode, findSalvezzaCommuneByName } from '../data/salvezzaCommunes';
 import { analyzeCompanyCreationDate } from './companyAge';
+
+/**
+ * Applique une mise à jour du profil entreprise et ses effets de bord
+ * (conformité fiscale/sociale, critère rural/QPV). Utilisé par la recherche
+ * SIRET et par la resynchronisation registres après dépôt d'une fiche projet.
+ */
+export function applyCompanyUpdate(
+  prev: FullQuestionnaireState,
+  updated: Partial<CompanyProfile>
+): FullQuestionnaireState {
+  const newCompany = { ...prev.company, ...updated };
+  let newRegulatory = prev.regulatory;
+  let newQualitative = prev.qualitative;
+
+  if (updated.complianceData) {
+    const dgfipOk = updated.complianceData.dgfip?.attestationFiscale?.status === 'ok';
+    const urssafOk = updated.complianceData.urssaf?.attestationVigilance?.status === 'ok';
+    if (dgfipOk && urssafOk) {
+      newRegulatory = { ...newRegulatory, isUpToDateTaxSocial: true };
+    }
+  }
+
+  if (updated.locationType !== undefined) {
+    const isRuralOrQpv =
+      updated.locationType === 'RURAL_SALVEZZA_UNDER_1000' ||
+      updated.locationType === 'POLE_RURAL_STRUCTURANT' ||
+      updated.locationType === 'QPV';
+    newQualitative = { ...newQualitative, q4_ruralOrQpvZone: isRuralOrQpv };
+  }
+
+  return { ...prev, company: newCompany, regulatory: newRegulatory, qualitative: newQualitative };
+}
 
 /**
  * Normalise la forme juridique extraite en type LegalForm officiel

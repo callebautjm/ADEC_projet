@@ -8,7 +8,7 @@
  * une conformité visuelle et juridique totale aux standards de l'ADEC et de l'État.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { CompanyProfile } from '../types';
 import {
   AttestationType,
@@ -139,13 +139,13 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
   };
 
   // Liens vers les portails officiels de l'État
-  const officialPortalUrl = useMemo(() => {
+  const officialPortalUrl = (() => {
     if (selectedType === 'rne') return getOfficialRneDownloadUrl(siren);
     if (selectedType === 'dgfip') return 'https://cfspro.impots.gouv.fr';
     if (selectedType === 'urssaf') return 'https://www.urssaf.fr/portail/home/utile-et-pratique/verification-attestation.html';
     if (selectedType === 'infogreffe') return 'https://monidenum.fr';
     return `https://annuaire-entreprises.data.gouv.fr/entreprise/${siren}`;
-  }, [selectedType, siren]);
+  })();
 
   // Marianne Header commun
   const renderMarianneHeader = (authority: string, subAuthority: string, refCode: string, date: string, hour: string, statusBadge: string) => (

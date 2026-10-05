@@ -12,7 +12,8 @@ import { DocumentaryExplorerView } from './components/DocumentaryExplorer/Docume
 import { DatabaseManagerView } from './components/DatabaseManager/DatabaseManagerView';
 import { FullQuestionnaireState, ComprehensiveEvaluationReport, DossierProjectAnalysis } from './types';
 import { evaluateCompanyEligibility } from './services/engine';
-import { synchronizeQuestionnaireFromDossier } from './utils/dossierSynchronizer';
+import { synchronizeQuestionnaireFromDossier, applyCompanyUpdate } from './utils/dossierSynchronizer';
+import { fetchEntrepriseBySiret } from './services/apiEntreprise';
 import { ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { ApiEntrepriseModal } from './components/ApiEntrepriseModal';
 import { SalvezzaCommunesModal } from './components/Salvezza/SalvezzaCommunesModal';
@@ -195,11 +196,25 @@ const MainAppContent: React.FC = () => {
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
   const [isSalvezzaModalOpen, setIsSalvezzaModalOpen] = useState(false);
 
-  const handleDossierAnalysisComplete = (analysis: DossierProjectAnalysis) => {
+  const handleDossierAnalysisComplete = async (analysis: DossierProjectAnalysis) => {
     setDossierAnalysis(analysis);
     const syncedState = synchronizeQuestionnaireFromDossier(analysis, questionnaireState);
     setQuestionnaireState(syncedState);
     setActiveTab('questionnaire');
+
+    // Les données des registres officiels (recherche SIRET) priment sur celles extraites du document
+    const siret = (syncedState.company.siret || '').replace(/\D/g, '');
+    if (siret.length !== 14) return;
+    const result = await fetchEntrepriseBySiret(siret);
+    if (result.success && result.mappedProfile) {
+      // Un champ absent des registres ne doit pas effacer la valeur lue dans le document
+      const registryProfile = Object.fromEntries(
+        Object.entries(result.mappedProfile).filter(([, value]) => value !== undefined && value !== null && value !== '')
+      );
+      setQuestionnaireState((prev) => applyCompanyUpdate(prev, registryProfile));
+    } else {
+      console.warn(`[Fiche projet] Resynchronisation registres impossible pour ${siret} : ${result.error}`);
+    }
   };
 
   const handleRunEvaluation = () => {

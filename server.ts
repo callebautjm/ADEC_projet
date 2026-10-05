@@ -438,8 +438,8 @@ async function startServer() {
             fetchSubEndpoint(`https://entreprise.api.gouv.fr/v3/infogreffe/rcs/unites_legales/${siren}/mandataires_sociaux?${makeParamString('infogreffe')}`),
             // DGFIP : Liasses fiscales v4
             fetchSubEndpoint(`https://entreprise.api.gouv.fr/v4/dgfip/unites_legales/${siren}/liasses_fiscales/2024?${makeParamString('dgfip-liasses')}`),
-            // INPI : Attestation d'immatriculation RNE (avec document PDF) v3
-            fetchSubEndpoint(`https://entreprise.api.gouv.fr/v3/inpi/rne/unites_legales/${siren}/attestation_immatriculation?${makeParamString('inpi-rne')}`),
+            // INPI : Extrait RNE (identité, dirigeants, établissements, observations + PDF) v3
+            fetchSubEndpoint(`https://entreprise.api.gouv.fr/v3/inpi/rne/unites_legales/${siren}/extrait_rne?${makeParamString('inpi-rne')}`),
             // Infogreffe : Extrait RCS / Kbis v3
             fetchSubEndpoint(`https://entreprise.api.gouv.fr/v3/infogreffe/rcs/unites_legales/${siren}/extrait_kbis?${makeParamString('infogreffe-kbis')}`)
           ]);
@@ -581,30 +581,106 @@ async function startServer() {
             }
           }
 
-          // INPI : Attestation d'immatriculation RNE (PDF & Données) & Observations
+          // INPI : Extrait RNE (identité, dirigeants, établissements, observations & PDF)
           const rneObservations: any[] = [];
+          let rneCapital: number | undefined;
+          let rneCapitalFormatted: string | undefined;
           if (inpiRneRes.status === 'fulfilled' && inpiRneRes.value.ok && inpiRneRes.value.data) {
             const rData = inpiRneRes.value.data;
+            const identite = rData.identite_entreprise || {};
             if (Array.isArray(rData.observations)) {
               for (const o of rData.observations) {
+                const texte = (o.texte || '').trim();
+                // Le RNM renvoie des entrées sans texte : rien à afficher
+                if (!texte) continue;
+                const numero = o.numero || '';
+                const date = o.date || '';
+                const fournisseur = o.fournisseur ? `INPI · RNE (${String(o.fournisseur).toUpperCase()})` : 'INPI · RNE';
                 rneObservations.push({
-                  numObservation: o.numObservation || o.numero || String(rneObservations.length + 1),
-                  dateAjout: o.dateAjout || o.date || '',
-                  description: o.description || o.libelle || o.texte || '',
-                  source: 'INPI · RNE'
+                  id: `${fournisseur}-${numero || rneObservations.length + 1}-${date}`,
+                  fournisseur,
+                  numero,
+                  date,
+                  texte,
+                  numObservation: numero,
+                  dateAjout: date,
+                  description: texte,
+                  source: fournisseur
                 });
               }
             }
+
+            const capitalMontant = identite.capital_social?.montant;
+            if (typeof capitalMontant === 'number' && Number.isFinite(capitalMontant) && capitalMontant > 0) {
+              rneCapital = capitalMontant;
+              rneCapitalFormatted = new Intl.NumberFormat('fr-FR', {
+                style: 'currency',
+                currency: identite.capital_social?.devise || 'EUR',
+                maximumFractionDigits: 0
+              }).format(capitalMontant);
+            }
+
+            const dirigeants = Array.isArray(rData.dirigeants_et_associes)
+              ? rData.dirigeants_et_associes.map((d: any) => ({
+                  type: d.denomination ? 'personne_morale' : 'personne_physique',
+                  nom: d.nom || d.denomination,
+                  prenom: d.prenom,
+                  denomination: d.denomination,
+                  fonction: d.qualite,
+                  dateNaissance: d.date_naissance,
+                  communeResidence: d.commune_residence
+                }))
+              : [];
+
+            const etablissements = Array.isArray(rData.etablissements)
+              ? rData.etablissements.map((e: any) => ({
+                  siret: e.siret,
+                  typeEtablissement: e.type_etablissement,
+                  statut: e.statut,
+                  dateDebutActivite: e.date_debut_activite,
+                  natureEtablissement: e.nature_etablissement,
+                  activitePrincipale: e.activite_principale,
+                  autreActivite: e.autre_activite,
+                  adresse: e.adresse
+                }))
+              : [];
+
             compliance.rne = {
               status: 'ok',
               documentUrl: rData.document_url || `https://annuaire-entreprises.data.gouv.fr/justificatif-immatriculation-pdf/${siren}`,
               publicPortalUrl: `https://annuaire-entreprises.data.gouv.fr/justificatif/${siren}`,
               annoncesUrl: `https://annuaire-entreprises.data.gouv.fr/annonces/${siren}`,
-              dateImmatriculationRne: rData.date_immatriculation || inseeData.date_creation || inseeData.unite_legale?.date_creation,
+              dateImmatriculationRne: identite.date_immatriculation_rne || inseeData.date_creation || inseeData.unite_legale?.date_creation,
               registre: 'Registre National des Entreprises (INPI)',
+              capitalSocial: rneCapital,
+              capitalSocialFormatted: rneCapitalFormatted,
+              capitalSocialSource: rneCapital ? 'API Entreprise · Extrait RNE (INPI)' : undefined,
+              denomination: identite.denomination,
+              dateDebutActivite: identite.date_debut_activite,
+              formeJuridique: identite.forme_juridique,
+              natureEntreprise: identite.nature_entreprise,
+              objetSocial: identite.activite_principales_objet_social,
+              codeApe: identite.code_APE,
+              associeUnique: identite.associe_unique,
+              dateClotureExercice: identite.date_cloture_exercice,
+              datePremiereClotureExercice: identite.date_premiere_cloture_exercice,
+              dateFinPersonne: identite.date_fin_personne,
+              detailCessation: identite.detail_cessation,
+              dissolution: identite.dissolution,
+              adresseSiege: identite.adresse_siege_social,
+              dirigeants,
+              etablissements,
+              etablissementsFermesTotal: rData.etablissements_fermes_total,
+              diffusionCommerciale: rData.diffusion_commerciale,
+              diffusionInsee: rData.diffusion_insee,
               observations: rneObservations,
               raw: rData
             };
+
+            // Les dirigeants RNE prennent le relais si Infogreffe ne renvoie pas de mandataires
+            if (dirigeants.length > 0 && !(compliance.infogreffe.mandatairesSociaux?.length > 0)) {
+              compliance.infogreffe.mandatairesSociaux = dirigeants;
+            }
           } else {
             // Dérivation standard du RNE officiel même si le scope INPI n'est pas actif sur le token
             compliance.rne = {
@@ -614,34 +690,18 @@ async function startServer() {
               annoncesUrl: `https://annuaire-entreprises.data.gouv.fr/annonces/${siren}`,
               dateImmatriculationRne: inseeData.date_creation || inseeData.unite_legale?.date_creation,
               registre: 'Registre National des Entreprises (INPI)',
+              capitalSocial: undefined,
+              capitalSocialFormatted: undefined,
               observations: rneObservations
             };
           }
 
-          // Greffe RCS observations si présentes
-          if (compliance.infogreffe?.extraitKbis?.observationsGreffier && Array.isArray(compliance.infogreffe.extraitKbis.observationsGreffier)) {
-            for (const o of compliance.infogreffe.extraitKbis.observationsGreffier) {
-              const text = typeof o === 'string' ? o : (o.libelle || o.description || o.texte || '');
-              if (text && !rneObservations.some(existing => existing.description === text)) {
-                rneObservations.push({
-                  numObservation: o.numero || String(rneObservations.length + 1),
-                  dateAjout: o.date || '',
-                  description: text,
-                  source: 'Greffe RCS / RNE'
-                });
-              }
-            }
+          if (rneCapital && !inseeData.capital_social) {
+            inseeData.capital_social = rneCapital;
+            inseeData.capital_social_formate = rneCapitalFormatted;
+            inseeData.capital_source = 'API Entreprise · Extrait RNE (INPI)';
           }
 
-          // Cas spécifique 849443312 (LUPINU ALIMENTATION - SPAR Bastia)
-          if (siren === '849443312' && rneObservations.length === 0) {
-            rneObservations.push({
-              numObservation: '1',
-              dateAjout: '2019-06-06',
-              description: 'Mise en activité de la société sur prise en location-gérance de l\'établissement principal situé Immeuble Le Colomba, 7 Route de Ville, 20200 Ville-di-Pietrabugno. Précédent exploitant : ALCI.',
-              source: 'INPI (RNE) & Greffe RCS de Bastia'
-            });
-          }
           compliance.rne.observations = rneObservations;
 
           // BODACC : Avis officiels (DILA / Journal Officiel)
@@ -831,14 +891,7 @@ async function startServer() {
                 annoncesUrl: 'https://annuaire-entreprises.data.gouv.fr/annonces/849443312',
                 dateImmatriculationRne: '2019-03-21',
                 registre: 'Registre National des Entreprises (INPI)',
-                observations: [
-                  {
-                    numObservation: '1',
-                    dateAjout: '2019-06-06',
-                    description: 'Mise en activité de la société sur prise en location-gérance de l\'établissement principal situé Immeuble Le Colomba, 7 Route de Ville, 20200 Ville-di-Pietrabugno. Précédent exploitant : ALCI.',
-                    source: 'INPI (RNE) & Greffe RCS de Bastia'
-                  }
-                ]
+                observations: []
               },
               infogreffe: {
                 mandatairesSociaux: [
@@ -947,14 +1000,7 @@ async function startServer() {
             annoncesUrl: `https://annuaire-entreprises.data.gouv.fr/annonces/${currentSiren}`,
             dateImmatriculationRne: matchingEtablissement?.date_creation || firstResult.date_creation,
             registre: 'Registre National des Entreprises (INPI)',
-            observations: currentSiren === '849443312' ? [
-              {
-                numObservation: '1',
-                dateAjout: '2019-06-06',
-                description: 'Mise en activité de la société sur prise en location-gérance de l\'établissement principal situé Immeuble Le Colomba, 7 Route de Ville, 20200 Ville-di-Pietrabugno. Précédent exploitant : ALCI.',
-                source: 'INPI (RNE) & Greffe RCS de Bastia'
-              }
-            ] : []
+            observations: []
           },
           infogreffe: {
             mandatairesSociaux: firstResult.dirigeants ? firstResult.dirigeants.map((d: any) => ({
