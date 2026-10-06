@@ -1108,6 +1108,66 @@ async function startServer() {
     }
   });
 
+  // Extrait RNE officiel (PDF INPI) via API Entreprise.
+  // Le document_url renvoyé par extrait_rne expire en ~30 s : on le redemande au moment du clic
+  // et on télécharge immédiatement, en patientant tant que l'API répond 409 (génération en cours).
+  app.post('/api/entreprise/extrait-rne-pdf', async (req: Request, res: Response) => {
+    const siren = String(req.body?.siren || '').replace(/\D/g, '').slice(0, 9);
+    const token = String(req.body?.token || '').trim();
+    const rawRecipient = String(req.body?.recipient || '').replace(/\D/g, '');
+    const recipient = rawRecipient.length === 14 ? rawRecipient : '20007695800012';
+
+    if (siren.length !== 9) {
+      return res.status(400).json({ error: 'SIREN invalide (9 chiffres requis).' });
+    }
+    if (!token) {
+      return res.status(401).json({ error: 'Jeton API Entreprise requis pour obtenir l’extrait RNE officiel.' });
+    }
+
+    const authHeaders = {
+      'Authorization': `Bearer ${token}`,
+      'User-Agent': 'ADEC-Corse-Diagnostic/1.0 (https://www.adec.corsica)',
+      'Accept': 'application/json'
+    };
+    const describeError = async (r: globalThis.Response) => {
+      const body: any = await r.json().catch(() => ({}));
+      const e = body?.errors?.[0];
+      return e ? `${e.title} (${e.code}) : ${e.detail}` : `Erreur ${r.status}`;
+    };
+
+    try {
+      const params = `context=${encodeURIComponent('Instruction dossier')}&recipient=${recipient}&object=${encodeURIComponent(`Extrait RNE ${siren}`)}`;
+      const extraitRes = await fetch(`https://entreprise.api.gouv.fr/v3/inpi/rne/unites_legales/${siren}/extrait_rne?${params}`, { headers: authHeaders });
+      if (!extraitRes.ok) {
+        return res.status(extraitRes.status).json({ error: await describeError(extraitRes) });
+      }
+      const documentUrl: string | undefined = (await extraitRes.json())?.data?.document_url;
+      if (!documentUrl) {
+        return res.status(404).json({ error: 'Aucun document PDF fourni par l’INPI pour cette entreprise.' });
+      }
+
+      const deadline = Date.now() + 25000;
+      let pdfRes = await fetch(documentUrl, { headers: { ...authHeaders, Accept: 'application/pdf' } });
+      while (pdfRes.status === 409 && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        pdfRes = await fetch(documentUrl, { headers: { ...authHeaders, Accept: 'application/pdf' } });
+      }
+
+      if (!pdfRes.ok || !(pdfRes.headers.get('content-type') || '').includes('pdf')) {
+        const status = pdfRes.ok ? 502 : pdfRes.status;
+        return res.status(status).json({ error: await describeError(pdfRes) });
+      }
+
+      const buffer = Buffer.from(await pdfRes.arrayBuffer());
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="extrait_rne_${siren}.pdf"`);
+      return res.send(buffer);
+    } catch (err: any) {
+      console.error('[Extrait RNE PDF] Erreur réseau:', err);
+      return res.status(502).json({ error: `Impossible de joindre entreprise.api.gouv.fr : ${err.message}` });
+    }
+  });
+
   // Route dédiée pour récupérer et télécharger le justificatif d'immatriculation officiel RNE au format PDF
   // Récupère depuis https://annuaire-entreprises.data.gouv.fr/justificatif-immatriculation-pdf/:siren
   app.get([

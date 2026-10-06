@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   MapPin,
   Users,
-  Briefcase,
   FileText,
   ChevronDown,
   ChevronUp,
@@ -34,28 +33,19 @@ import {
   X,
   Mountain,
   Compass,
-  Info,
-  FolderDown,
-  AlertCircle,
-  Coins,
-  Award,
-  FileSpreadsheet,
   Sparkles
 } from 'lucide-react';
 import { determineCompanySize } from '../../services/engine';
-import { fetchEntrepriseBySiret, fetchBodaccBySiren, getStoredApiEntrepriseToken, isValidLuhn } from '../../services/apiEntreprise';
+import { fetchEntrepriseBySiret, fetchBodaccBySiren, getStoredApiEntrepriseToken, isValidLuhn, downloadExtraitRnePdf } from '../../services/apiEntreprise';
 import { ApiEntrepriseModal } from '../ApiEntrepriseModal';
 import { BeneficiairesEffectifsPanel } from './BeneficiairesEffectifsPanel';
-import { ComplianceAttestationsModal } from '../ComplianceAttestationsModal';
+import { ComplianceRow } from './ComplianceRow';
 import {
   AttestationType,
   ATTESTATIONS_REGISTRY,
   downloadCertificateFile
 } from '../../utils/complianceCertificates';
-import {
-  getOfficialRneDownloadUrl,
-  retrieveAndDownloadOfficialRnePdf
-} from '../../utils/rneDownloader';
+import { getOfficialRneDownloadUrl } from '../../utils/rneDownloader';
 import { SalvezzaCommunesModal } from '../Salvezza/SalvezzaCommunesModal';
 import {
   determineCorsicaZoning,
@@ -80,38 +70,25 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
   const [isManualZoningOverride, setIsManualZoningOverride] = useState(false);
   const [isSalvezzaModalOpen, setIsSalvezzaModalOpen] = useState(false);
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
-  const [isRneModalOpen, setIsRneModalOpen] = useState(false);
-  const [showAdminPillars, setShowAdminPillars] = useState(true);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const [showRawData, setShowRawData] = useState(false);
   const [hasToken, setHasToken] = useState<boolean>(() => Boolean(getStoredApiEntrepriseToken().trim()));
-  const [attestationModalConfig, setAttestationModalConfig] = useState<{
-    isOpen: boolean;
-    type: AttestationType;
-  }>({
-    isOpen: false,
-    type: 'bundle'
-  });
   const [downloadSuccessNotice, setDownloadSuccessNotice] = useState<string | null>(null);
   const [isDownloadingRnePdf, setIsDownloadingRnePdf] = useState(false);
+  const [rnePdfError, setRnePdfError] = useState<string | null>(null);
 
-  const handleOpenAttestation = (type: AttestationType = 'bundle') => {
-    setAttestationModalConfig({ isOpen: true, type });
-  };
-
-  const handleDownloadOfficialRne = async (siren: string) => {
+  // Extrait RNE officiel INPI : lien frais demandé au clic (jeton requis), sinon justificatif public
+  const handleDownloadExtraitRne = async (siren: string) => {
+    setRnePdfError(null);
+    if (!hasToken) {
+      window.open(getOfficialRneDownloadUrl(siren), '_blank', 'noopener,noreferrer');
+      return;
+    }
     setIsDownloadingRnePdf(true);
-    setDownloadSuccessNotice(`Récupération du justificatif d'immatriculation officiel RNE (PDF) depuis ${getOfficialRneDownloadUrl(siren)}...`);
-    try {
-      const res = await retrieveAndDownloadOfficialRnePdf(siren, data.name);
-      setDownloadSuccessNotice(res.message);
-    } catch {
-      setDownloadSuccessNotice("Téléchargement du justificatif RNE initié.");
-    } finally {
-      setIsDownloadingRnePdf(false);
-      setTimeout(() => {
-        setDownloadSuccessNotice(null);
-      }, 6000);
+    const result = await downloadExtraitRnePdf(siren, data.name);
+    setIsDownloadingRnePdf(false);
+    if (!result.success) {
+      setRnePdfError(result.error || 'Téléchargement impossible.');
     }
   };
 
@@ -132,6 +109,18 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
   const dgfipDocumentUrl = data.complianceData?.dgfip?.attestationFiscale?.documentUrl;
   const urssafDocumentUrl = data.complianceData?.urssaf?.attestationVigilance?.documentUrl;
 
+  // Immatriculation RNE
+  const rneOk = data.complianceData?.rne?.status === 'ok';
+  const rneDateIso = data.complianceData?.rne?.dateImmatriculationRne;
+  const rneDateFr = rneDateIso && /^\d{4}-\d{2}-\d{2}/.test(rneDateIso)
+    ? new Date(rneDateIso).toLocaleDateString('fr-FR')
+    : rneDateIso;
+  const bodacc = data.complianceData?.bodacc;
+
+  const primaryActionClass = 'inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[11px] font-semibold transition shadow-2xs cursor-pointer';
+  const secondaryActionClass = 'inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-md text-[11px] font-semibold transition cursor-pointer';
+  const disabledActionClass = 'inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[11px] font-semibold cursor-not-allowed';
+
   // Mandataires sociaux et dirigeants déclarés
   const currentMandataires: MandataireSocial[] =
     (data.mandataires && data.mandataires.length > 0)
@@ -142,6 +131,9 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
 
   // Observations issues de l'attestation d'immatriculation RNE (INPI)
   const currentObservations = data.complianceData?.rne?.observations || [];
+
+  // Nombre de pièces réellement vérifiées (RNE, DGFiP, URSSAF, mandataires)
+  const verifiedCount = [rneOk, dgfipOk, urssafOk, currentMandataires.length > 0].filter(Boolean).length;
 
   const [isMandataireModalOpen, setIsMandataireModalOpen] = useState(false);
   const [editingMandataireIndex, setEditingMandataireIndex] = useState<number | null>(null);
@@ -353,16 +345,6 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
         }}
       />
 
-      <ComplianceAttestationsModal
-        isOpen={attestationModalConfig.isOpen || isRneModalOpen}
-        onClose={() => {
-          setAttestationModalConfig(prev => ({ ...prev, isOpen: false }));
-          setIsRneModalOpen(false);
-        }}
-        company={data}
-        initialType={isRneModalOpen ? 'rne' : attestationModalConfig.type}
-      />
-
       {/* 1. EN-TÊTE PRINCIPAL & ACCÈS JETON API */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div>
@@ -541,10 +523,10 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
         )}
       </div>
 
-      {/* 3. FICHE SYNTHÉTIQUE CERTIFIÉE DE L'ÉTABLISSEMENT */}
+      {/* 3. FICHE ÉTABLISSEMENT : IDENTITÉ, CONFORMITÉ & DONNÉES DES REGISTRES */}
       {data.siret && (
         <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
-          {/* En-tête de l'établissement avec boutons d'actions unifiés */}
+          {/* Identité de l'établissement */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -566,7 +548,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 font-mono">
+              <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 font-mono flex-wrap">
                 <span>SIRET : <strong className="text-slate-800">{data.siret}</strong></span>
                 {isCurrentSiretValidLuhn && (
                   <span title="Clé de Luhn valide" className="inline-flex items-center text-emerald-600">
@@ -579,33 +561,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
               </div>
             </div>
 
-            {/* Actions officielles sans doublon */}
             <div className="flex items-center gap-2 flex-wrap">
-              {activeSiren && (
-                <button
-                  type="button"
-                  onClick={() => handleDownloadOfficialRne(activeSiren)}
-                  disabled={isDownloadingRnePdf}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50"
-                  title={`Télécharger le justificatif officiel d'immatriculation RNE (PDF) depuis ${getOfficialRneDownloadUrl(activeSiren)}`}
-                >
-                  <Download className={`w-3.5 h-3.5 ${isDownloadingRnePdf ? 'animate-bounce' : ''}`} />
-                  <span>{isDownloadingRnePdf ? 'Récupération...' : 'Justificatif RNE (PDF)'}</span>
-                </button>
-              )}
-
-              {activeSiren && (
-                <button
-                  type="button"
-                  onClick={() => handleOpenAttestation('bundle')}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-semibold border border-slate-200 transition cursor-pointer"
-                  title="Consulter et exporter les 4 attestations de conformité administrative"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Attestations (4/4)</span>
-                </button>
-              )}
-
               {activeSiren && (
                 <a
                   href={`https://annuaire-entreprises.data.gouv.fr/entreprise/${activeSiren}`}
@@ -615,81 +571,264 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                   title="Consulter la fiche officielle sur l'Annuaire des Entreprises (data.gouv.fr)"
                 >
                   <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Fiche Gouv.fr</span>
+                  <span>Annuaire des Entreprises</span>
                 </a>
+              )}
+              {data.rawApiData && (
+                <button
+                  type="button"
+                  onClick={() => setShowRawData(!showRawData)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-medium border border-slate-200 transition cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5 text-slate-400" />
+                  <span>{showRawData ? 'Masquer JSON' : 'JSON brut'}</span>
+                </button>
               )}
             </div>
           </div>
 
-          {/* Grille uniforme des 4 indicateurs clés */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-            {/* 1. Forme Juridique */}
-            <div className="p-3 bg-slate-50/80 rounded-lg border border-slate-200 space-y-1">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                Forme Juridique & Statut
-              </span>
-              <p className="font-extrabold text-slate-900 truncate" title={data.natureJuridiqueLibelle || data.legalForm}>
-                {data.natureJuridiqueLibelle || data.legalForm}
-              </p>
-              <p className="text-[11px] text-slate-500 truncate">
-                {data.natureJuridiqueCode ? `Code ${data.natureJuridiqueCode} · ` : ''}
-                {data.enterpriseCategory ? `Catégorie ${data.enterpriseCategory}` : 'Régime réel'}
-              </p>
+          {showRawData && data.rawApiData && (
+            <div className="bg-slate-900 text-slate-200 p-3 rounded-lg text-xs font-mono max-h-56 overflow-y-auto">
+              <pre className="text-[10px] leading-relaxed whitespace-pre-wrap">
+                {JSON.stringify(data.rawApiData, null, 2)}
+              </pre>
             </div>
+          )}
 
-            {/* 2. Capital Social */}
-            <div className="p-3 bg-amber-50/60 rounded-lg border border-amber-300/80 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-amber-950 uppercase tracking-wider flex items-center gap-1">
-                  <Coins className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                  Capital Social
-                </span>
-                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-200">
-                  {data.capitalSocial ? (data.capitalSocialSource || 'Extrait RCS') : 'RNE'}
-                </span>
+          {downloadSuccessNotice && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center justify-between gap-2 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="font-medium">{downloadSuccessNotice}</span>
               </div>
-              <p className="font-extrabold text-base text-amber-950 tracking-tight">
-                {data.capitalSocialFormatted || (data.capitalSocial ? `${new Intl.NumberFormat('fr-FR').format(data.capitalSocial)} €` : (data.legalForm === 'COMMERCIANT_ARTISAN_EI' || data.legalForm === 'MICRO_ENTREPRISE' ? 'Non applicable (EI)' : 'Non renseigné'))}
-              </p>
-              <p className="text-[11px] text-amber-900/80 truncate">
-                {data.capitalSocial ? (data.capitalSocialSource || 'Extrait RCS / Infogreffe') : 'Fonds propres ou patrimoine affecté'}
+              <button
+                type="button"
+                onClick={() => setDownloadSuccessNotice(null)}
+                className="text-emerald-700 hover:text-emerald-900 text-xs font-bold px-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Conformité & justificatifs : une ligne par pièce, statut réel, action unique */}
+          <div className="space-y-2">
+            <div>
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Conformité & justificatifs</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border normal-case tracking-normal ${
+                  verifiedCount === 4
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-amber-50 text-amber-800 border-amber-200'
+                }`}>
+                  {verifiedCount}/4 pièces vérifiées
+                </span>
+              </h4>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Pièces exigées par l'ADEC pour l'instruction et le versement des aides.
               </p>
             </div>
 
-            {/* 3. Activité NAF / APE */}
-            <div className="p-3 bg-slate-50/80 rounded-lg border border-slate-200 space-y-1">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                Activité NAF / APE
-              </span>
-              <p className="font-extrabold font-mono text-slate-900">
-                {data.nafCode || 'Non renseigné'}
-              </p>
-              <p className="text-[11px] text-slate-500 truncate" title={data.nafLabel}>
-                {data.nafLabel || 'Activité principale déclarée'}
-              </p>
-            </div>
-
-            {/* 4. Immatriculation & Ancienneté */}
-            <div className="p-3 bg-slate-50/80 rounded-lg border border-slate-200 space-y-1">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                Création & Ancienneté
-              </span>
-              <p className="font-extrabold text-slate-900">
-                {ageAnalysis.isDateKnown ? ageAnalysis.dateFormattedFr : 'Non importée'}
-              </p>
-              <p className="text-[11px] truncate">
-                {ageAnalysis.isDateKnown ? (
-                  <span className="font-semibold text-emerald-700">
-                    {ageAnalysis.ageLabel} · {ageAnalysis.isUnderFiveYears ? 'Éligible Impresa Sì (≤ 5 ans)' : '> 5 ans'}
-                  </span>
-                ) : (
-                  <span className="text-amber-700 font-medium">À renseigner ci-dessous</span>
+            <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 bg-white">
+              <ComplianceRow
+                icon={<Building2 className="w-3.5 h-3.5" />}
+                title="Immatriculation RNE"
+                source="INPI · Registre National des Entreprises"
+                tone={rneOk ? 'ok' : 'unknown'}
+                statusLabel={rneOk ? 'Immatriculée' : 'Non vérifiée'}
+                description={
+                  rneOk
+                    ? `Immatriculation au RNE${rneDateFr ? ` le ${rneDateFr}` : ''}. Justificatif officiel téléchargeable.`
+                    : 'Lancez une recherche SIRET pour vérifier l’immatriculation.'
+                }
+                actions={
+                  activeSiren ? (
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadExtraitRne(activeSiren)}
+                      disabled={isDownloadingRnePdf}
+                      className={`${primaryActionClass} disabled:opacity-50`}
+                      title={hasToken
+                        ? "Télécharger l'extrait RNE officiel (INPI, via API Entreprise)"
+                        : `Ouvrir le justificatif d'immatriculation public (${getOfficialRneDownloadUrl(activeSiren)})`}
+                    >
+                      <Download className={`w-3 h-3 ${isDownloadingRnePdf ? 'animate-bounce' : ''}`} />
+                      <span>{isDownloadingRnePdf ? 'Génération INPI...' : 'PDF officiel'}</span>
+                    </button>
+                  ) : undefined
+                }
+              >
+                {rnePdfError && activeSiren && (
+                  <div className="md:pl-[15.75rem] text-[11px]">
+                    <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-900 space-y-1">
+                      <p><strong>Extrait RNE indisponible auprès de l’INPI.</strong> {rnePdfError}</p>
+                      <p className="text-slate-700">
+                        Réessayez dans quelques minutes, ou ouvrez le{' '}
+                        <a
+                          href={getOfficialRneDownloadUrl(activeSiren)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-blue-700 underline hover:text-blue-900"
+                        >
+                          justificatif d’immatriculation public (Annuaire des Entreprises)
+                        </a>
+                        .
+                      </p>
+                    </div>
+                  </div>
                 )}
-              </p>
+              </ComplianceRow>
+
+              <ComplianceRow
+                icon={<Landmark className="w-3.5 h-3.5" />}
+                title="Attestation fiscale"
+                source="DGFiP · Art. L. 2141-2 CCP"
+                tone={dgfipOk ? 'ok' : 'unknown'}
+                statusLabel={dgfipOk ? 'À jour' : 'Non certifiée'}
+                description={data.complianceData?.dgfip?.attestationFiscale?.libelle || 'Aucune attestation délivrée (jeton API Entreprise requis).'}
+                actions={
+                  dgfipDocumentUrl ? (
+                    <a href={dgfipDocumentUrl} target="_blank" rel="noopener noreferrer" className={primaryActionClass} title="Attestation fiscale officielle délivrée par la DGFiP">
+                      <Download className="w-3 h-3" />
+                      <span>PDF officiel</span>
+                    </a>
+                  ) : (
+                    <span className={disabledActionClass} title="Aucune attestation fiscale délivrée">
+                      <Download className="w-3 h-3" />
+                      <span>Non disponible</span>
+                    </span>
+                  )
+                }
+              />
+
+              <ComplianceRow
+                icon={<ShieldCheck className="w-3.5 h-3.5" />}
+                title="Attestation de vigilance"
+                source="URSSAF · Art. L. 243-15 CSS"
+                tone={urssafOk ? 'ok' : 'unknown'}
+                statusLabel={urssafOk ? 'À jour' : 'Non certifiée'}
+                description={data.complianceData?.urssaf?.attestationVigilance?.libelle || 'Aucune attestation délivrée (jeton API Entreprise requis).'}
+                actions={
+                  urssafDocumentUrl ? (
+                    <a href={urssafDocumentUrl} target="_blank" rel="noopener noreferrer" className={primaryActionClass} title="Attestation de vigilance officielle délivrée par l'URSSAF">
+                      <Download className="w-3 h-3" />
+                      <span>PDF officiel</span>
+                    </a>
+                  ) : (
+                    <span className={disabledActionClass} title="Aucune attestation de vigilance délivrée">
+                      <Download className="w-3 h-3" />
+                      <span>Non disponible</span>
+                    </span>
+                  )
+                }
+              />
+
+              <ComplianceRow
+                icon={<UserCheck className="w-3.5 h-3.5" />}
+                title="Mandataires & pouvoirs"
+                source="RNE · Art. L. 123-36 C. com."
+                tone={currentMandataires.length > 0 ? 'ok' : 'unknown'}
+                statusLabel={
+                  currentMandataires.length > 0
+                    ? `${currentMandataires.length} ${currentMandataires.length > 1 ? 'dirigeants' : 'dirigeant'}`
+                    : 'Non renseignés'
+                }
+                description="Représentation légale de la société. Détail et bénéficiaires effectifs dans la section Gouvernance ci-dessous."
+                actions={
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadAttestation('infogreffe')}
+                    className={secondaryActionClass}
+                    title="Télécharger l'extrait de gouvernance (PDF généré à partir des mandataires déclarés)"
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>Extrait (PDF)</span>
+                  </button>
+                }
+              />
+
+              <ComplianceRow
+                icon={<Scale className="w-3.5 h-3.5" />}
+                title="Situation judiciaire"
+                source="BODACC · DILA / Journal officiel"
+                tone={!bodacc ? 'unknown' : bodacc.hasProcedureCollective ? 'alert' : 'ok'}
+                statusLabel={!bodacc ? 'Non consultée' : bodacc.hasProcedureCollective ? 'Procédure collective' : 'In bonis'}
+                description={
+                  bodacc?.synthese ||
+                  (bodacc ? 'Aucune procédure collective publiée au BODACC.' : 'Lancez une recherche SIRET pour consulter le BODACC.')
+                }
+                actions={
+                  activeSiren ? (
+                    <button
+                      type="button"
+                      onClick={handleRefreshBodacc}
+                      disabled={isBodaccLoading}
+                      className={secondaryActionClass}
+                      title="Actualiser les avis BODACC"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isBodaccLoading ? 'animate-spin text-blue-600' : ''}`} />
+                      <span>Actualiser</span>
+                    </button>
+                  ) : undefined
+                }
+              />
+
+              <ComplianceRow
+                icon={<FileText className="w-3.5 h-3.5" />}
+                title="Observations au RNE"
+                source="INPI · Mentions RCS / RNM"
+                tone={!data.complianceData?.rne ? 'unknown' : currentObservations.length > 0 ? 'warning' : 'ok'}
+                statusLabel={
+                  !data.complianceData?.rne
+                    ? 'Non consultées'
+                    : currentObservations.length > 0
+                      ? `${currentObservations.length} observation${currentObservations.length > 1 ? 's' : ''}`
+                      : 'Aucune'
+                }
+                description={
+                  !data.complianceData?.rne
+                    ? 'Lancez une recherche SIRET pour consulter les observations.'
+                    : currentObservations.length > 0
+                      ? 'Mentions inscrites au registre, à examiner pour l’instruction :'
+                      : 'Aucune observation ni mention d’office inscrite au registre.'
+                }
+                actions={
+                  activeSiren ? (
+                    <a
+                      href={`https://annuaire-entreprises.data.gouv.fr/annonces/${activeSiren}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={secondaryActionClass}
+                      title="Consulter les annonces et observations sur l'Annuaire des Entreprises"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>Annonces</span>
+                    </a>
+                  ) : undefined
+                }
+              >
+                {currentObservations.length > 0 && (
+                  <ul className="space-y-1.5 md:pl-[15.75rem]">
+                    {currentObservations.map((obs, idx) => (
+                      <li key={obs.id || idx} className="text-[11px] bg-amber-50/50 border border-amber-100 rounded-lg p-2.5 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap text-[10px] text-slate-500 font-medium">
+                          <span className="font-bold text-slate-700">
+                            {(obs.numero || obs.numObservation) ? `N° ${obs.numero || obs.numObservation}` : `#${idx + 1}`}
+                          </span>
+                          {(obs.date || obs.dateAjout) && <span className="font-mono">{obs.date || obs.dateAjout}</span>}
+                          {(obs.fournisseur || obs.source) && <span>{obs.fournisseur || obs.source}</span>}
+                        </div>
+                        <p className="text-slate-800 leading-relaxed">{obs.texte || obs.description}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </ComplianceRow>
             </div>
           </div>
 
-          {/* Tiroir technique épuré : Données complémentaires issues des registres API */}
+          {/* Données complémentaires des registres (non saisissables) */}
           <div className="border border-slate-200 rounded-lg bg-slate-50/50 overflow-hidden">
             <button
               type="button"
@@ -698,7 +837,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
             >
               <span className="flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                <span>Données complémentaires des registres (TVA, Effectifs, Conventions & Fiscalité)</span>
+                <span>Données complémentaires des registres (TVA, social, établissements)</span>
               </span>
               <div className="flex items-center gap-1 text-slate-400">
                 <span className="text-[11px] font-normal">{showTechnicalDetails ? 'Masquer' : 'Afficher'}</span>
@@ -707,546 +846,56 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
             </button>
 
             {showTechnicalDetails && (
-              <div className="p-3.5 pt-1 border-t border-slate-200 bg-white grid grid-cols-1 md:grid-cols-3 gap-3 text-xs animate-in fade-in duration-150">
-                {/* Registres fiscaux & TVA */}
+              <div className="p-3.5 border-t border-slate-200 bg-white grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 space-y-1">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Fiscalité & TVA</span>
-                  <div className="text-[11px] space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">TVA Intra :</span>
-                      <strong className="font-mono text-slate-800">{data.tvaIntracommunautaire || `FR${String((12 + 3 * (parseInt(activeSiren || '0', 10) % 97)) % 97).padStart(2, '0')}${activeSiren}`}</strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Régime fiscal :</span>
-                      <strong className="text-slate-800">{data.complianceData?.dgfip?.liassesFiscales?.regimeImposition || 'Régime réel d\'imposition'}</strong>
-                    </div>
-                    {data.annualRevenue && (
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">CA Déclaré :</span>
-                        <strong className="text-emerald-700">{new Intl.NumberFormat('fr-FR').format(data.annualRevenue)} €</strong>
-                      </div>
-                    )}
+                  <span className="block text-[10px] font-bold uppercase text-slate-500">Fiscalité</span>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-500">TVA intracom. :</span>
+                    <strong className="font-mono text-slate-800">{data.tvaIntracommunautaire || `FR${String((12 + 3 * (parseInt(activeSiren || '0', 10) % 97)) % 97).padStart(2, '0')}${activeSiren}`}</strong>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-500">Régime fiscal :</span>
+                    <strong className="text-slate-800 text-right">{data.complianceData?.dgfip?.liassesFiscales?.regimeImposition || 'Non communiqué'}</strong>
                   </div>
                 </div>
 
-                {/* Effectifs & Social */}
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 space-y-1">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Dialogue Social & Emploi</span>
-                  <div className="text-[11px] space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Tranche INSEE :</span>
-                      <strong className="text-slate-800">{data.headcountTranche || `${data.headcount} salarié(s)`}</strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Convention (IDCC) :</span>
-                      <strong className="text-slate-800 truncate max-w-[140px]" title={data.conventionCollective?.idcc || 'Interprofessionnelle'}>
-                        {data.conventionCollective?.idcc || 'Régime général'}
-                      </strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Employeur :</span>
-                      <strong className="text-cyan-700">{data.caractereEmployeur === 'O' || typeof data.caractereEmployeur === 'string' ? 'Actif' : 'Non employeur'}</strong>
-                    </div>
+                  <span className="block text-[10px] font-bold uppercase text-slate-500">Social & emploi</span>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-500">Tranche INSEE :</span>
+                    <strong className="text-slate-800 text-right">{data.headcountTranche || 'Non communiquée'}</strong>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-500">Convention (IDCC) :</span>
+                    <strong className="text-slate-800 truncate max-w-[140px]" title={data.conventionCollective?.idcc}>
+                      {data.conventionCollective?.idcc || 'Non communiquée'}
+                    </strong>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-500">Employeur :</span>
+                    <strong className="text-slate-800">
+                      {data.caractereEmployeur === 'O' ? 'Oui' : data.caractereEmployeur === 'N' ? 'Non' : 'Non communiqué'}
+                    </strong>
                   </div>
                 </div>
 
-                {/* Labels & Territoire */}
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 space-y-1">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Labels & Réseau</span>
-                  <div className="text-[11px] space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Agriculture Bio :</span>
-                      <strong className={data.labelsAndCertifications?.isBio ? 'text-emerald-700' : 'text-slate-600'}>
-                        {data.labelsAndCertifications?.isBio ? '✓ Certifié Agence Bio' : 'Non'}
-                      </strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Établissements :</span>
-                      <strong className="text-slate-800">{data.nombreEtablissements ?? 1} ({data.nombreEtablissementsOuverts ?? 1} ouvert)</strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Diffusion INSEE :</span>
-                      <strong className="text-slate-800">{data.statutDiffusion === 'O' ? 'Publique' : 'Protégée'}</strong>
-                    </div>
+                  <span className="block text-[10px] font-bold uppercase text-slate-500">Établissements & labels</span>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-500">Établissements :</span>
+                    <strong className="text-slate-800">{data.nombreEtablissements ?? 1} ({data.nombreEtablissementsOuverts ?? 1} ouvert)</strong>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-500">Diffusion INSEE :</span>
+                    <strong className="text-slate-800">{data.statutDiffusion === 'O' ? 'Publique' : 'Protégée'}</strong>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-500">Agriculture bio :</span>
+                    <strong className={data.labelsAndCertifications?.isBio ? 'text-emerald-700' : 'text-slate-800'}>
+                      {data.labelsAndCertifications?.isBio ? 'Certifiée Agence Bio' : 'Non'}
+                    </strong>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* 4. VÉRIFICATIONS ADMINISTRATIVES & ATTESTATIONS DE CONFORMITÉ (4/4) */}
-          <div className="pt-2 space-y-3">
-            {/* Notification de téléchargement réussi */}
-            {downloadSuccessNotice && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center justify-between gap-2 shadow-2xs animate-in fade-in duration-150">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="font-medium">{downloadSuccessNotice}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDownloadSuccessNotice(null)}
-                  className="text-emerald-700 hover:text-emerald-900 text-xs font-bold px-1 cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-
-            {/* En-tête de section */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => setShowAdminPillars(!showAdminPillars)}
-                    className="text-xs sm:text-sm font-bold text-slate-900 hover:text-blue-700 flex items-center gap-1.5 transition text-left cursor-pointer"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Vérifications administratives & Justificatifs légaux</span>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200">
-                      4/4 vérifiés
-                    </span>
-                    {showAdminPillars ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  Pièces opposables exigées par l'ADEC pour l'instruction et le versement des aides.
-                </p>
-              </div>
-
-              {/* Actions globales */}
-              <div className="flex items-center gap-2 flex-wrap shrink-0">
-                <button
-                  type="button"
-                  onClick={() => handleDownloadAttestation('bundle')}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition active:scale-98 cursor-pointer"
-                  title="Télécharger l'intégralité du pack (les 4 attestations regroupées)"
-                >
-                  <FolderDown className="w-3.5 h-3.5" />
-                  <span>Télécharger le Pack (4/4)</span>
-                </button>
-
-                {data.rawApiData && (
-                  <button
-                    type="button"
-                    onClick={() => setShowRawData(!showRawData)}
-                    className="text-[11px] text-slate-500 hover:text-slate-800 flex items-center gap-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg transition cursor-pointer"
-                  >
-                    <FileText className="w-3 h-3 text-slate-400" />
-                    <span>{showRawData ? 'Masquer JSON' : 'Inspecter JSON'}</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* GRILLE HARMONISÉE DES 4 ATTESTATIONS DE CONFORMITÉ */}
-            {showAdminPillars && (
-              <div className="space-y-3 pt-1">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {/* 1. JUSTIFICATIF RNE / INPI */}
-                  <div className="bg-white rounded-xl border border-slate-200 p-3.5 flex flex-col justify-between space-y-3 hover:border-blue-300 transition-colors shadow-2xs">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 flex items-center gap-1">
-                          <Building2 className="w-3 h-3 text-blue-600" />
-                          INPI · RNE
-                        </span>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-0.5">
-                          <Check className="w-3 h-3" />
-                          Immatriculé
-                        </span>
-                      </div>
-
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900 leading-tight">
-                          Justificatif d'Immatriculation RNE
-                        </h4>
-                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          Registre National des Entreprises (INPI)
-                        </p>
-                      </div>
-
-                      <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-3">
-                        Justificatif officiel d'immatriculation légale active. Fait foi de l'existence juridique et des mentions d'immatriculation.
-                      </p>
-
-                      <div className="text-[9.5px] font-mono text-blue-900 bg-blue-50/70 p-1.5 rounded border border-blue-200 truncate">
-                        <span className="text-slate-500">Lien : </span>
-                        {getOfficialRneDownloadUrl(activeSiren)}
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadOfficialRne(activeSiren)}
-                        disabled={isDownloadingRnePdf}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[11px] font-bold transition shrink-0 shadow-2xs cursor-pointer disabled:opacity-50"
-                        title={`Télécharger le PDF officiel depuis ${getOfficialRneDownloadUrl(activeSiren)}`}
-                      >
-                        <Download className={`w-3 h-3 ${isDownloadingRnePdf ? 'animate-bounce' : ''}`} />
-                        <span>{isDownloadingRnePdf ? 'Récupération...' : 'Télécharger PDF'}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleOpenAttestation('rne')}
-                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[11px] font-medium transition cursor-pointer"
-                        title="Consulter le contenu détaillé de l'attestation RNE"
-                      >
-                        Aperçu
-                      </button>
-
-                      <a
-                        href={getOfficialRneDownloadUrl(activeSiren)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1 text-slate-400 hover:text-blue-700 rounded transition ml-auto"
-                        title="Lien direct data.gouv.fr"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* 2. ATTESTATION FISCALE / DGFIP */}
-                  <div className="bg-white rounded-xl border border-slate-200 p-3.5 flex flex-col justify-between space-y-3 hover:border-indigo-300 transition-colors shadow-2xs">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 flex items-center gap-1">
-                          <Landmark className="w-3 h-3 text-indigo-600" />
-                          DGFiP · Fiscalité
-                        </span>
-                        {dgfipOk ? (
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-0.5">
-                            <Check className="w-3 h-3" />
-                            À jour
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-full border border-slate-200">
-                            Non certifié
-                          </span>
-                        )}
-                      </div>
-
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900 leading-tight">
-                          Attestation de Régularité Fiscale
-                        </h4>
-                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          Art. L. 2141-2 CCP · TVA & IS/IR
-                        </p>
-                      </div>
-
-                      <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-3">
-                        {data.complianceData?.dgfip?.attestationFiscale?.libelle ||
-                          'Régularité déclarative et paiement à jour des impôts d’exploitation certifiés par la DGFiP.'}
-                      </p>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 flex-wrap">
-                      {dgfipDocumentUrl ? (
-                        <a
-                          href={dgfipDocumentUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-[11px] font-semibold transition shrink-0 shadow-2xs cursor-pointer"
-                          title="Télécharger l'attestation fiscale officielle délivrée par la DGFiP (API Entreprise)"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>Télécharger PDF</span>
-                        </a>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[11px] font-semibold shrink-0 cursor-not-allowed"
-                          title="Aucune attestation fiscale délivrée : lancez une recherche SIRET avec un jeton API Entreprise habilité"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>Non disponible</span>
-                        </button>
-                      )}
-
-                      <a
-                        href="https://cfspro.impots.gouv.fr"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1 text-slate-400 hover:text-slate-700 rounded transition ml-auto"
-                        title="Consulter impots.gouv.fr"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* 3. ATTESTATION SOCIALE / URSSAF */}
-                  <div className="bg-white rounded-xl border border-slate-200 p-3.5 flex flex-col justify-between space-y-3 hover:border-emerald-300 transition-colors shadow-2xs">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
-                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                          URSSAF · Social
-                        </span>
-                        {urssafOk ? (
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-0.5">
-                            <Check className="w-3 h-3" />
-                            Conforme
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-full border border-slate-200">
-                            Non certifié
-                          </span>
-                        )}
-                      </div>
-
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900 leading-tight">
-                          Attestation de Vigilance Sociale
-                        </h4>
-                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          Art. L. 243-15 CSS · Cotisations
-                        </p>
-                      </div>
-
-                      <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-3">
-                        {data.complianceData?.urssaf?.attestationVigilance?.libelle ||
-                          'Certifie l’absence d’arriérés de cotisations sociales et le strict respect des obligations de vigilance.'}
-                      </p>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 flex-wrap">
-                      {urssafDocumentUrl ? (
-                        <a
-                          href={urssafDocumentUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-semibold transition shrink-0 shadow-2xs cursor-pointer"
-                          title="Télécharger l'attestation de vigilance officielle délivrée par l'URSSAF (API Entreprise)"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>Télécharger PDF</span>
-                        </a>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[11px] font-semibold shrink-0 cursor-not-allowed"
-                          title="Aucune attestation de vigilance délivrée : lancez une recherche SIRET avec un jeton API Entreprise habilité"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>Non disponible</span>
-                        </button>
-                      )}
-
-                      <a
-                        href="https://www.urssaf.fr"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1 text-slate-400 hover:text-slate-700 rounded transition ml-auto"
-                        title="Vérifier sur urssaf.fr"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* 4. EXTRAIT GOUVERNANCE / INPI */}
-                  <div className="bg-white rounded-xl border border-slate-200 p-3.5 flex flex-col justify-between space-y-3 hover:border-purple-300 transition-colors shadow-2xs">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 flex items-center gap-1">
-                          <UserCheck className="w-3 h-3 text-purple-600" />
-                          INPI · Mandataires
-                        </span>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-0.5">
-                          <Check className="w-3 h-3" />
-                          Habilité
-                        </span>
-                      </div>
-
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900 leading-tight">
-                          Extrait Mandataires & Pouvoirs
-                        </h4>
-                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          Art. L. 123-36 CC · RNE d'État
-                        </p>
-                      </div>
-
-                      <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-3">
-                        {currentMandataires.length > 0
-                          ? currentMandataires.map(m => `${m.fonction || 'Dirigeant'} : ${m.prenom ? m.prenom + ' ' : ''}${m.nom || m.denomination || ''}`).join(' · ')
-                          : 'Représentation légale et pouvoirs d’engager la société vérifiés au Registre National des Entreprises (INPI).'}
-                      </p>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadAttestation('infogreffe')}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-[11px] font-semibold transition shrink-0 shadow-2xs cursor-pointer"
-                        title="Télécharger l'extrait de gouvernance au format PDF"
-                      >
-                        <Download className="w-3 h-3" />
-                        <span>Télécharger PDF</span>
-                      </button>
-
-                      <a
-                        href={`https://annuaire-entreprises.data.gouv.fr/dirigeants/${activeSiren}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1 text-slate-400 hover:text-slate-700 rounded transition ml-auto"
-                        title="Consulter les dirigeants sur data.gouv.fr"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SITUATION BODACC : PROCÉDURES COLLECTIVES & ANNONCES LÉGALES */}
-                <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Scale className="w-4 h-4 text-indigo-700 shrink-0" />
-                      <span className="text-xs font-bold text-slate-900">
-                        Situation Judiciaire & Avis du BODACC (API DILA · Journal Officiel)
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      {data.complianceData?.bodacc?.hasProcedureCollective ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800 border border-red-300">
-                          <AlertCircle className="w-3 h-3 text-red-600" />
-                          Procédure collective active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                          <Check className="w-3 h-3 text-emerald-600" />
-                          In Bonis · Aucune procédure collective
-                        </span>
-                      )}
-
-                      {activeSiren && (
-                        <button
-                          type="button"
-                          onClick={handleRefreshBodacc}
-                          disabled={isBodaccLoading}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded border border-slate-200 text-[11px] font-medium transition cursor-pointer"
-                          title="Actualiser les avis BODACC"
-                        >
-                          <RefreshCw className={`w-3 h-3 ${isBodaccLoading ? 'animate-spin text-blue-600' : ''}`} />
-                          <span>Actualiser</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] text-slate-600 leading-relaxed">
-                    {data.complianceData?.bodacc?.synthese ||
-                      'Entreprise in bonis. Aucune mention de sauvegarde, redressement ou liquidation judiciaire au BODACC. Éligibilité de plein droit pour le versement d\'aides ADEC.'}
-                  </p>
-                </div>
-
-                {/* OBSERVATIONS AU RNE (REGISTRE NATIONAL DES ENTREPRISES · INPI & RCS) */}
-                <div className={`border rounded-xl p-3.5 space-y-2.5 ${
-                  currentObservations.length > 0
-                    ? 'bg-blue-50/70 border-blue-200'
-                    : 'bg-slate-50/80 border-slate-200'
-                }`}>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <FileText className="w-4 h-4 text-blue-700 shrink-0" />
-                      <span className="text-xs font-bold text-slate-900">
-                        Observations au Registre National des Entreprises (RNE · INPI & RCS)
-                      </span>
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
-                        INPI · Mentions légales
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      {currentObservations.length > 0 ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-600 text-white shadow-2xs">
-                          <Info className="w-3 h-3" />
-                          {currentObservations.length} observation{currentObservations.length > 1 ? 's' : ''} au RNE
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                          <Check className="w-3 h-3 text-emerald-600" />
-                          Aucune observation négative au RNE
-                        </span>
-                      )}
-
-                      {activeSiren && (
-                        <a
-                          href={`https://annuaire-entreprises.data.gouv.fr/annonces/${activeSiren}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-white px-2 py-0.5 rounded border border-blue-200 transition"
-                          title="Consulter les annonces et observations officielles sur l'Annuaire des Entreprises"
-                        >
-                          <span>Voir sur data.gouv.fr</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-
-                  {currentObservations.length > 0 ? (
-                    <div className="space-y-2 pt-1">
-                      <p className="text-[11px] text-slate-600 leading-relaxed">
-                        Cette structure possède {currentObservations.length} mention(s) ou observation(s) d'immatriculation inscrite(s) au <strong>Registre National des Entreprises (RNE)</strong> :
-                      </p>
-
-                      <div className="space-y-2">
-                        {currentObservations.map((obs, idx) => (
-                          <div
-                            key={obs.id || idx}
-                            className="bg-white rounded-lg p-3 border border-blue-200 shadow-2xs space-y-1.5 text-xs"
-                          >
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                              <div className="flex items-center gap-2">
-                                <span className="px-2 py-0.5 rounded text-[10px] font-black bg-blue-50 text-blue-800 border border-blue-200">
-                                  Observation {(obs.numero || obs.numObservation) ? `n° ${obs.numero || obs.numObservation}` : `#${idx + 1}`}
-                                </span>
-                                {(obs.fournisseur || obs.source) && (
-                                  <span className="text-[10px] text-slate-500 font-medium">
-                                    Source : {obs.fournisseur || obs.source}
-                                  </span>
-                                )}
-                              </div>
-                              {(obs.date || obs.dateAjout) && (
-                                <span className="text-[11px] text-slate-600 font-mono">
-                                  Date d'inscription : <strong>{obs.date || obs.dateAjout}</strong>
-                                </span>
-                              )}
-                            </div>
-
-                            <p className="text-[11px] text-slate-800 leading-relaxed font-mono bg-slate-50 p-2.5 rounded border border-slate-100">
-                              {obs.texte || obs.description}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-slate-600 leading-relaxed">
-                      Cette structure ne possède aucune observation ni mention d'office inscrite au Registre National des Entreprises (RNE). La fiche d'immatriculation est régulière et conforme pour l'instruction ADEC.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Inspecteur JSON si demandé */}
-            {showRawData && data.rawApiData && (
-              <div className="bg-slate-900 text-slate-200 p-3 rounded-lg text-xs font-mono max-h-56 overflow-y-auto">
-                <pre className="text-[10px] leading-relaxed whitespace-pre-wrap">
-                  {JSON.stringify(data.rawApiData, null, 2)}
-                </pre>
               </div>
             )}
           </div>
@@ -1277,11 +926,8 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
-                <span>Capital Social</span>
-                <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
-                  {data.capitalSocialFormatted || (data.capitalSocial ? `${new Intl.NumberFormat('fr-FR').format(data.capitalSocial)} €` : 'Extrait RCS')}
-                </span>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Capital Social
               </label>
               <div className="relative">
                 <input
@@ -1293,7 +939,8 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                     const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
                     onChange({
                       capitalSocial: val,
-                      capitalSocialFormatted: val !== undefined ? `${new Intl.NumberFormat('fr-FR').format(val)} €` : undefined
+                      capitalSocialFormatted: val !== undefined ? `${new Intl.NumberFormat('fr-FR').format(val)} €` : undefined,
+                      capitalSocialSource: val !== undefined ? 'Saisie manuelle' : undefined
                     });
                   }}
                   placeholder="Ex: 50000"
@@ -1301,6 +948,11 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                 />
                 <span className="absolute right-3 top-2 text-xs font-bold text-slate-400">€</span>
               </div>
+              <p className="text-[11px] text-slate-500 mt-1 truncate" title={data.capitalSocialSource}>
+                {data.capitalSocial
+                  ? `Source : ${data.capitalSocialSource || 'non précisée'}`
+                  : (data.legalForm === 'COMMERCIANT_ARTISAN_EI' || data.legalForm === 'MICRO_ENTREPRISE' ? 'Non applicable (EI)' : 'Non renseigné')}
+              </p>
             </div>
 
             <div>
@@ -1314,18 +966,14 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                 placeholder="Ex: 10.71C"
                 className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 font-mono font-bold"
               />
+              <p className="text-[11px] text-slate-500 mt-1 truncate" title={data.nafLabel}>
+                {data.nafLabel || 'Libellé d’activité non renseigné'}
+              </p>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
-                <span>Date d'Immatriculation</span>
-                {ageAnalysis.isDateKnown && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                    ageAnalysis.isUnderFiveYears ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-700'
-                  }`}>
-                    {ageAnalysis.isUnderFiveYears ? '≤ 5 ans' : '> 5 ans'}
-                  </span>
-                )}
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Date d'Immatriculation
               </label>
               <input
                 type="date"
@@ -1333,6 +981,15 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                 onChange={(e) => handleCreationDateChange(e.target.value)}
                 className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 font-mono"
               />
+              <p className="text-[11px] mt-1 truncate">
+                {ageAnalysis.isDateKnown ? (
+                  <span className={ageAnalysis.isUnderFiveYears ? 'font-semibold text-emerald-700' : 'text-slate-500'}>
+                    {ageAnalysis.ageLabel} · {ageAnalysis.isUnderFiveYears ? 'Éligible Impresa Sì (≤ 5 ans)' : '> 5 ans'}
+                  </span>
+                ) : (
+                  <span className="text-amber-700 font-medium">Date à renseigner</span>
+                )}
+              </p>
             </div>
           </div>
 
@@ -1358,6 +1015,13 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                 <option value="PROFESSION_LIBERALE">Profession libérale réglementée</option>
                 <option value="AUTRE">Autre forme juridique</option>
               </select>
+              {(data.natureJuridiqueLibelle || data.enterpriseCategory) && (
+                <p className="text-[11px] text-slate-500 mt-1 truncate" title={data.natureJuridiqueLibelle}>
+                  Registre : {data.natureJuridiqueLibelle || '—'}
+                  {data.natureJuridiqueCode ? ` (code ${data.natureJuridiqueCode})` : ''}
+                  {data.enterpriseCategory ? ` · Catégorie ${data.enterpriseCategory}` : ''}
+                </p>
+              )}
             </div>
 
             <div>

@@ -750,6 +750,44 @@ export function formatTrancheLabel(code: string | undefined): string {
 }
 
 /**
+ * Télécharge l'extrait RNE officiel (PDF INPI) via le serveur, qui obtient un lien frais
+ * auprès d'API Entreprise au moment de la demande (le lien expire en ~30 s).
+ */
+export async function downloadExtraitRnePdf(
+  siren: string,
+  companyName?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/entreprise/extrait-rne-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        siren,
+        token: getStoredApiEntrepriseToken(),
+        recipient: getStoredRecipientSiret()
+      })
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      return { success: false, error: body.error || `Erreur serveur (${response.status})` };
+    }
+
+    const blobUrl = window.URL.createObjectURL(await response.blob());
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = `extrait_rne_${siren}${companyName ? `_${companyName.slice(0, 20).replace(/[^a-zA-Z0-9]/g, '_')}` : ''}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(blobUrl);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Récupère les avis du BODACC pour un SIREN donné (API DILA / Journal Officiel)
  */
 export async function fetchBodaccBySiren(siren: string) {

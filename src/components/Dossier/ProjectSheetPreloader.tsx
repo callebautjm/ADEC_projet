@@ -22,8 +22,7 @@ import {
   Search,
   Building2,
   Trash2,
-  RefreshCw,
-  FolderOpen
+  RefreshCw
 } from 'lucide-react';
 import { DossierProjectAnalysis, FullQuestionnaireState } from '../../types';
 
@@ -152,53 +151,6 @@ export const ProjectSheetPreloader: React.FC<ProjectSheetPreloaderProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       processUploadedFile(e.target.files[0]);
-    }
-  };
-
-  const handleLoadSample = async () => {
-    setErrorMessage(null);
-    setFileName('Exemple_Fiche_Projet_ADEC_Risilienza_2026.pdf');
-    setIsAnalyzing(true);
-    setAnalyzingStep(1);
-
-    try {
-      const stepTimer1 = setTimeout(() => setAnalyzingStep(2), 800);
-      const stepTimer2 = setTimeout(() => setAnalyzingStep(3), 1600);
-      const stepTimer3 = setTimeout(() => setAnalyzingStep(4), 2400);
-
-      const response = await fetch('/api/dossier/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sampleDossierId: '11103',
-          token: apiToken,
-          recipient: recipientSiret,
-          fileName: 'Exemple_Fiche_Projet_ADEC_Risilienza_2026.pdf'
-        })
-      });
-
-      clearTimeout(stepTimer1);
-      clearTimeout(stepTimer2);
-      clearTimeout(stepTimer3);
-      setAnalyzingStep(5);
-
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement de la fiche projet exemple.');
-      }
-
-      const resData = await response.json();
-      if (!resData.success || !resData.analysis) {
-        throw new Error('Données exemple non disponibles.');
-      }
-
-      setTimeout(() => {
-        setIsAnalyzing(false);
-        onAnalysisComplete(resData.analysis);
-      }, 500);
-
-    } catch (err: any) {
-      setIsAnalyzing(false);
-      setErrorMessage(err?.message || 'Erreur chargement exemple.');
     }
   };
 
@@ -361,17 +313,6 @@ export const ProjectSheetPreloader: React.FC<ProjectSheetPreloaderProps> = ({
             <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
               Déposez votre document pour préremplir automatiquement les 5 étapes du simulateur (entreprise, critères qualitatifs, programme d'investissement et budget). L'analyse s'effectue strictement en mémoire vive (RAM) de manière confidentielle.
             </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleLoadSample}
-              className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-blue-900 font-semibold text-xs border border-blue-200 shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <FolderOpen className="w-3.5 h-3.5 text-blue-600" />
-              <span>Charger l'exemple ADEC</span>
-            </button>
           </div>
         </div>
 
