@@ -1,14 +1,13 @@
-@import "@fontsource-variable/montserrat";
 @import "tailwindcss";
 
 /*
- * Charte graphique inspirée du site institutionnel adec.corsica :
- * typographie Montserrat, prune #9f358a (couleur principale), aubergine #79438a,
- * bleu pétrole #177a9c, safran #f0b533 (accents), gris neutres, angles sobres.
- * Les états (succès, alerte, erreur) gardent les palettes emerald / amber / red.
+ * Outil interne des agents de l'ADEC : interface sobre et dense.
+ * Police système (celle du poste de travail), gris neutres pour les surfaces,
+ * prune #9f358a (couleur de l'agence) réservé aux actions principales et à la sélection,
+ * bleu pétrole pour les informations ; succès, alerte et erreur en emerald / amber / red.
  */
 @theme {
-  --font-sans: "Montserrat Variable", "Montserrat", Arial, Tahoma, sans-serif;
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
   /* prune : #9f358a = prune-600 */
   --color-prune-50: #fef4fb;
@@ -23,19 +22,6 @@
   --color-prune-900: #611b54;
   --color-prune-950: #430e39;
 
-  /* aubergine : #79438a = aubergine-600 */
-  --color-aubergine-50: #fcf4fe;
-  --color-aubergine-100: #f2e3f7;
-  --color-aubergine-200: #e6cbef;
-  --color-aubergine-300: #d1a8de;
-  --color-aubergine-400: #af7bc0;
-  --color-aubergine-500: #925ba4;
-  --color-aubergine-600: #79438a;
-  --color-aubergine-700: #693779;
-  --color-aubergine-800: #5a2e68;
-  --color-aubergine-900: #4b2756;
-  --color-aubergine-950: #33183b;
-
   /* bleu pétrole : #177a9c = petrole-600 */
   --color-petrole-50: #f0f9fe;
   --color-petrole-100: #dcf0f9;
@@ -49,50 +35,30 @@
   --color-petrole-900: #02475e;
   --color-petrole-950: #002f40;
 
-  /* safran : #f0b533 = safran-300 (texte noir dessus) */
-  --color-safran-50: #fcf2e0;
-  --color-safran-100: #fbe6c0;
-  --color-safran-200: #f9d38d;
-  --color-safran-300: #f0b533;
-  --color-safran-400: #c99300;
-  --color-safran-500: #a97b06;
-  --color-safran-600: #906906;
-  --color-safran-700: #7b5901;
-  --color-safran-800: #684b02;
-  --color-safran-900: #563d03;
-  --color-safran-950: #3a2800;
-
-  /* Angles sobres : cartes quasi carrées, les boutons principaux sont en pilule (rounded-full) */
+  /* Angles discrets sur tous les blocs */
   --radius-md: 0.25rem;
   --radius-lg: 0.25rem;
   --radius-xl: 0.375rem;
-  --radius-2xl: 0.5rem;
-  --radius-3xl: 0.75rem;
+  --radius-2xl: 0.375rem;
+  --radius-3xl: 0.5rem;
 }
 
-/* Cases à cocher, boutons radio et curseurs natifs aux couleurs de la charte */
 @layer base {
   :root {
-    accent-color: var(--color-prune-600);
+    /* Cases à cocher, boutons radio et curseurs natifs aux couleurs de l'agence */
+    accent-color: var(--color-prune-700);
   }
-}
 
-/* Trame de points des bandeaux (motif du site ADEC) : couleur = currentColor */
-@utility adec-dots {
-  background-image: radial-gradient(currentColor 2px, transparent 2.5px);
-  background-size: 14px 14px;
-}
+  body {
+    background-color: var(--color-neutral-100);
+    color: var(--color-neutral-900);
+    -webkit-font-smoothing: antialiased;
+  }
 
-/* Soulignement progressif au survol d'un parent .group, comme les liens du site ADEC */
-@utility adec-underline {
-  background-image: linear-gradient(transparent calc(100% - 0.09em), currentColor 0.09em);
-  background-repeat: no-repeat;
-  background-size: 0 100%;
-  transition: background-size 300ms ease-in-out;
-
-  .group:hover &,
-  .group:focus-visible & {
-    background-size: 100% 100%;
+  /* Montants et identifiants alignés dans les tableaux et les champs */
+  table,
+  input {
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -104,10 +70,10 @@
 }
 
 .salvezza-leaflet-tooltip {
-  background-color: rgba(255, 255, 255, 0.96) !important;
+  background-color: #ffffff !important;
   border: 1px solid #d4d4d4 !important;
   border-radius: 4px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
   color: #171717 !important;
   padding: 6px 10px !important;
 }

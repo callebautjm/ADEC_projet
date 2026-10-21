@@ -273,7 +273,7 @@ export function evaluateCompanyEligibility(
         if (userNeeds.includes(scheme.id)) {
           reasons.push(`Adéquation projet validée : dispositif personnalisé « ${scheme.name} » (${scheme.code}) expressément sélectionné en Étape 3.`);
         } else {
-          reasons.push(`Dispositif issu de la base documentaire analysé pour votre profil d’entreprise.`);
+          reasons.push(`Dispositif issu de la base documentaire analysé pour le profil de l’entreprise.`);
         }
       }
     }
@@ -308,7 +308,7 @@ export function evaluateCompanyEligibility(
       // Entreprise non en difficulté
       if (scheme.id === 'ribumba') {
         ineligibilityMotifs.push(
-          'La mesure Ribumbà est strictement réservée aux entreprises répondant à la qualification d’entreprise en difficulté (art. 2 point 18 du Règl. UE 651/2014). Votre entreprise n’étant pas en difficulté financière, elle relève des dispositifs de développement ou de résilience.'
+          'La mesure Ribumbà est strictement réservée aux entreprises répondant à la qualification d’entreprise en difficulté (art. 2 point 18 du Règl. UE 651/2014). L’entreprise n’étant pas en difficulté financière, elle relève des dispositifs de développement ou de résilience.'
         );
       }
     }
@@ -336,7 +336,7 @@ export function evaluateCompanyEligibility(
 
       if (!isRuralSalvezza) {
         ineligibilityMotifs.push(
-          `Implantation géographique inéligible : Ce dispositif est réservé aux entreprises implantées dans les territoires ruraux ou de montagne (zonage SALVEZZA, communes < 1 000 habitants ou bassins intérieurs structurants). Votre implantation actuelle est : ${company.locationType}.`
+          `Implantation géographique inéligible : Ce dispositif est réservé aux entreprises implantées dans les territoires ruraux ou de montagne (zonage SALVEZZA, communes < 1 000 habitants ou bassins intérieurs structurants). Implantation actuelle : ${company.locationType}.`
         );
       } else {
         if (salvezzaCommune) {
@@ -367,7 +367,7 @@ export function evaluateCompanyEligibility(
         ineligibilityMotifs.push('Date d’immatriculation non renseignée : l’accès au volet Création exige de renseigner la date d’immatriculation officielle (≤ 5 ans requise, justificatif Kbis).');
       } else if (!ageInfo.isUnderFiveYears) {
         ineligibilityMotifs.push(
-          `Entreprise immatriculée le ${ageInfo.dateFormattedFr} (${ageInfo.ageLabel} d’existence) : le volet Création est strictement limité aux entreprises de 5 ans d’ancienneté au maximum. Pour votre entreprise, le volet « IMPRESA SÌ – Phase Développement » est la mesure adaptée.`
+          `Entreprise immatriculée le ${ageInfo.dateFormattedFr} (${ageInfo.ageLabel} d’existence) : le volet Création est strictement limité aux entreprises de 5 ans d’ancienneté au maximum. Pour cette entreprise, le volet « IMPRESA SÌ – Phase Développement » est la mesure adaptée.`
         );
       } else {
         reasons.push(`Ancienneté d’entreprise de ${ageInfo.ageLabel} conforme au volet Création (≤ 5 ans).`);
@@ -453,7 +453,7 @@ export function evaluateCompanyEligibility(
       if (!qualValidated) {
         qualitativeBlocksEligibility = true;
         warningNotes.push(
-          `Évaluation qualitative préalable requise : Actuellement ${qualScore}/8 critères « OUI » validés. Le seuil réglementaire minimal de 3 « OUI » sur 8 est requis pour que l’ADEC puisse engager une instruction financière (Délibération N° 21/177 AC). Il vous manque ${3 - qualScore} critère(s) favorable(s).`
+          `Évaluation qualitative préalable requise : Actuellement ${qualScore}/8 critères « OUI » validés. Le seuil réglementaire minimal de 3 « OUI » sur 8 est requis pour que l’ADEC puisse engager une instruction financière (Délibération N° 21/177 AC). Il manque ${3 - qualScore} critère(s) favorable(s).`
         );
       } else {
         reasons.push(`Évaluation qualitative validée avec succès (${qualScore}/8 critères « OUI », seuil réglementaire de 3 atteint conformément à la délibération 21/177 AC).`);
@@ -550,7 +550,7 @@ export function evaluateCompanyEligibility(
     if (scheme.legalBasis.includes('de minimis')) {
       if (estimatedSubsidyAmount > deMinimisRemaining) {
         warningNotes.push(
-          `Attention : Le plafond de minimis restant disponible pour votre entreprise est de ${deMinimisRemaining.toLocaleString('fr-FR')} € (sur les 300 000 € autorisés sur 3 ans glissants). Le montant accordé sera écrêté à cette limite.`
+          `Attention : Le plafond de minimis restant disponible pour l’entreprise est de ${deMinimisRemaining.toLocaleString('fr-FR')} € (sur les 300 000 € autorisés sur 3 ans glissants). Le montant accordé sera écrêté à cette limite.`
         );
         estimatedSubsidyAmount = Math.min(estimatedSubsidyAmount, deMinimisRemaining);
       }
@@ -595,7 +595,7 @@ export function evaluateCompanyEligibility(
     const isPrimaryFromDossierAAP = Boolean(dossierAapSchemeId && scheme.id === dossierAapSchemeId);
 
     if (isPrimaryFromDossierAAP) {
-      reasons.unshift(`★ DISPOSITIF RETENU PAR VOTRE FICHE PROJET (Section Appel à projet : ${state.dossierSource?.aapTitre || scheme.name})`);
+      reasons.unshift(`Dispositif retenu d’après la fiche projet (appel à projets : ${state.dossierSource?.aapTitre || scheme.name})`);
     }
 
     const itemResult: EvaluationResultItem = {
@@ -641,17 +641,17 @@ export function evaluateCompanyEligibility(
   // Synthèse globale personnalisée
   let overallDiagnosisSummary = '';
   if (state.dossierSource?.aapTitre) {
-    overallDiagnosisSummary = `Diagnostic synchronisé avec votre Fiche Projet (${state.dossierSource.dossierNumber || 'Dossier ADEC'}). Le dispositif prioritaire identifié dans l'Appel à projet (« ${state.dossierSource.primarySchemeName || state.dossierSource.aapTitre} ») a été analysé et retenu, accompagné de ${eligibleSchemes.length - 1} intervention(s) complémentaire(s) éligible(s).`;
+    overallDiagnosisSummary = `Diagnostic synchronisé avec la fiche projet (${state.dossierSource.dossierNumber || 'Dossier ADEC'}). Le dispositif prioritaire identifié dans l'Appel à projet (« ${state.dossierSource.primarySchemeName || state.dossierSource.aapTitre} ») a été analysé et retenu, accompagné de ${eligibleSchemes.length - 1} intervention(s) complémentaire(s) éligible(s).`;
   } else if (eligibleSchemes.length > 0) {
-    overallDiagnosisSummary = `Votre entreprise est éligible à ${eligibleSchemes.length} dispositif(s) d’accompagnement officiel(s) de l’ADEC, pour un potentiel estimé d’aide publique de ${eligibleSchemes.reduce((acc, curr) => acc + curr.estimatedSubsidyAmount, 0).toLocaleString('fr-FR')} € (dans le respect des règles de non-cumul et du plafond de minimis de 300 000 €).`;
+    overallDiagnosisSummary = `L’entreprise est éligible à ${eligibleSchemes.length} dispositif(s) d’accompagnement officiel(s) de l’ADEC, pour un potentiel estimé d’aide publique de ${eligibleSchemes.reduce((acc, curr) => acc + curr.estimatedSubsidyAmount, 0).toLocaleString('fr-FR')} € (dans le respect des règles de non-cumul et du plafond de minimis de 300 000 €).`;
   } else if (conditionalSchemes.length > 0) {
-    overallDiagnosisSummary = `Votre entreprise remplit l’ensemble des conditions administratives pour ${conditionalSchemes.length} dispositif(s), mais nécessite de valider au moins 3 critères « OUI » à l’évaluation qualitative préalable (Délibération N° 21/177 AC).`;
+    overallDiagnosisSummary = `L’entreprise remplit l’ensemble des conditions administratives pour ${conditionalSchemes.length} dispositif(s), mais nécessite de valider au moins 3 critères « OUI » à l’évaluation qualitative préalable (Délibération N° 21/177 AC).`;
   } else {
-    overallDiagnosisSummary = 'Aucun dispositif ADEC ne correspond actuellement à votre situation au vu des critères d’inéligibilité stricts rencontrés (forme juridique, secteur exclu, litiges antérieurs ou absence de besoin sélectionné).';
+    overallDiagnosisSummary = 'Aucun dispositif ADEC ne correspond actuellement à la situation de l’entreprise au vu des critères d’inéligibilité stricts rencontrés (forme juridique, secteur exclu, litiges antérieurs ou absence de besoin sélectionné).';
   }
 
   if (salvezzaCommune) {
-    overallDiagnosisSummary += ` Établissement implanté à ${salvezzaCommune.nom} (« ${salvezzaCommune.nomCorse} », dép. ${salvezzaCommune.departement}) : votre dossier bénéficie des bonifications officielles Volets « Économique » et « Emploi » du Fonds SALVEZZA (230 communes éligibles sous contrainte).`;
+    overallDiagnosisSummary += ` Établissement implanté à ${salvezzaCommune.nom} (« ${salvezzaCommune.nomCorse} », dép. ${salvezzaCommune.departement}) : le dossier bénéficie des bonifications officielles Volets « Économique » et « Emploi » du Fonds SALVEZZA (230 communes éligibles sous contrainte).`;
   }
 
   const actionPlan: string[] = [

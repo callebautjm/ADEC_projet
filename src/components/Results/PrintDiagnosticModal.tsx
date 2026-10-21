@@ -14,15 +14,11 @@ import {
   Copy,
   Check,
   X,
-  FileText,
   ShieldCheck,
-  Building2,
-  Calendar,
-  Euro,
-  ExternalLink,
-  AlertCircle
+  Building2
 } from 'lucide-react';
 import { analyzeCompanyCreationDate } from '../../utils/companyAge';
+import { Modal, Notice, btn, iconBtn } from '../Layout/ui';
 
 interface PrintDiagnosticModalProps {
   isOpen: boolean;
@@ -68,10 +64,10 @@ export const PrintDiagnosticModal: React.FC<PrintDiagnosticModalProps> = ({
   // Déclenchement de l'impression directe du navigateur
   const handleDirectPrint = () => {
     try {
-      setPrintNotice("Ordre d'impression envoyé. Si la boîte de dialogue ne s'ouvre pas automatiquement (restriction du navigateur dans ce cadre sécurisé), utilisez le bouton 'Télécharger la Fiche' ci-contre.");
+      setPrintNotice("Impression demandée. Si la boîte de dialogue ne s'ouvre pas (restriction du navigateur), utiliser « Télécharger la fiche ».");
       window.print();
     } catch (e: any) {
-      setPrintNotice("L'impression directe est restreinte par le cadre sécurisé de votre navigateur. Veuillez cliquer sur 'Télécharger la Fiche' ci-contre pour imprimer ou enregistrer en PDF en toute autonomie.");
+      setPrintNotice("L'impression directe est bloquée par le navigateur : utiliser « Télécharger la fiche » pour imprimer ou enregistrer en PDF.");
     }
   };
 
@@ -493,7 +489,7 @@ export const PrintDiagnosticModal: React.FC<PrintDiagnosticModalProps> = ({
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    setPrintNotice(`Fichier téléchargeable prêt : "${fileName}". Vous pouvez l'ouvrir dans un nouvel onglet de votre navigateur pour imprimer ou enregistrer en PDF immédiatement sans restriction d'iframe !`);
+    setPrintNotice(`Fiche téléchargée : « ${fileName} ». L’ouvrir dans le navigateur pour l’imprimer ou l’enregistrer en PDF.`);
   };
 
   // Copie d'une synthèse texte propre dans le presse-papier
@@ -534,306 +530,249 @@ export const PrintDiagnosticModal: React.FC<PrintDiagnosticModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-neutral-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-      <div className="bg-neutral-900 border border-neutral-700 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-950/60">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <Printer className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                Impression & Export du Diagnostic ADEC
-                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-neutral-800 text-emerald-400 border border-neutral-700">
-                  Guide 2026
-                </span>
-              </h2>
-              <p className="text-xs text-neutral-400">
-                Génération de la fiche de synthèse officielle prête pour impression ou archivage PDF
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
-            title="Fermer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Action Bar (Top) */}
-        <div className="p-3 sm:p-4 bg-neutral-800/80 border-b border-neutral-700 flex flex-wrap items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Primary Print Button */}
-            <button
-              onClick={handleDirectPrint}
-              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow-xs"
-            >
-              <Printer className="w-4 h-4" />
-              Imprimer directement (Ctrl+P)
+    <Modal
+      size="xl"
+      title="Impression et export du diagnostic"
+      subtitle={<>Fiche de synthèse prête pour l’impression ou l’archivage PDF · réf. <span className="font-mono">{dossierRef}</span></>}
+      onClose={onClose}
+      bodyClassName=""
+      footer={
+        <>
+          <span className="text-xs text-neutral-500">Guide des aides ADEC 2026 · Collectivité de Corse</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={handleCopySummary} className={btn('secondary')}>
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Synthèse copiée' : 'Copier la synthèse'}
             </button>
-
-            {/* Standalone HTML / PDF Download Button */}
             <button
+              type="button"
               onClick={handleDownloadStandaloneHtml}
-              className="px-4 py-2 bg-white text-neutral-900 hover:bg-neutral-100 font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow-xs"
-              title="Télécharge un document autonome avec impression automatique au format PDF"
+              className={btn('secondary')}
+              title="Télécharge un document autonome qui s'ouvre directement sur l'impression (PDF)"
             >
-              <Download className="w-4 h-4 text-neutral-700" />
-              Télécharger la Fiche (PDF / Autonome)
+              <Download className="w-3.5 h-3.5" />
+              Télécharger la fiche
             </button>
-
-            {/* Copy Button */}
-            <button
-              onClick={handleCopySummary}
-              className="px-3 py-2 bg-neutral-700 hover:bg-neutral-600 text-neutral-200 font-semibold text-xs rounded-lg transition flex items-center gap-1.5"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-300">Copié !</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  Copier la synthèse
-                </>
-              )}
+            <button type="button" onClick={handleDirectPrint} className={btn('primary')}>
+              <Printer className="w-3.5 h-3.5" />
+              Imprimer (Ctrl+P)
             </button>
           </div>
-
-          <div className="text-[11px] text-neutral-400 font-mono">
-            Réf : <strong className="text-neutral-200">{dossierRef}</strong>
-          </div>
+        </>
+      }
+    >
+      {printNotice && (
+        <div className="px-4 pt-3">
+          <Notice
+            tone="info"
+            action={
+              <button type="button" onClick={() => setPrintNotice(null)} className={iconBtn} aria-label="Fermer">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            }
+          >
+            {printNotice}
+          </Notice>
         </div>
+      )}
 
-        {/* Notice alert if triggered */}
-        {printNotice && (
-          <div className="mx-4 sm:mx-6 mt-3 p-3 rounded-lg bg-petrole-950/70 border border-petrole-600/40 text-petrole-200 text-xs flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-petrole-400 shrink-0 mt-0.5" />
-            <div className="flex-1 leading-relaxed">{printNotice}</div>
-            <button
-              onClick={() => setPrintNotice(null)}
-              className="text-petrole-400 hover:text-petrole-200 font-bold ml-2"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Printable Sheet Viewport Preview */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-neutral-950/40">
-          <div className="bg-white text-neutral-900 rounded-xl p-6 sm:p-8 shadow-md border border-neutral-200 space-y-6 max-w-3xl mx-auto printable-report text-xs">
-            {/* Header Document */}
-            <div className="border-b-2 border-neutral-900 pb-4">
-              <div className="flex items-start justify-between flex-wrap gap-4">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block">
-                    Collectivité de Corse · Cullettività di Corsica
-                  </span>
-                  <h1 className="text-xl font-extrabold text-neutral-900 tracking-tight mt-0.5">
-                    ADEC · AGENCE DE DÉVELOPPEMENT ÉCONOMIQUE DE LA CORSE
-                  </h1>
-                  <p className="text-xs text-neutral-600 mt-1">
-                    Fiche Officielle d'Éligibilité & Diagnostic d'Aides Directes · Cadre Délibération 21/177 AC
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="inline-block px-2.5 py-1 bg-neutral-100 border border-neutral-300 rounded font-mono text-[10px] font-bold text-neutral-800">
-                    {dossierRef}
-                  </span>
-                  <p className="text-[10px] text-neutral-500 mt-1">Édité le {editionDate}</p>
-                </div>
+      {/* Aperçu de la fiche imprimable */}
+      <div className="p-4 sm:p-6 bg-neutral-100">
+        <div className="bg-white text-neutral-900 rounded-md p-6 sm:p-8 border border-neutral-200 space-y-6 max-w-3xl mx-auto printable-report text-xs">
+          {/* Header Document */}
+          <div className="border-b-2 border-neutral-900 pb-4">
+            <div className="flex items-start justify-between flex-wrap gap-4">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block">
+                  Collectivité de Corse · Cullettività di Corsica
+                </span>
+                <h1 className="text-xl font-extrabold text-neutral-900 tracking-tight mt-0.5">
+                  ADEC · AGENCE DE DÉVELOPPEMENT ÉCONOMIQUE DE LA CORSE
+                </h1>
+                <p className="text-xs text-neutral-600 mt-1">
+                  Fiche Officielle d'Éligibilité & Diagnostic d'Aides Directes · Cadre Délibération 21/177 AC
+                </p>
+              </div>
+              <div className="text-right">
+                <span className="inline-block px-2.5 py-1 bg-neutral-100 border border-neutral-300 rounded font-mono text-[10px] font-bold text-neutral-800">
+                  {dossierRef}
+                </span>
+                <p className="text-[10px] text-neutral-500 mt-1">Édité le {editionDate}</p>
               </div>
             </div>
+          </div>
 
-            {/* Key Indicators */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <div className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
-                <span className="text-[9px] font-bold text-neutral-500 uppercase block">Dispositifs Éligibles</span>
-                <span className="text-lg font-bold font-mono text-emerald-700">{report.eligibleSchemes.length}</span>
-                <span className="text-[9px] text-neutral-500 block">sur {report.eligibleSchemes.length + report.conditionalSchemes.length + report.ineligibleSchemes.length} dispositifs</span>
+          {/* Key Indicators */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
+              <span className="text-[9px] font-bold text-neutral-500 uppercase block">Dispositifs Éligibles</span>
+              <span className="text-lg font-bold font-mono text-emerald-700">{report.eligibleSchemes.length}</span>
+              <span className="text-[9px] text-neutral-500 block">sur {report.eligibleSchemes.length + report.conditionalSchemes.length + report.ineligibleSchemes.length} dispositifs</span>
+            </div>
+            <div className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
+              <span className="text-[9px] font-bold text-neutral-500 uppercase block">Subvention Estimée</span>
+              <span className="text-lg font-bold font-mono text-neutral-900">{totalSimulatedEligibleGrant.toLocaleString('fr-FR')} €</span>
+              <span className="text-[9px] text-neutral-500 block">selon intensités</span>
+            </div>
+            <div className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
+              <span className="text-[9px] font-bold text-neutral-500 uppercase block">Grille Qualitative</span>
+              <span className="text-lg font-bold font-mono text-neutral-900">{report.qualitativeTotalYes}/8</span>
+              <span className={`text-[9px] font-bold block ${report.qualitativeValidated ? 'text-emerald-700' : 'text-amber-700'}`}>
+                {report.qualitativeValidated ? 'Validée (≥3)' : 'Inférieur à 3'}
+              </span>
+            </div>
+            <div className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
+              <span className="text-[9px] font-bold text-neutral-500 uppercase block">De Minimis Résiduel</span>
+              <span className="text-lg font-bold font-mono text-neutral-900">{report.deMinimisAvailableRemaining.toLocaleString('fr-FR')} €</span>
+              <span className="text-[9px] text-neutral-500 block">sur 300 000 € autorisés</span>
+            </div>
+          </div>
+
+          {/* 1. Identification Entreprise */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider border-b border-neutral-200 pb-1 flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-neutral-700" />
+              1. Identification du Candidat & Profil Économique
+            </h3>
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              <div className="p-2 bg-neutral-50 rounded border border-neutral-200/80">
+                <span className="text-neutral-500 block text-[9px] uppercase">Raison sociale</span>
+                <strong className="text-neutral-900 text-xs">{company.name || 'Entreprise candidate'}</strong>
               </div>
-              <div className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
-                <span className="text-[9px] font-bold text-neutral-500 uppercase block">Subvention Estimée</span>
-                <span className="text-lg font-bold font-mono text-neutral-900">{totalSimulatedEligibleGrant.toLocaleString('fr-FR')} €</span>
-                <span className="text-[9px] text-neutral-500 block">selon intensités</span>
+              <div className="p-2 bg-neutral-50 rounded border border-neutral-200/80">
+                <span className="text-neutral-500 block text-[9px] uppercase">Numéro SIRET (14 chiffres)</span>
+                <strong className="text-neutral-900 font-mono text-xs">{company.siret || 'Non renseigné'}</strong>
               </div>
-              <div className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
-                <span className="text-[9px] font-bold text-neutral-500 uppercase block">Grille Qualitative</span>
-                <span className="text-lg font-bold font-mono text-neutral-900">{report.qualitativeTotalYes}/8</span>
-                <span className={`text-[9px] font-bold block ${report.qualitativeValidated ? 'text-emerald-700' : 'text-amber-700'}`}>
-                  {report.qualitativeValidated ? 'Validée (≥3)' : 'Inférieur à 3'}
+              <div className="p-2 bg-neutral-50 rounded border border-neutral-200/80">
+                <span className="text-neutral-500 block text-[9px] uppercase">Forme juridique & Catégorie</span>
+                <span className="text-neutral-800">{company.legalForm} · <strong>{company.size}</strong> ({company.headcount} ETP)</span>
+              </div>
+              <div className="p-2 bg-neutral-50 rounded border border-neutral-200/80">
+                <span className="text-neutral-500 block text-[9px] uppercase">Date d'Immatriculation & Ancienneté</span>
+                <span className={`font-semibold ${companyAge.isDateKnown ? 'text-neutral-800' : 'text-amber-800'}`}>
+                  {companyAge.isDateKnown ? companyAge.dateFormattedFr : 'Non communiquée'}
+                </span>
+                <span className={`block text-[10px] mt-0.5 font-medium ${companyAge.isDateKnown ? 'text-emerald-800' : 'text-amber-700'}`}>
+                  {companyAge.isDateKnown ? companyAge.ageLabel : 'Ancienneté indéterminée (Kbis requis)'}
                 </span>
               </div>
-              <div className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-200">
-                <span className="text-[9px] font-bold text-neutral-500 uppercase block">De Minimis Résiduel</span>
-                <span className="text-lg font-bold font-mono text-petrole-800">{report.deMinimisAvailableRemaining.toLocaleString('fr-FR')} €</span>
-                <span className="text-[9px] text-neutral-500 block">sur 300 000 € autorisés</span>
-              </div>
-            </div>
-
-            {/* 1. Identification Entreprise */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider border-b border-neutral-200 pb-1 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-neutral-700" />
-                1. Identification du Candidat & Profil Économique
-              </h3>
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div className="p-2 bg-neutral-50 rounded border border-neutral-200/80">
-                  <span className="text-neutral-500 block text-[9px] uppercase">Raison sociale</span>
-                  <strong className="text-neutral-900 text-xs">{company.name || 'Entreprise candidate'}</strong>
-                </div>
-                <div className="p-2 bg-neutral-50 rounded border border-neutral-200/80">
-                  <span className="text-neutral-500 block text-[9px] uppercase">Numéro SIRET (14 chiffres)</span>
-                  <strong className="text-neutral-900 font-mono text-xs">{company.siret || 'Non renseigné'}</strong>
-                </div>
-                <div className="p-2 bg-neutral-50 rounded border border-neutral-200/80">
-                  <span className="text-neutral-500 block text-[9px] uppercase">Forme juridique & Catégorie</span>
-                  <span className="text-neutral-800">{company.legalForm} · <strong>{company.size}</strong> ({company.headcount} ETP)</span>
-                </div>
-                <div className="p-2 bg-neutral-50 rounded border border-neutral-200/80">
-                  <span className="text-neutral-500 block text-[9px] uppercase">Date d'Immatriculation & Ancienneté</span>
-                  <span className={`font-semibold ${companyAge.isDateKnown ? 'text-neutral-800' : 'text-amber-800'}`}>
-                    {companyAge.isDateKnown ? companyAge.dateFormattedFr : 'Non communiquée'}
-                  </span>
-                  <span className={`block text-[10px] mt-0.5 font-medium ${companyAge.isDateKnown ? 'text-emerald-800' : 'text-amber-700'}`}>
-                    {companyAge.isDateKnown ? companyAge.ageLabel : 'Ancienneté indéterminée (Kbis requis)'}
-                  </span>
-                </div>
-                <div className="col-span-2 p-2 bg-neutral-50 rounded border border-neutral-200/80">
-                  <span className="text-neutral-500 block text-[9px] uppercase">Commune & Typologie Territoriale</span>
-                  <span className="text-neutral-800 font-medium">{company.city || 'Corse'} ({company.postalCode || ''})</span>
-                  <span className="text-neutral-600 block text-[10px] mt-0.5 font-semibold text-emerald-800">
-                    {formatLocationType(company.locationType, company.qpvNeighborhood)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Conformité Réglementaire Certifiée */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider border-b border-neutral-200 pb-1 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-                2. Conformité Réglementaire Certifiée (API Entreprise)
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
-                <div className="p-2 rounded bg-neutral-50 border border-neutral-200 flex items-center justify-between">
-                  <div>
-                    <strong className="text-neutral-900 block">DGFIP (Fiscalité)</strong>
-                    <span className="text-neutral-600">{company.complianceData?.dgfip?.attestationFiscale?.libelle || 'Attestation fiscale conforme (TVA & IS)'}</span>
-                  </div>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold shrink-0">À jour</span>
-                </div>
-                <div className="p-2 rounded bg-neutral-50 border border-neutral-200 flex items-center justify-between">
-                  <div>
-                    <strong className="text-neutral-900 block">URSSAF (Vigilance Sociale)</strong>
-                    <span className="text-neutral-600">{company.complianceData?.urssaf?.attestationVigilance?.libelle || 'Cotisations sociales acquittées'}</span>
-                  </div>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold shrink-0">À jour</span>
-                </div>
-                <div className="p-2 rounded bg-neutral-50 border border-neutral-200 flex items-center justify-between">
-                  <div>
-                    <strong className="text-neutral-900 block">INPI (Mandataires RNE)</strong>
-                    <span className="text-neutral-600">{company.mandataires && company.mandataires.length > 0 ? `${company.mandataires[0].nom} (${company.mandataires[0].fonction})` : 'Dirigeant légal habilité'}</span>
-                  </div>
-                  <span className="px-1.5 py-0.5 rounded bg-aubergine-100 text-aubergine-800 font-bold shrink-0">Conforme</span>
-                </div>
-                <div className="p-2 rounded bg-neutral-50 border border-neutral-200 flex items-center justify-between">
-                  <div>
-                    <strong className="text-neutral-900 block">INSEE (Sirene Étendu)</strong>
-                    <span className="text-neutral-600">Établissement actif vérifié (Code NAF {company.nafCode || 'Validé'})</span>
-                  </div>
-                  <span className="px-1.5 py-0.5 rounded bg-petrole-100 text-petrole-800 font-bold shrink-0">Actif</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Dispositifs Éligibles */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider border-b border-neutral-200 pb-1">
-                3. Tableau des Dispositifs d'Aide Recommandés
-              </h3>
-              <table className="w-full border-collapse text-[10px]">
-                <thead>
-                  <tr className="bg-neutral-100 text-neutral-700">
-                    <th className="p-1.5 border border-neutral-200 text-left">Code</th>
-                    <th className="p-1.5 border border-neutral-200 text-left">Dispositif</th>
-                    <th className="p-1.5 border border-neutral-200 text-center">Taux</th>
-                    <th className="p-1.5 border border-neutral-200 text-left">Détail du calcul</th>
-                    <th className="p-1.5 border border-neutral-200 text-right">Montant Estimé</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.eligibleSchemes.map((item, idx) => (
-                    <tr key={idx} className="border-b border-neutral-200 hover:bg-neutral-50">
-                      <td className="p-1.5 border border-neutral-200 font-bold text-neutral-900">{item.scheme.code}</td>
-                      <td className="p-1.5 border border-neutral-200">
-                        <strong className="text-neutral-900">{item.scheme.name}</strong>
-                        <div className="text-[9px] text-neutral-500">{item.scheme.legalBasis}</div>
-                      </td>
-                      <td className="p-1.5 border border-neutral-200 text-center font-bold text-emerald-700">
-                        {(item.applicableRatePercent * 100).toFixed(0)}%
-                      </td>
-                      <td className="p-1.5 border border-neutral-200 text-neutral-600">{item.subsidyCalculationDetails}</td>
-                      <td className="p-1.5 border border-neutral-200 text-right font-mono font-bold text-emerald-800">
-                        {item.estimatedSubsidyAmount.toLocaleString('fr-FR')} €
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-neutral-100 font-bold text-neutral-900">
-                    <td colSpan={4} className="p-2 border border-neutral-200 text-right uppercase text-[9px]">
-                      Total subvention potentiel estimé :
-                    </td>
-                    <td className="p-2 border border-neutral-200 text-right font-mono text-xs text-neutral-900">
-                      {totalSimulatedEligibleGrant.toLocaleString('fr-FR')} €
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            {/* 4. Avertissement Antériorité & Signature */}
-            <div className="p-3 rounded-lg bg-neutral-50 border border-neutral-200 text-[10px] space-y-1.5 leading-relaxed text-neutral-700">
-              <strong className="text-neutral-900 block uppercase">
-                Règle impérative de non-antériorité des dépenses & Procédure :
-              </strong>
-              <p>
-                Aucune dépense ne doit être engagée (devis signé, acompte versé, facture émise) avant le dépôt dématérialisé du dossier complet sur le portail de l'ADEC. Le présent diagnostic constitue une simulation technique indicative. L'octroi définitif d'une aide relève de la compétence souveraine du <strong>Bureau de l'ADEC</strong> après instruction des pièces justificatives.
-              </p>
-            </div>
-
-            {/* Signature Box */}
-            <div className="grid grid-cols-2 gap-4 pt-3 border-t border-neutral-200 text-[10px]">
-              <div className="p-3 border border-dashed border-neutral-300 rounded h-20">
-                <span className="font-bold text-neutral-700 block">Pour l'entreprise demanderesse :</span>
-                <span className="text-[9px] text-neutral-500">Nom, qualité du signataire et signature</span>
-              </div>
-              <div className="p-3 border border-dashed border-neutral-300 rounded h-20 text-right">
-                <span className="font-bold text-neutral-700 block">Pour l'ADEC :</span>
-                <span className="text-[9px] text-neutral-500">Service d'instruction territoriale</span>
+              <div className="col-span-2 p-2 bg-neutral-50 rounded border border-neutral-200/80">
+                <span className="text-neutral-500 block text-[9px] uppercase">Commune & Typologie Territoriale</span>
+                <span className="text-neutral-800 font-medium">{company.city || 'Corse'} ({company.postalCode || ''})</span>
+                <span className="text-neutral-600 block text-[10px] mt-0.5 font-semibold text-emerald-800">
+                  {formatLocationType(company.locationType, company.qpvNeighborhood)}
+                </span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Modal Footer */}
-        <div className="p-4 border-t border-neutral-800 bg-neutral-950 flex items-center justify-between text-xs">
-          <span className="text-neutral-400">
-            Guide des Aides ADEC 2026 · Collectivité de Corse
-          </span>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white font-semibold rounded-lg transition"
-          >
-            Fermer l'aperçu
-          </button>
+          {/* 2. Conformité Réglementaire Certifiée */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider border-b border-neutral-200 pb-1 flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+              2. Conformité Réglementaire Certifiée (API Entreprise)
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
+              <div className="p-2 rounded bg-neutral-50 border border-neutral-200 flex items-center justify-between">
+                <div>
+                  <strong className="text-neutral-900 block">DGFIP (Fiscalité)</strong>
+                  <span className="text-neutral-600">{company.complianceData?.dgfip?.attestationFiscale?.libelle || 'Attestation fiscale conforme (TVA & IS)'}</span>
+                </div>
+                <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold shrink-0">À jour</span>
+              </div>
+              <div className="p-2 rounded bg-neutral-50 border border-neutral-200 flex items-center justify-between">
+                <div>
+                  <strong className="text-neutral-900 block">URSSAF (Vigilance Sociale)</strong>
+                  <span className="text-neutral-600">{company.complianceData?.urssaf?.attestationVigilance?.libelle || 'Cotisations sociales acquittées'}</span>
+                </div>
+                <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold shrink-0">À jour</span>
+              </div>
+              <div className="p-2 rounded bg-neutral-50 border border-neutral-200 flex items-center justify-between">
+                <div>
+                  <strong className="text-neutral-900 block">INPI (Mandataires RNE)</strong>
+                  <span className="text-neutral-600">{company.mandataires && company.mandataires.length > 0 ? `${company.mandataires[0].nom} (${company.mandataires[0].fonction})` : 'Dirigeant légal habilité'}</span>
+                </div>
+                <span className="px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-800 font-bold shrink-0">Conforme</span>
+              </div>
+              <div className="p-2 rounded bg-neutral-50 border border-neutral-200 flex items-center justify-between">
+                <div>
+                  <strong className="text-neutral-900 block">INSEE (Sirene Étendu)</strong>
+                  <span className="text-neutral-600">Établissement actif vérifié (Code NAF {company.nafCode || 'Validé'})</span>
+                </div>
+                <span className="px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-800 font-bold shrink-0">Actif</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Dispositifs Éligibles */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider border-b border-neutral-200 pb-1">
+              3. Tableau des Dispositifs d'Aide Recommandés
+            </h3>
+            <table className="w-full border-collapse text-[10px]">
+              <thead>
+                <tr className="bg-neutral-100 text-neutral-700">
+                  <th className="p-1.5 border border-neutral-200 text-left">Code</th>
+                  <th className="p-1.5 border border-neutral-200 text-left">Dispositif</th>
+                  <th className="p-1.5 border border-neutral-200 text-center">Taux</th>
+                  <th className="p-1.5 border border-neutral-200 text-left">Détail du calcul</th>
+                  <th className="p-1.5 border border-neutral-200 text-right">Montant Estimé</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.eligibleSchemes.map((item, idx) => (
+                  <tr key={idx} className="border-b border-neutral-200 hover:bg-neutral-50">
+                    <td className="p-1.5 border border-neutral-200 font-bold text-neutral-900">{item.scheme.code}</td>
+                    <td className="p-1.5 border border-neutral-200">
+                      <strong className="text-neutral-900">{item.scheme.name}</strong>
+                      <div className="text-[9px] text-neutral-500">{item.scheme.legalBasis}</div>
+                    </td>
+                    <td className="p-1.5 border border-neutral-200 text-center font-bold text-emerald-700">
+                      {(item.applicableRatePercent * 100).toFixed(0)}%
+                    </td>
+                    <td className="p-1.5 border border-neutral-200 text-neutral-600">{item.subsidyCalculationDetails}</td>
+                    <td className="p-1.5 border border-neutral-200 text-right font-mono font-bold text-emerald-800">
+                      {item.estimatedSubsidyAmount.toLocaleString('fr-FR')} €
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-neutral-100 font-bold text-neutral-900">
+                  <td colSpan={4} className="p-2 border border-neutral-200 text-right uppercase text-[9px]">
+                    Total subvention potentiel estimé :
+                  </td>
+                  <td className="p-2 border border-neutral-200 text-right font-mono text-xs text-neutral-900">
+                    {totalSimulatedEligibleGrant.toLocaleString('fr-FR')} €
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {/* 4. Avertissement Antériorité & Signature */}
+          <div className="p-3 rounded-lg bg-neutral-50 border border-neutral-200 text-[10px] space-y-1.5 leading-relaxed text-neutral-700">
+            <strong className="text-neutral-900 block uppercase">
+              Règle impérative de non-antériorité des dépenses & Procédure :
+            </strong>
+            <p>
+              Aucune dépense ne doit être engagée (devis signé, acompte versé, facture émise) avant le dépôt dématérialisé du dossier complet sur le portail de l'ADEC. Le présent diagnostic constitue une simulation technique indicative. L'octroi définitif d'une aide relève de la compétence souveraine du <strong>Bureau de l'ADEC</strong> après instruction des pièces justificatives.
+            </p>
+          </div>
+
+          {/* Signature Box */}
+          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-neutral-200 text-[10px]">
+            <div className="p-3 border border-dashed border-neutral-300 rounded h-20">
+              <span className="font-bold text-neutral-700 block">Pour l'entreprise demanderesse :</span>
+              <span className="text-[9px] text-neutral-500">Nom, qualité du signataire et signature</span>
+            </div>
+            <div className="p-3 border border-dashed border-neutral-300 rounded h-20 text-right">
+              <span className="font-bold text-neutral-700 block">Pour l'ADEC :</span>
+              <span className="text-[9px] text-neutral-500">Service d'instruction territoriale</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

@@ -5,16 +5,18 @@
  */
 
 import React, { useState } from 'react';
-import { Building2, Landmark, ShieldCheck, UserCheck, Download, CheckCircle2 } from 'lucide-react';
+import { Building2, Landmark, ShieldCheck, UserCheck, Download, X } from 'lucide-react';
 import { CompanyProfile, MandataireSocial } from '../../types';
 import { downloadExtraitRnePdf } from '../../services/apiEntreprise';
 import { ATTESTATIONS_REGISTRY, downloadCertificateFile } from '../../utils/complianceCertificates';
 import { getOfficialRneDownloadUrl } from '../../utils/rneDownloader';
 import { ComplianceRow } from '../Questionnaire/ComplianceRow';
+import { Badge, btn, iconBtn, linkClass, Notice } from '../Layout/ui';
 
-export const primaryActionClass = 'inline-flex items-center gap-1 px-2.5 py-1.5 bg-prune-600 hover:bg-prune-700 text-white rounded-md text-[11px] font-semibold transition shadow-2xs cursor-pointer';
-export const secondaryActionClass = 'inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-neutral-50 text-neutral-700 border border-neutral-200 rounded-md text-[11px] font-semibold transition cursor-pointer';
-const disabledActionClass = 'inline-flex items-center gap-1 px-2.5 py-1.5 bg-neutral-100 text-neutral-400 border border-neutral-200 rounded-md text-[11px] font-semibold cursor-not-allowed';
+export const primaryActionClass = btn('primary', 'sm');
+export const secondaryActionClass = btn('secondary', 'sm');
+const disabledActionClass =
+  'inline-flex items-center gap-1 h-7 px-2.5 rounded-md border border-neutral-200 bg-neutral-50 text-neutral-400 text-xs font-medium whitespace-nowrap cursor-not-allowed';
 
 /** Mandataires saisis, sinon ceux remontés par les registres */
 export function getCurrentMandataires(data: CompanyProfile): MandataireSocial[] {
@@ -22,11 +24,28 @@ export function getCurrentMandataires(data: CompanyProfile): MandataireSocial[] 
   return data.complianceData?.infogreffe?.mandatairesSociaux || [];
 }
 
+/** Nombre de pièces réellement vérifiées (RNE, DGFiP, URSSAF, mandataires) */
+export function countVerifiedPieces(data: CompanyProfile): number {
+  return [
+    data.complianceData?.rne?.status === 'ok',
+    data.complianceData?.dgfip?.attestationFiscale?.status === 'ok',
+    data.complianceData?.urssaf?.attestationVigilance?.status === 'ok',
+    getCurrentMandataires(data).length > 0
+  ].filter(Boolean).length;
+}
+
+export const VerifiedPiecesBadge: React.FC<{ data: CompanyProfile }> = ({ data }) => {
+  const count = countVerifiedPieces(data);
+  return <Badge tone={count === 4 ? 'success' : 'warning'}>{count}/4 pièces vérifiées</Badge>;
+};
+
 interface AttestationsListProps {
   data: CompanyProfile;
   hasToken: boolean;
   /** Texte de la ligne « Mandataires & pouvoirs » */
   mandatairesDescription?: string;
+  /** Titre et compteur au-dessus de la liste (masqués quand le parent les affiche) */
+  showHeading?: boolean;
   /** Lignes supplémentaires ajoutées sous les 4 attestations (BODACC, observations…) */
   children?: React.ReactNode;
 }
@@ -35,6 +54,7 @@ export const AttestationsList: React.FC<AttestationsListProps> = ({
   data,
   hasToken,
   mandatairesDescription = 'Représentation légale de la société (dirigeants inscrits au registre).',
+  showHeading = true,
   children
 }) => {
   const [downloadSuccessNotice, setDownloadSuccessNotice] = useState<string | null>(null);
@@ -60,7 +80,7 @@ export const AttestationsList: React.FC<AttestationsListProps> = ({
 
   const handleDownloadGouvernance = () => {
     const { fileName } = downloadCertificateFile('infogreffe', data);
-    setDownloadSuccessNotice(`"${ATTESTATIONS_REGISTRY.infogreffe.title}" a été généré et téléchargé avec succès au format PDF (${fileName}).`);
+    setDownloadSuccessNotice(`« ${ATTESTATIONS_REGISTRY.infogreffe.title} » généré et téléchargé (${fileName}).`);
     setTimeout(() => {
       setDownloadSuccessNotice(null);
     }, 5000);
@@ -81,47 +101,33 @@ export const AttestationsList: React.FC<AttestationsListProps> = ({
 
   const currentMandataires = getCurrentMandataires(data);
 
-  // Nombre de pièces réellement vérifiées (RNE, DGFiP, URSSAF, mandataires)
-  const verifiedCount = [rneOk, dgfipOk, urssafOk, currentMandataires.length > 0].filter(Boolean).length;
-
   return (
     <div className="space-y-2">
-      {downloadSuccessNotice && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center justify-between gap-2 shadow-2xs">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span className="font-medium">{downloadSuccessNotice}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setDownloadSuccessNotice(null)}
-            className="text-emerald-700 hover:text-emerald-900 text-xs font-bold px-1 cursor-pointer"
-          >
-            ✕
-          </button>
+      {showHeading && (
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-semibold text-neutral-900">Pièces justificatives</h3>
+          <VerifiedPiecesBadge data={data} />
+          <span className="text-xs text-neutral-500">Exigées pour l’instruction et le versement des aides.</span>
         </div>
       )}
 
-      <div>
-        <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider flex items-center gap-1.5">
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>Conformité & justificatifs</span>
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border normal-case tracking-normal ${
-            verifiedCount === 4
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-              : 'bg-amber-50 text-amber-800 border-amber-200'
-          }`}>
-            {verifiedCount}/4 pièces vérifiées
-          </span>
-        </h4>
-        <p className="text-[11px] text-neutral-500 mt-0.5">
-          Pièces exigées par l'ADEC pour l'instruction et le versement des aides.
-        </p>
-      </div>
+      {downloadSuccessNotice && (
+        <Notice
+          tone="success"
+          className={showHeading ? '' : 'mx-4 mt-3'}
+          action={
+            <button type="button" onClick={() => setDownloadSuccessNotice(null)} className={iconBtn} aria-label="Fermer">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          }
+        >
+          {downloadSuccessNotice}
+        </Notice>
+      )}
 
-      <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-100 bg-white">
+      <div className={`divide-y divide-neutral-200 bg-white ${showHeading ? 'border border-neutral-200 rounded-md' : ''}`}>
         <ComplianceRow
-          icon={<Building2 className="w-3.5 h-3.5" />}
+          icon={<Building2 className="w-4 h-4" />}
           title="Immatriculation RNE"
           source="INPI · Registre National des Entreprises"
           tone={rneOk ? 'ok' : 'unknown'}
@@ -137,40 +143,35 @@ export const AttestationsList: React.FC<AttestationsListProps> = ({
                 type="button"
                 onClick={() => handleDownloadExtraitRne(activeSiren)}
                 disabled={isDownloadingRnePdf}
-                className={`${primaryActionClass} disabled:opacity-50`}
+                className={primaryActionClass}
                 title={hasToken
                   ? "Télécharger l'extrait RNE officiel (INPI, via API Entreprise)"
                   : `Ouvrir le justificatif d'immatriculation public (${getOfficialRneDownloadUrl(activeSiren)})`}
               >
                 <Download className={`w-3 h-3 ${isDownloadingRnePdf ? 'animate-bounce' : ''}`} />
-                <span>{isDownloadingRnePdf ? 'Génération INPI...' : 'PDF officiel'}</span>
+                <span>{isDownloadingRnePdf ? 'Génération INPI…' : 'PDF officiel'}</span>
               </button>
             ) : undefined
           }
         >
           {rnePdfError && activeSiren && (
-            <div className="md:pl-[15.75rem] text-[11px]">
-              <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-900 space-y-1">
-                <p><strong>Extrait RNE indisponible auprès de l’INPI.</strong> {rnePdfError}</p>
-                <p className="text-neutral-700">
-                  Réessayez dans quelques minutes, ou ouvrez le{' '}
-                  <a
-                    href={getOfficialRneDownloadUrl(activeSiren)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-prune-700 underline hover:text-prune-900"
-                  >
+            <div className="md:pl-[15.75rem]">
+              <Notice tone="danger" title="Extrait RNE indisponible auprès de l’INPI.">
+                <p>{rnePdfError}</p>
+                <p>
+                  Réessayer dans quelques minutes, ou ouvrir le{' '}
+                  <a href={getOfficialRneDownloadUrl(activeSiren)} target="_blank" rel="noopener noreferrer" className={linkClass}>
                     justificatif d’immatriculation public (Annuaire des Entreprises)
                   </a>
                   .
                 </p>
-              </div>
+              </Notice>
             </div>
           )}
         </ComplianceRow>
 
         <ComplianceRow
-          icon={<Landmark className="w-3.5 h-3.5" />}
+          icon={<Landmark className="w-4 h-4" />}
           title="Attestation fiscale"
           source="DGFiP · Art. L. 2141-2 CCP"
           tone={dgfipOk ? 'ok' : 'unknown'}
@@ -192,7 +193,7 @@ export const AttestationsList: React.FC<AttestationsListProps> = ({
         />
 
         <ComplianceRow
-          icon={<ShieldCheck className="w-3.5 h-3.5" />}
+          icon={<ShieldCheck className="w-4 h-4" />}
           title="Attestation de vigilance"
           source="URSSAF · Art. L. 243-15 CSS"
           tone={urssafOk ? 'ok' : 'unknown'}
@@ -214,7 +215,7 @@ export const AttestationsList: React.FC<AttestationsListProps> = ({
         />
 
         <ComplianceRow
-          icon={<UserCheck className="w-3.5 h-3.5" />}
+          icon={<UserCheck className="w-4 h-4" />}
           title="Mandataires & pouvoirs"
           source="RNE · Art. L. 123-36 C. com."
           tone={currentMandataires.length > 0 ? 'ok' : 'unknown'}

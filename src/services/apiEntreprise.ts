@@ -91,6 +91,13 @@ export function getStoredApiEntrepriseToken(): string {
   }
 }
 
+/** Émis sur window à chaque enregistrement ou suppression du jeton (voir useHasApiEntrepriseToken) */
+export const API_TOKEN_CHANGE_EVENT = 'adec-api-entreprise-token-change';
+
+function notifyTokenChange(): void {
+  window.dispatchEvent(new Event(API_TOKEN_CHANGE_EVENT));
+}
+
 export function saveApiEntrepriseToken(token: string): void {
   try {
     if (!token.trim()) {
@@ -101,6 +108,7 @@ export function saveApiEntrepriseToken(token: string): void {
   } catch (e) {
     console.error('Erreur lors de la sauvegarde du token API Entreprise', e);
   }
+  notifyTokenChange();
 }
 
 export function removeApiEntrepriseToken(): void {
@@ -109,6 +117,7 @@ export function removeApiEntrepriseToken(): void {
   } catch (e) {
     console.error('Erreur lors de la suppression du token API Entreprise', e);
   }
+  notifyTokenChange();
 }
 
 export function getStoredRecipientSiret(): string {

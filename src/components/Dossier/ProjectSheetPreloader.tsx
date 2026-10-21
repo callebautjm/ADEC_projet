@@ -1,16 +1,20 @@
 /**
  * Dépôt d'une Fiche Projet ADEC (PDF OpenSub) : lecture exacte, synthèse et pré-remplissage du simulateur.
  * Le document est traité en mémoire côté serveur, rien n'est stocké.
+ * Sans fiche : zone de dépôt (à placer dans un Panel) ; avec fiche : bandeau de rappel.
  */
 
 import React, { useRef, useState } from 'react';
-import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, Trash2, RefreshCw } from 'lucide-react';
+import { UploadCloud, FileText, Check, Loader2, Trash2, RefreshCw } from 'lucide-react';
 import { AnalyseFicheProjetResponse } from '../../types/ficheProjet';
+import { btn, Notice } from '../Layout/ui';
 
 interface ProjectSheetPreloaderProps {
   dossier: AnalyseFicheProjetResponse | null;
   onFicheAnalysee: (analyse: AnalyseFicheProjetResponse) => void;
   onRemoveDossier: () => void;
+  /** Zone de dépôt sur une ligne (simulation saisie manuellement) */
+  compact?: boolean;
 }
 
 const ETAPES_ANALYSE = [
@@ -19,7 +23,7 @@ const ETAPES_ANALYSE = [
   'Rédaction de la synthèse du projet'
 ];
 
-export const ProjectSheetPreloader: React.FC<ProjectSheetPreloaderProps> = ({ dossier, onFicheAnalysee, onRemoveDossier }) => {
+export const ProjectSheetPreloader: React.FC<ProjectSheetPreloaderProps> = ({ dossier, onFicheAnalysee, onRemoveDossier, compact = false }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [etape, setEtape] = useState(0);
@@ -71,29 +75,27 @@ export const ProjectSheetPreloader: React.FC<ProjectSheetPreloaderProps> = ({ do
   // Analyse en cours
   if (isAnalyzing) {
     return (
-      <div className="bg-white border-2 border-prune-500/80 rounded-2xl p-5 shadow-md space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-prune-600 text-white flex items-center justify-center animate-pulse">
-            <FileText className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="font-bold text-neutral-900 text-sm">Analyse de la fiche projet…</h3>
-            <span className="text-xs text-neutral-500">{fileName}</span>
-          </div>
-        </div>
-        <ol className="space-y-1.5">
+      <div className="bg-white border border-neutral-200 rounded-md px-4 py-3 space-y-2" aria-live="polite">
+        <p className="flex items-center gap-2 text-sm min-w-0">
+          <Loader2 className="w-4 h-4 animate-spin text-prune-700 shrink-0" />
+          <span className="font-medium text-neutral-900">Analyse de la fiche projet…</span>
+          <span className="text-xs text-neutral-500 truncate">{fileName}</span>
+        </p>
+        <ol className="space-y-1 text-xs pl-6">
           {ETAPES_ANALYSE.map((label, idx) => (
             <li
               key={label}
-              className={`flex items-center gap-2 text-xs p-2 rounded-lg border ${
-                idx < etape ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                  : idx === etape ? 'bg-prune-50 border-prune-300 text-prune-950 font-semibold'
-                  : 'bg-neutral-50 border-neutral-200 text-neutral-400'
+              className={`flex items-center gap-2 ${
+                idx < etape ? 'text-neutral-500' : idx === etape ? 'text-neutral-900 font-medium' : 'text-neutral-400'
               }`}
             >
-              {idx < etape ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                : idx === etape ? <Loader2 className="w-3.5 h-3.5 animate-spin text-prune-600" />
-                : <span className="w-3.5 h-3.5 rounded-full border border-neutral-300 inline-block" />}
+              {idx < etape ? (
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+              ) : idx === etape ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-prune-700" />
+              ) : (
+                <span className="w-3.5 h-3.5 rounded-full border border-neutral-300 inline-block" />
+              )}
               <span>{label}</span>
             </li>
           ))}
@@ -106,56 +108,52 @@ export const ProjectSheetPreloader: React.FC<ProjectSheetPreloaderProps> = ({ do
   if (dossier) {
     const { fiche } = dossier;
     return (
-      <div className="bg-prune-900 text-white rounded-2xl p-4 sm:p-5 shadow-md border border-prune-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-prune-800/80 border border-prune-500/40 text-emerald-300 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
+      <div className="bg-white border border-neutral-200 rounded-md px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <FileText className="w-4 h-4 text-neutral-400 shrink-0" />
           <div className="min-w-0">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">
-              Fiche projet{fiche.dossierNumero ? ` n° ${fiche.dossierNumero}` : ''} · simulateur pré-rempli
-            </span>
-            <h2 className="text-sm sm:text-base font-bold truncate">
+            <p className="text-sm font-medium text-neutral-900 truncate">
               {fiche.entreprise.raisonSociale || 'Entreprise'}
-              {fiche.projet.libelle && <span className="font-normal text-prune-200"> — {fiche.projet.libelle}</span>}
-            </h2>
-            <span className="text-[11px] text-prune-300">{dossier.sourceDocumentName}</span>
+              {fiche.projet.libelle && <span className="font-normal text-neutral-500"> — {fiche.projet.libelle}</span>}
+            </p>
+            <p className="text-[11px] text-neutral-500 truncate">
+              Fiche projet{fiche.dossierNumero ? ` n° ${fiche.dossierNumero}` : ''} · {dossier.sourceDocumentName} · simulation pré-remplie
+            </p>
           </div>
         </div>
         <button
           type="button"
           onClick={onRemoveDossier}
-          title="Retirer la fiche projet et repartir d'un simulateur vierge"
-          className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/90 text-xs font-medium border border-white/20 flex items-center gap-1.5 shrink-0 cursor-pointer"
+          title="Retirer la fiche projet et repartir d'une simulation vierge"
+          className={`${btn('ghost', 'sm')} self-start sm:self-auto`}
         >
-          <Trash2 className="w-3.5 h-3.5 text-rose-300" />
-          <span>Retirer la fiche</span>
+          <Trash2 className="w-3.5 h-3.5" />
+          Retirer la fiche
         </button>
       </div>
     );
   }
 
   // Aucune fiche : zone de dépôt
+  const openFilePicker = () => fileInputRef.current?.click();
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200/90 shadow-2xs p-5 sm:p-6 space-y-3">
-      <div>
-        <h2 className="text-base sm:text-lg font-bold text-neutral-900 tracking-tight">
-          Vous disposez d’une fiche projet ADEC ?
-        </h2>
-        <p className="text-xs sm:text-sm text-neutral-600 max-w-3xl leading-relaxed">
-          Déposez-la pour obtenir une synthèse du projet et pré-remplir toutes les étapes. Sinon, saisissez simplement le SIRET à l’étape 1 :
-          le simulateur fonctionnera sans synthèse de projet.
-        </p>
-      </div>
-
+    <div className="space-y-2">
       <div
+        role="button"
+        tabIndex={0}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        className={`border-2 border-dashed rounded-xl p-8 sm:p-10 text-center cursor-pointer transition ${
-          isDragging ? 'border-prune-600 bg-prune-50/80' : 'border-safran-300 hover:border-prune-500 hover:bg-prune-50/30'
-        }`}
+        onClick={openFilePicker}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openFilePicker();
+          }
+        }}
+        className={`border border-dashed rounded-md cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-prune-600 ${
+          isDragging ? 'border-prune-600 bg-prune-50' : 'border-neutral-300 bg-neutral-50 hover:border-neutral-400 hover:bg-white'
+        } ${compact ? 'px-3 py-2.5 flex items-center gap-2.5' : 'px-4 py-6 text-center'}`}
       >
         <input
           ref={fileInputRef}
@@ -164,34 +162,36 @@ export const ProjectSheetPreloader: React.FC<ProjectSheetPreloaderProps> = ({ do
           onChange={(e) => { if (e.target.files?.length) processUploadedFile(e.target.files[0]); }}
           className="hidden"
         />
-        <div className="flex flex-col items-center justify-center gap-3 text-xs sm:text-sm">
-          <div className="w-12 h-12 rounded-full bg-prune-600 text-white flex items-center justify-center shrink-0">
-            <UploadCloud className="w-6 h-6" />
-          </div>
-          <span>
-            <strong className="text-neutral-900">Glissez-déposez la fiche projet (PDF)</strong>
-            <span className="text-neutral-500"> ou <strong className="text-prune-700 underline font-medium">parcourez vos fichiers</strong></span>
+        <UploadCloud className={`text-neutral-400 shrink-0 ${compact ? 'w-4 h-4' : 'w-5 h-5 mx-auto'}`} />
+        {compact ? (
+          <span className="text-xs text-neutral-600">
+            <span className="font-medium text-neutral-800">Déposer une fiche projet (PDF)</span> pour pré-remplir la simulation et obtenir la synthèse du projet
           </span>
-        </div>
+        ) : (
+          <>
+            <p className="mt-2 text-sm text-neutral-700">
+              <span className="font-medium text-neutral-900">Déposer la fiche projet (PDF)</span> ou{' '}
+              <span className="text-prune-700 underline underline-offset-2">choisir un fichier</span>
+            </p>
+            <p className="text-[11px] text-neutral-500 mt-1">Export OpenSub de la fiche projet ADEC · lu en mémoire, aucun document conservé</p>
+          </>
+        )}
       </div>
 
       {errorMessage && (
-        <div className="p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-          {lastFileRef.current && (
-            <button
-              type="button"
-              onClick={() => processUploadedFile(lastFileRef.current!)}
-              className="px-2.5 py-1 bg-amber-600 text-white rounded-lg font-bold text-[11px] hover:bg-amber-700 flex items-center gap-1 shrink-0 cursor-pointer"
-            >
-              <RefreshCw className="w-3 h-3" />
-              <span>Réessayer</span>
-            </button>
-          )}
-        </div>
+        <Notice
+          tone="warning"
+          action={
+            lastFileRef.current && (
+              <button type="button" onClick={() => processUploadedFile(lastFileRef.current!)} className={btn('secondary', 'sm')}>
+                <RefreshCw className="w-3 h-3" />
+                Réessayer
+              </button>
+            )
+          }
+        >
+          {errorMessage}
+        </Notice>
       )}
     </div>
   );

@@ -4,13 +4,15 @@
  */
 
 import React, { useState } from 'react';
-import { Search, RefreshCw, CheckCircle2, AlertTriangle, Key, Building2, ExternalLink, Check } from 'lucide-react';
+import { ExternalLink, Check } from 'lucide-react';
 import { CompanyProfile } from '../../types';
-import { fetchEntrepriseBySiret, getStoredApiEntrepriseToken, isValidLuhn } from '../../services/apiEntreprise';
-import { cleanSiret, isForbiddenSiretKey } from '../../utils/siret';
+import { isValidLuhn } from '../../services/apiEntreprise';
+import { useHasApiEntrepriseToken } from '../../hooks/useHasApiEntrepriseToken';
 import { ApiEntrepriseModal } from '../ApiEntrepriseModal';
-import { AttestationsList } from './AttestationsList';
-import { PageHero, heroActionClass } from '../Layout/PageHero';
+import { AttestationsList, VerifiedPiecesBadge } from './AttestationsList';
+import { SiretSearchForm } from './SiretSearchForm';
+import { PageHeader } from '../Layout/PageHeader';
+import { Badge, Notice, Panel, btn, pageContainer } from '../Layout/ui';
 
 interface AttestationsPageProps {
   company: CompanyProfile | null;
@@ -18,28 +20,8 @@ interface AttestationsPageProps {
 }
 
 export const AttestationsPage: React.FC<AttestationsPageProps> = ({ company, onCompanyFound }) => {
-  const [siretQuery, setSiretQuery] = useState(company?.siret || '');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
-  const [hasToken, setHasToken] = useState<boolean>(() => Boolean(getStoredApiEntrepriseToken().trim()));
-
-  const handleSearch = async () => {
-    const targetSiret = cleanSiret(siretQuery);
-    if (targetSiret.length !== 14 || !/^\d+$/.test(targetSiret)) {
-      setError('Veuillez saisir un numéro SIRET valide composé d’exactement 14 chiffres.');
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    const result = await fetchEntrepriseBySiret(targetSiret);
-    setIsLoading(false);
-    if (result.success && result.mappedProfile) {
-      onCompanyFound(result.mappedProfile);
-    } else {
-      setError(result.error || 'Erreur lors de l’interrogation de l’API Entreprise.');
-    }
-  };
+  const hasToken = useHasApiEntrepriseToken();
 
   const siren = company ? company.siren || (company.siret || '').slice(0, 9) : '';
   const address = company ? [company.address, [company.postalCode, company.city].filter(Boolean).join(' ')].filter(Boolean).join(', ') : '';
@@ -55,139 +37,91 @@ export const AttestationsPage: React.FC<AttestationsPageProps> = ({ company, onC
 
   return (
     <div>
-      <ApiEntrepriseModal
-        isOpen={isTokenModalOpen}
-        onClose={() => setIsTokenModalOpen(false)}
-        onTokenUpdated={(hasTok) => setHasToken(hasTok)}
-      />
+      <ApiEntrepriseModal isOpen={isTokenModalOpen} onClose={() => setIsTokenModalOpen(false)} />
 
-      <PageHero
-        eyebrow="Justificatifs de l'entreprise"
+      <PageHeader
         title="Attestations"
-        description="Immatriculation RNE, attestation fiscale, attestation de vigilance et extrait des mandataires, à partir du SIRET."
-        actions={
-          <button
-            type="button"
-            onClick={() => setIsTokenModalOpen(true)}
-            className={heroActionClass}
-            title="Configuration du jeton API Entreprise v4 (requis pour les attestations DGFiP et URSSAF)"
-          >
-            <Key className="w-3.5 h-3.5" />
-            <span>Token API</span>
-            <span className={`w-2 h-2 rounded-full ${hasToken ? 'bg-emerald-500' : 'bg-amber-400'}`} title={hasToken ? 'Jeton actif' : 'Jeton absent'} />
-          </button>
-        }
+        description="Pièces justificatives d’une entreprise à partir de son SIRET : immatriculation RNE, attestation fiscale, attestation de vigilance et mandataires."
       />
 
-      <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 space-y-6">
-        {/* Recherche SIRET */}
-        <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-3">
-          <label htmlFor="siret-attestations" className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
-            <Search className="w-4 h-4 text-prune-600" />
-            Numéro SIRET
-          </label>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="relative flex-1">
-              <input
-                id="siret-attestations"
-                type="text"
-                inputMode="numeric"
-                value={siretQuery}
-                onChange={(e) => setSiretQuery(cleanSiret(e.target.value))}
-                onKeyDown={(e) => {
-                  if (isForbiddenSiretKey(e.key)) e.preventDefault();
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleSearch();
-                  }
-                }}
-                onPaste={(e) => {
-                  e.preventDefault();
-                  setSiretQuery(cleanSiret(e.clipboardData.getData('text')));
-                }}
-                placeholder="Ex: 40001662200013"
-                className="w-full pl-3 pr-16 py-2.5 text-sm bg-white text-neutral-900 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 focus:border-prune-500 font-mono font-semibold"
-              />
-              <span className={`absolute right-2 top-2.5 text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
-                siretQuery.length === 14 ? 'bg-emerald-100 text-emerald-800' : 'bg-neutral-100 text-neutral-500'
-              }`}>
-                {siretQuery.length}/14
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={handleSearch}
-              disabled={isLoading || !siretQuery}
-              className="px-6 py-2.5 bg-prune-600 hover:bg-aubergine-600 text-white font-bold uppercase tracking-wider text-xs rounded-full transition disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 shadow-2xs cursor-pointer"
-            >
-              {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-              {isLoading ? 'Recherche...' : 'Rechercher'}
-            </button>
-          </div>
-          {error && (
-            <div className="p-3 rounded-lg border bg-red-50 border-red-200 text-red-900 text-xs flex items-start gap-1.5 font-semibold">
-              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-        </div>
+      <div className={`${pageContainer} py-5 space-y-4`}>
+        <Panel>
+          <SiretSearchForm
+            key={company?.siret || 'vide'}
+            id="siret-attestations"
+            initialValue={company?.siret || ''}
+            onFound={onCompanyFound}
+            autoFocus={!company?.siret}
+          />
+        </Panel>
+
+        {!hasToken && (
+          <Notice
+            tone="warning"
+            action={
+              <button type="button" onClick={() => setIsTokenModalOpen(true)} className={btn('secondary', 'sm')}>
+                Configurer le jeton
+              </button>
+            }
+          >
+            Aucun jeton API Entreprise : les attestations DGFiP et URSSAF ne peuvent pas être délivrées. L’immatriculation RNE reste consultable.
+          </Notice>
+        )}
 
         {company?.siret && (
-          <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-5">
+          <>
             {/* Rappel succinct de l'entreprise */}
-            <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Building2 className="w-4 h-4 text-neutral-600" />
-                    <h2 className="text-base font-bold text-neutral-900">{company.name || 'Établissement'}</h2>
-                    {company.administrativeStatus && (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                        {company.administrativeStatus}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-neutral-500 font-mono flex-wrap">
-                    <span>SIRET : <strong className="text-neutral-800">{company.siret}</strong></span>
-                    {isValidLuhn(company.siret) && (
-                      <span title="Clé de Luhn valide" className="inline-flex items-center text-emerald-600">
-                        <Check className="w-3.5 h-3.5" />
-                      </span>
-                    )}
-                    {siren && <span>· SIREN : <strong className="text-neutral-800">{siren}</strong></span>}
-                  </div>
-                </div>
-                {siren && (
+            <Panel
+              title={
+                <>
+                  {company.name || 'Établissement'}
+                  {company.administrativeStatus && <Badge tone="success">{company.administrativeStatus}</Badge>}
+                </>
+              }
+              description={
+                <span className="font-mono">
+                  SIRET {company.siret}
+                  {isValidLuhn(company.siret) && (
+                    <span title="Clé de Luhn valide" className="inline-flex align-middle ml-1 text-emerald-600">
+                      <Check className="w-3.5 h-3.5" />
+                    </span>
+                  )}
+                  {siren && <> · SIREN {siren}</>}
+                </span>
+              }
+              actions={
+                siren && (
                   <a
                     href={`https://annuaire-entreprises.data.gouv.fr/entreprise/${siren}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-neutral-50 text-neutral-600 rounded-lg text-xs font-medium border border-neutral-200 transition self-start"
+                    className={btn('secondary', 'sm')}
                   >
-                    <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
-                    <span>Annuaire des Entreprises</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Annuaire des Entreprises
                   </a>
-                )}
-              </div>
+                )
+              }
+            >
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
                 {recap.filter((r) => r.value).map((r) => (
                   <div key={r.label} className="flex gap-2 min-w-0">
                     <dt className="text-neutral-500 shrink-0 w-28">{r.label}</dt>
-                    <dd className="text-neutral-800 font-medium min-w-0 break-words">{r.value}</dd>
+                    <dd className="text-neutral-800 min-w-0 break-words">{r.value}</dd>
                   </div>
                 ))}
               </dl>
-            </div>
+            </Panel>
 
-            <AttestationsList data={company} hasToken={hasToken} />
-          </div>
-        )}
-
-        {!company?.siret && !error && (
-          <p className="text-xs text-neutral-500 flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400" />
-            Les attestations DGFiP et URSSAF nécessitent un jeton API Entreprise ; l'immatriculation RNE reste consultable sans jeton.
-          </p>
+            <Panel
+              title="Pièces justificatives"
+              description="Exigées par l’ADEC pour l’instruction et le versement des aides."
+              actions={<VerifiedPiecesBadge data={company} />}
+              bodyClassName=""
+            >
+              <AttestationsList data={company} hasToken={hasToken} showHeading={false} />
+            </Panel>
+          </>
         )}
       </div>
     </div>

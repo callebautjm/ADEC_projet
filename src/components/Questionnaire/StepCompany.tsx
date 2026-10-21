@@ -7,32 +7,23 @@
 import React, { useState } from 'react';
 import { CompanyProfile, LegalForm, ActivitySector, MandataireSocial } from '../../types';
 import {
-  Building2,
-  AlertTriangle,
   Search,
-  Key,
-  Lock,
+  KeyRound,
   RefreshCw,
-  CheckCircle2,
-  ShieldCheck,
-  MapPin,
-  FileText,
   ChevronDown,
   ChevronUp,
   Check,
   ExternalLink,
   Scale,
-  UserCheck,
+  FileText,
   UserPlus,
   Edit3,
   Trash2,
-  Plus,
   X,
-  Mountain,
-  Compass,
-  Sparkles
+  MapPin
 } from 'lucide-react';
-import { fetchEntrepriseBySiret, fetchBodaccBySiren, getStoredApiEntrepriseToken, isValidLuhn } from '../../services/apiEntreprise';
+import { fetchEntrepriseBySiret, fetchBodaccBySiren, isValidLuhn } from '../../services/apiEntreprise';
+import { useHasApiEntrepriseToken } from '../../hooks/useHasApiEntrepriseToken';
 import { ApiEntrepriseModal } from '../ApiEntrepriseModal';
 import { BeneficiairesEffectifsPanel } from './BeneficiairesEffectifsPanel';
 import { ComplianceRow } from './ComplianceRow';
@@ -45,15 +36,33 @@ import {
 } from '../../services/corsicaZoning';
 import { analyzeCompanyCreationDate } from '../../utils/companyAge';
 import { cleanSiret, isForbiddenSiretKey } from '../../utils/siret';
+import {
+  Badge,
+  Modal,
+  Notice,
+  Panel,
+  SectionHeading,
+  StatusDot,
+  SegmentedControl,
+  btn,
+  checkRowClass,
+  hintClass,
+  iconBtn,
+  iconBtnDanger,
+  inputClass,
+  labelClass
+} from '../Layout/ui';
 
 interface StepCompanyProps {
   data: CompanyProfile;
   onChange: (updated: Partial<CompanyProfile>) => void;
 }
 
+const MANDAT_PRESETS = ['Gérant', 'Associée co-gérante', 'Président', 'Directeur Général', 'Gérant majoritaire', 'Associé unique'];
+
 export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
 
-  const [siretQuery, setSiretQuery] = useState('');
+  const [siretQuery, setSiretQuery] = useState(() => cleanSiret(data.siret || ''));
   const [isLoadingApi, setIsLoadingApi] = useState(false);
   const [showCommuneSuggestions, setShowCommuneSuggestions] = useState(false);
   const [communeSuggestions, setCommuneSuggestions] = useState<CorsicaCommuneReference[]>([]);
@@ -62,7 +71,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const [showRawData, setShowRawData] = useState(false);
-  const [hasToken, setHasToken] = useState<boolean>(() => Boolean(getStoredApiEntrepriseToken().trim()));
+  const hasToken = useHasApiEntrepriseToken();
   const bodacc = data.complianceData?.bodacc;
 
   // Mandataires sociaux et dirigeants déclarés
@@ -166,7 +175,6 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
   };
 
   const [isBodaccLoading, setIsBodaccLoading] = useState(false);
-  const [showAllBodaccAnnonces, setShowAllBodaccAnnonces] = useState(false);
 
   const [apiFeedback, setApiFeedback] = useState<{
     success?: boolean;
@@ -203,7 +211,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
     if (!targetSiret || targetSiret.length !== 14 || !/^\d+$/.test(targetSiret)) {
       setApiFeedback({
         success: false,
-        message: 'Veuillez saisir un numéro SIRET valide composé d’exactement 14 chiffres.'
+        message: 'Le SIRET doit comporter exactement 14 chiffres.'
       });
       return;
     }
@@ -218,14 +226,14 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
       onChange(result.mappedProfile);
       setSiretQuery(targetSiret);
       const isDateFound = Boolean(result.mappedProfile.creationDate);
-      const dateText = isDateFound 
+      const dateText = isDateFound
         ? `Création INSEE : ${result.mappedProfile.companyAgeLabel || result.mappedProfile.creationDate}`
         : 'Date non communiquée (à renseigner)';
 
       setApiFeedback({
         success: true,
         source: result.source,
-        message: `Établissement « ${result.mappedProfile.name} » synchronisé avec succès.`,
+        message: `Établissement « ${result.mappedProfile.name} » synchronisé.`,
         details: `${result.mappedProfile.legalForm} · ${result.mappedProfile.city} (${result.mappedProfile.postalCode}) · ~${result.mappedProfile.headcount} ETP · ${dateText}`
       });
     } else {
@@ -255,14 +263,12 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
     }
   };
 
+  const isSalvezzaCommune = zoningAnalysis.isSalvezza || Boolean(data.salvezzaCommune);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Fenêtres modales */}
-      <ApiEntrepriseModal
-        isOpen={isTokenModalOpen}
-        onClose={() => setIsTokenModalOpen(false)}
-        onTokenUpdated={(hasTok) => setHasToken(hasTok)}
-      />
+      <ApiEntrepriseModal isOpen={isTokenModalOpen} onClose={() => setIsTokenModalOpen(false)} />
 
       <SalvezzaCommunesModal
         isOpen={isSalvezzaModalOpen}
@@ -281,54 +287,31 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
         }}
       />
 
-      {/* 1. EN-TÊTE PRINCIPAL & ACCÈS JETON API */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-200">
-        <div>
-          <h2 className="text-xl font-bold text-neutral-900 tracking-tight flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-neutral-700" />
-            1. Entreprise
-          </h2>
-          <p className="text-xs text-neutral-500 mt-1">
-            Identité, registres officiels (INSEE, RNE, DGFiP, URSSAF, BODACC), implantation et gouvernance.
-          </p>
-        </div>
+      <SectionHeading
+        title="1. Entreprise"
+        description="Identité, registres officiels (INSEE, RNE, DGFiP, URSSAF, BODACC), implantation et gouvernance."
+        actions={
+          <button
+            type="button"
+            onClick={() => setIsTokenModalOpen(true)}
+            className={btn('secondary', 'sm')}
+            title="Configuration du jeton API Entreprise v4"
+          >
+            <KeyRound className="w-3.5 h-3.5 text-neutral-500" />
+            Jeton API
+            <StatusDot tone={hasToken ? 'success' : 'warning'} />
+          </button>
+        }
+      />
 
-        <button
-          type="button"
-          onClick={() => setIsTokenModalOpen(true)}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shrink-0 cursor-pointer ${
-            hasToken
-              ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'
-              : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-neutral-300'
-          }`}
-          title="Configuration du jeton API Entreprise v4"
-        >
-          <Key className="w-3.5 h-3.5 text-neutral-600" />
-          <span>Token API</span>
-          <Lock className="w-3 h-3 text-neutral-400" />
-          <span
-            className={`w-2 h-2 rounded-full ${hasToken ? 'bg-emerald-500' : 'bg-amber-400'}`}
-            title={hasToken ? 'Jeton actif' : 'Jeton absent'}
-          />
-        </button>
-      </div>
-
-      {/* 2. RECHERCHE ET SYNCHRONISATION PAR SIRET */}
-      <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4 space-y-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
-            <Search className="w-4 h-4 text-prune-600" />
-            Recherche par numéro SIRET (Répertoire national INSEE Sirene)
-          </label>
-          <span className="text-[11px] font-mono font-bold text-prune-700 bg-prune-50 px-2 py-0.5 rounded border border-prune-200">
-            14 chiffres
-          </span>
-        </div>
-
+      {/* Recherche et synchronisation par SIRET */}
+      <Panel title="Recherche par SIRET" description="Répertoire Sirene (INSEE) et registres associés : les champs ci-dessous sont mis à jour." headingLevel={3}>
         <div className="flex flex-col sm:flex-row gap-2">
-          <div className="relative flex-1">
+          <div className="relative flex-1 sm:max-w-xs">
             <input
               type="text"
+              inputMode="numeric"
+              aria-label="Numéro SIRET"
               value={siretQuery}
               onChange={(e) => {
                 const clean = cleanSiret(e.target.value);
@@ -353,25 +336,22 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                   onChange({ siret: clean });
                 }
               }}
-              placeholder="Ex: 40001662200013"
-              className="w-full pl-3 pr-20 py-2 text-sm bg-white text-neutral-900 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 font-mono font-semibold"
+              placeholder="14 chiffres"
+              className={`${inputClass} pr-20 font-mono tracking-wide`}
             />
-            <div className="absolute right-2 top-2 flex items-center gap-1.5">
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
               {siretQuery.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setSiretQuery('')}
-                  className="text-xs text-neutral-400 hover:text-neutral-600 px-1 cursor-pointer"
+                  className="text-neutral-400 hover:text-neutral-700 cursor-pointer"
                   title="Effacer"
+                  aria-label="Effacer le SIRET"
                 >
-                  ✕
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
-              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
-                siretQuery.length === 14
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-neutral-100 text-neutral-500'
-              }`}>
+              <span className={`text-[11px] font-mono ${siretQuery.length === 14 ? 'text-emerald-700' : 'text-neutral-400'}`}>
                 {siretQuery.length}/14
               </span>
             </div>
@@ -381,729 +361,614 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
             type="button"
             onClick={() => handleFetchSiret()}
             disabled={isLoadingApi || !siretQuery.trim()}
-            className="px-4 py-2 bg-prune-600 hover:bg-aubergine-600 text-white font-semibold text-xs rounded-full transition disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 shadow-2xs cursor-pointer"
+            className={btn('primary')}
           >
-            {isLoadingApi ? (
-              <>
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                Synchronisation...
-              </>
-            ) : (
-              <>
-                <Search className="w-3.5 h-3.5" />
-                Synchroniser
-              </>
-            )}
+            {isLoadingApi ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+            {isLoadingApi ? 'Synchronisation…' : 'Synchroniser'}
           </button>
         </div>
 
-        {/* Message de statut */}
         {apiFeedback && (
-          <div
-            className={`p-3 rounded-lg border text-xs space-y-1 ${
-              apiFeedback.success
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                : 'bg-red-50 border-red-200 text-red-900'
-            }`}
-          >
-            <div className="flex items-start gap-1.5 font-semibold">
-              {apiFeedback.success ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-              )}
-              <span>{apiFeedback.message}</span>
-            </div>
-            {apiFeedback.details && (
-              <p className="text-[11px] text-neutral-600 pl-5 leading-relaxed">
-                {apiFeedback.details}
-              </p>
-            )}
-          </div>
+          <Notice tone={apiFeedback.success ? 'success' : 'danger'} title={apiFeedback.message}>
+            {apiFeedback.details && <p className="text-neutral-600">{apiFeedback.details}</p>}
+          </Notice>
         )}
-      </div>
+      </Panel>
 
-      {/* 3. FICHE ÉTABLISSEMENT : IDENTITÉ, CONFORMITÉ & DONNÉES DES REGISTRES */}
+      {/* Fiche établissement : identité, conformité & données des registres */}
       {data.siret && (
-        <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
-          {/* Identité de l'établissement */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-neutral-100">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base font-bold text-neutral-900">
-                  {data.name || 'Établissement'}
-                </h3>
-                {data.isHeadOffice !== undefined && (
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                    data.isHeadOffice
-                      ? 'bg-petrole-50 text-petrole-800 border border-petrole-200'
-                      : 'bg-neutral-100 text-neutral-700 border border-neutral-200'
-                  }`}>
-                    {data.isHeadOffice ? 'Siège Principal' : 'Établissement Secondaire'}
-                  </span>
-                )}
-                {data.administrativeStatus && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    {data.administrativeStatus}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2 mt-1 text-xs text-neutral-500 font-mono flex-wrap">
-                <span>SIRET : <strong className="text-neutral-800">{data.siret}</strong></span>
-                {isCurrentSiretValidLuhn && (
-                  <span title="Clé de Luhn valide" className="inline-flex items-center text-emerald-600">
-                    <Check className="w-3.5 h-3.5" />
-                  </span>
-                )}
-                {activeSiren && (
-                  <span>· SIREN : <strong className="text-neutral-800">{activeSiren}</strong></span>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap">
+        <Panel
+          headingLevel={3}
+          title={
+            <>
+              {data.name || 'Établissement'}
+              {data.isHeadOffice !== undefined && (
+                <Badge tone={data.isHeadOffice ? 'info' : 'neutral'}>{data.isHeadOffice ? 'Siège' : 'Établissement secondaire'}</Badge>
+              )}
+              {data.administrativeStatus && <Badge tone="success">{data.administrativeStatus}</Badge>}
+            </>
+          }
+          description={
+            <span className="font-mono">
+              SIRET {data.siret}
+              {isCurrentSiretValidLuhn && (
+                <span title="Clé de Luhn valide" className="inline-flex align-middle ml-1 text-emerald-600">
+                  <Check className="w-3.5 h-3.5" />
+                </span>
+              )}
+              {activeSiren && <> · SIREN {activeSiren}</>}
+            </span>
+          }
+          actions={
+            <>
               {activeSiren && (
                 <a
                   href={`https://annuaire-entreprises.data.gouv.fr/entreprise/${activeSiren}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-neutral-50 text-neutral-600 rounded-lg text-xs font-medium border border-neutral-200 transition"
-                  title="Consulter la fiche officielle sur l'Annuaire des Entreprises (data.gouv.fr)"
+                  className={btn('secondary', 'sm')}
+                  title="Fiche officielle sur l'Annuaire des Entreprises (data.gouv.fr)"
                 >
-                  <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>Annuaire des Entreprises</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Annuaire des Entreprises
                 </a>
               )}
               {data.rawApiData && (
-                <button
-                  type="button"
-                  onClick={() => setShowRawData(!showRawData)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-neutral-50 text-neutral-600 rounded-lg text-xs font-medium border border-neutral-200 transition cursor-pointer"
-                >
-                  <FileText className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>{showRawData ? 'Masquer JSON' : 'JSON brut'}</span>
+                <button type="button" onClick={() => setShowRawData(!showRawData)} className={btn('ghost', 'sm')}>
+                  <FileText className="w-3.5 h-3.5" />
+                  {showRawData ? 'Masquer le JSON' : 'JSON brut'}
                 </button>
               )}
-            </div>
-          </div>
-
+            </>
+          }
+        >
           {showRawData && data.rawApiData && (
-            <div className="bg-neutral-900 text-neutral-200 p-3 rounded-lg text-xs font-mono max-h-56 overflow-y-auto">
-              <pre className="text-[10px] leading-relaxed whitespace-pre-wrap">
-                {JSON.stringify(data.rawApiData, null, 2)}
-              </pre>
-            </div>
+            <pre className="bg-neutral-900 text-neutral-200 p-3 rounded-md text-[10px] leading-relaxed font-mono max-h-56 overflow-y-auto whitespace-pre-wrap">
+              {JSON.stringify(data.rawApiData, null, 2)}
+            </pre>
           )}
 
-          {/* Conformité & justificatifs : les 4 attestations, puis BODACC et observations */}
+          {/* Pièces justificatives : les 4 attestations, puis BODACC et observations */}
           <AttestationsList
             data={data}
             hasToken={hasToken}
-            mandatairesDescription="Représentation légale de la société. Détail et bénéficiaires effectifs dans la section Gouvernance ci-dessous."
+            mandatairesDescription="Représentation légale de la société. Détail et bénéficiaires effectifs dans la partie Gouvernance ci-dessous."
           >
-          <ComplianceRow
-            icon={<Scale className="w-3.5 h-3.5" />}
-            title="Situation judiciaire"
-            source="BODACC · DILA / Journal officiel"
-            tone={!bodacc ? 'unknown' : bodacc.hasProcedureCollective ? 'alert' : 'ok'}
-            statusLabel={!bodacc ? 'Non consultée' : bodacc.hasProcedureCollective ? 'Procédure collective' : 'In bonis'}
-            description={
-              bodacc?.synthese ||
-              (bodacc ? 'Aucune procédure collective publiée au BODACC.' : 'Lancez une recherche SIRET pour consulter le BODACC.')
-            }
-            actions={
-              activeSiren ? (
-                <button
-                  type="button"
-                  onClick={handleRefreshBodacc}
-                  disabled={isBodaccLoading}
-                  className={secondaryActionClass}
-                  title="Actualiser les avis BODACC"
-                >
-                  <RefreshCw className={`w-3 h-3 ${isBodaccLoading ? 'animate-spin text-prune-600' : ''}`} />
-                  <span>Actualiser</span>
-                </button>
-              ) : undefined
-            }
-          />
+            <ComplianceRow
+              icon={<Scale className="w-4 h-4" />}
+              title="Situation judiciaire"
+              source="BODACC · DILA / Journal officiel"
+              tone={!bodacc ? 'unknown' : bodacc.hasProcedureCollective ? 'alert' : 'ok'}
+              statusLabel={!bodacc ? 'Non consultée' : bodacc.hasProcedureCollective ? 'Procédure collective' : 'In bonis'}
+              description={
+                bodacc?.synthese ||
+                (bodacc ? 'Aucune procédure collective publiée au BODACC.' : 'Lancez une recherche SIRET pour consulter le BODACC.')
+              }
+              actions={
+                activeSiren ? (
+                  <button
+                    type="button"
+                    onClick={handleRefreshBodacc}
+                    disabled={isBodaccLoading}
+                    className={secondaryActionClass}
+                    title="Actualiser les avis BODACC"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isBodaccLoading ? 'animate-spin' : ''}`} />
+                    <span>Actualiser</span>
+                  </button>
+                ) : undefined
+              }
+            />
 
-          <ComplianceRow
-            icon={<FileText className="w-3.5 h-3.5" />}
-            title="Observations au RNE"
-            source="INPI · Mentions RCS / RNM"
-            tone={!data.complianceData?.rne ? 'unknown' : currentObservations.length > 0 ? 'warning' : 'ok'}
-            statusLabel={
-              !data.complianceData?.rne
-                ? 'Non consultées'
-                : currentObservations.length > 0
-                  ? `${currentObservations.length} observation${currentObservations.length > 1 ? 's' : ''}`
-                  : 'Aucune'
-            }
-            description={
-              !data.complianceData?.rne
-                ? 'Lancez une recherche SIRET pour consulter les observations.'
-                : currentObservations.length > 0
-                  ? 'Mentions inscrites au registre, à examiner pour l’instruction :'
-                  : 'Aucune observation ni mention d’office inscrite au registre.'
-            }
-            actions={
-              activeSiren ? (
-                <a
-                  href={`https://annuaire-entreprises.data.gouv.fr/annonces/${activeSiren}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={secondaryActionClass}
-                  title="Consulter les annonces et observations sur l'Annuaire des Entreprises"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  <span>Annonces</span>
-                </a>
-              ) : undefined
-            }
-          >
-            {currentObservations.length > 0 && (
-              <ul className="space-y-1.5 md:pl-[15.75rem]">
-                {currentObservations.map((obs, idx) => (
-                  <li key={obs.id || idx} className="text-[11px] bg-amber-50/50 border border-amber-100 rounded-lg p-2.5 space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap text-[10px] text-neutral-500 font-medium">
-                      <span className="font-bold text-neutral-700">
-                        {(obs.numero || obs.numObservation) ? `N° ${obs.numero || obs.numObservation}` : `#${idx + 1}`}
-                      </span>
-                      {(obs.date || obs.dateAjout) && <span className="font-mono">{obs.date || obs.dateAjout}</span>}
-                      {(obs.fournisseur || obs.source) && <span>{obs.fournisseur || obs.source}</span>}
-                    </div>
-                    <p className="text-neutral-800 leading-relaxed">{obs.texte || obs.description}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </ComplianceRow>
+            <ComplianceRow
+              icon={<FileText className="w-4 h-4" />}
+              title="Observations au RNE"
+              source="INPI · Mentions RCS / RNM"
+              tone={!data.complianceData?.rne ? 'unknown' : currentObservations.length > 0 ? 'warning' : 'ok'}
+              statusLabel={
+                !data.complianceData?.rne
+                  ? 'Non consultées'
+                  : currentObservations.length > 0
+                    ? `${currentObservations.length} observation${currentObservations.length > 1 ? 's' : ''}`
+                    : 'Aucune'
+              }
+              description={
+                !data.complianceData?.rne
+                  ? 'Lancez une recherche SIRET pour consulter les observations.'
+                  : currentObservations.length > 0
+                    ? 'Mentions inscrites au registre, à examiner pour l’instruction :'
+                    : 'Aucune observation ni mention d’office inscrite au registre.'
+              }
+              actions={
+                activeSiren ? (
+                  <a
+                    href={`https://annuaire-entreprises.data.gouv.fr/annonces/${activeSiren}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={secondaryActionClass}
+                    title="Annonces et observations sur l'Annuaire des Entreprises"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>Annonces</span>
+                  </a>
+                ) : undefined
+              }
+            >
+              {currentObservations.length > 0 && (
+                <ul className="space-y-1.5 md:pl-[15.75rem]">
+                  {currentObservations.map((obs, idx) => (
+                    <li key={obs.id || idx} className="text-[11px] bg-amber-50 border border-amber-200 rounded-md px-2.5 py-2 space-y-0.5">
+                      <div className="flex items-center gap-2 flex-wrap text-[11px] text-neutral-500">
+                        <span className="font-semibold text-neutral-700">
+                          {(obs.numero || obs.numObservation) ? `N° ${obs.numero || obs.numObservation}` : `#${idx + 1}`}
+                        </span>
+                        {(obs.date || obs.dateAjout) && <span className="font-mono">{obs.date || obs.dateAjout}</span>}
+                        {(obs.fournisseur || obs.source) && <span>{obs.fournisseur || obs.source}</span>}
+                      </div>
+                      <p className="text-neutral-800 leading-relaxed">{obs.texte || obs.description}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </ComplianceRow>
           </AttestationsList>
 
           {/* Données complémentaires des registres (non saisissables) */}
-          <div className="border border-neutral-200 rounded-lg bg-neutral-50/50 overflow-hidden">
+          <div className="border border-neutral-200 rounded-md">
             <button
               type="button"
               onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
-              className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-semibold text-neutral-700 hover:bg-neutral-100/70 transition cursor-pointer"
+              aria-expanded={showTechnicalDetails}
+              className="w-full px-3 py-2 flex items-center justify-between text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
             >
-              <span className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-prune-600" />
-                <span>Données complémentaires des registres (TVA, social, établissements)</span>
-              </span>
-              <div className="flex items-center gap-1 text-neutral-400">
-                <span className="text-[11px] font-normal">{showTechnicalDetails ? 'Masquer' : 'Afficher'}</span>
-                {showTechnicalDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              </div>
+              <span>Données complémentaires des registres (TVA, social, établissements)</span>
+              {showTechnicalDetails ? <ChevronUp className="w-3.5 h-3.5 text-neutral-400" /> : <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />}
             </button>
 
             {showTechnicalDetails && (
-              <div className="p-3.5 border-t border-neutral-200 bg-white grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
-                <div className="p-2.5 bg-neutral-50 rounded-lg border border-neutral-100 space-y-1">
-                  <span className="block text-[10px] font-bold uppercase text-neutral-500">Fiscalité</span>
+              <div className="px-3 py-3 border-t border-neutral-200 grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-3 text-xs">
+                <dl className="space-y-1">
+                  <p className="text-[11px] font-semibold text-neutral-500">Fiscalité</p>
                   <div className="flex justify-between gap-2">
-                    <span className="text-neutral-500">TVA intracom. :</span>
-                    <strong className="font-mono text-neutral-800">{data.tvaIntracommunautaire || `FR${String((12 + 3 * (parseInt(activeSiren || '0', 10) % 97)) % 97).padStart(2, '0')}${activeSiren}`}</strong>
+                    <dt className="text-neutral-500">TVA intracom.</dt>
+                    <dd className="font-mono text-neutral-800">{data.tvaIntracommunautaire || `FR${String((12 + 3 * (parseInt(activeSiren || '0', 10) % 97)) % 97).padStart(2, '0')}${activeSiren}`}</dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-neutral-500">Régime fiscal :</span>
-                    <strong className="text-neutral-800 text-right">{data.complianceData?.dgfip?.liassesFiscales?.regimeImposition || 'Non communiqué'}</strong>
+                    <dt className="text-neutral-500">Régime fiscal</dt>
+                    <dd className="text-neutral-800 text-right">{data.complianceData?.dgfip?.liassesFiscales?.regimeImposition || 'Non communiqué'}</dd>
                   </div>
-                </div>
+                </dl>
 
-                <div className="p-2.5 bg-neutral-50 rounded-lg border border-neutral-100 space-y-1">
-                  <span className="block text-[10px] font-bold uppercase text-neutral-500">Social & emploi</span>
+                <dl className="space-y-1">
+                  <p className="text-[11px] font-semibold text-neutral-500">Social & emploi</p>
                   <div className="flex justify-between gap-2">
-                    <span className="text-neutral-500">Tranche INSEE :</span>
-                    <strong className="text-neutral-800 text-right">{data.headcountTranche || 'Non communiquée'}</strong>
+                    <dt className="text-neutral-500">Tranche INSEE</dt>
+                    <dd className="text-neutral-800 text-right">{data.headcountTranche || 'Non communiquée'}</dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-neutral-500">Convention (IDCC) :</span>
-                    <strong className="text-neutral-800 truncate max-w-[140px]" title={data.conventionCollective?.idcc}>
+                    <dt className="text-neutral-500">Convention (IDCC)</dt>
+                    <dd className="text-neutral-800 truncate max-w-[140px]" title={data.conventionCollective?.idcc}>
                       {data.conventionCollective?.idcc || 'Non communiquée'}
-                    </strong>
+                    </dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-neutral-500">Employeur :</span>
-                    <strong className="text-neutral-800">
+                    <dt className="text-neutral-500">Employeur</dt>
+                    <dd className="text-neutral-800">
                       {data.caractereEmployeur === 'O' ? 'Oui' : data.caractereEmployeur === 'N' ? 'Non' : 'Non communiqué'}
-                    </strong>
+                    </dd>
                   </div>
-                </div>
+                </dl>
 
-                <div className="p-2.5 bg-neutral-50 rounded-lg border border-neutral-100 space-y-1">
-                  <span className="block text-[10px] font-bold uppercase text-neutral-500">Établissements & labels</span>
+                <dl className="space-y-1">
+                  <p className="text-[11px] font-semibold text-neutral-500">Établissements & labels</p>
                   <div className="flex justify-between gap-2">
-                    <span className="text-neutral-500">Établissements :</span>
-                    <strong className="text-neutral-800">{data.nombreEtablissements ?? 1} ({data.nombreEtablissementsOuverts ?? 1} ouvert)</strong>
+                    <dt className="text-neutral-500">Établissements</dt>
+                    <dd className="text-neutral-800">{data.nombreEtablissements ?? 1} ({data.nombreEtablissementsOuverts ?? 1} ouvert)</dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-neutral-500">Diffusion INSEE :</span>
-                    <strong className="text-neutral-800">{data.statutDiffusion === 'O' ? 'Publique' : 'Protégée'}</strong>
+                    <dt className="text-neutral-500">Diffusion INSEE</dt>
+                    <dd className="text-neutral-800">{data.statutDiffusion === 'O' ? 'Publique' : 'Protégée'}</dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-neutral-500">Agriculture bio :</span>
-                    <strong className={data.labelsAndCertifications?.isBio ? 'text-emerald-700' : 'text-neutral-800'}>
+                    <dt className="text-neutral-500">Agriculture bio</dt>
+                    <dd className={data.labelsAndCertifications?.isBio ? 'text-emerald-700' : 'text-neutral-800'}>
                       {data.labelsAndCertifications?.isBio ? 'Certifiée Agence Bio' : 'Non'}
-                    </strong>
+                    </dd>
                   </div>
+                </dl>
+              </div>
+            )}
+          </div>
+        </Panel>
+      )}
+
+      {/* Volet A : identification, capital & activité */}
+      <Panel title="Identification juridique, capital et activité" headingLevel={3}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label htmlFor="company-name" className={labelClass}>Raison sociale / nom commercial</label>
+            <input
+              id="company-name"
+              type="text"
+              value={data.name}
+              onChange={(e) => onChange({ name: e.target.value })}
+              placeholder="Ex : Entreprise Corsica"
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="company-capital" className={labelClass}>Capital social</label>
+            <div className="relative">
+              <input
+                id="company-capital"
+                type="number"
+                min="0"
+                step="1000"
+                value={data.capitalSocial ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                  onChange({
+                    capitalSocial: val,
+                    capitalSocialFormatted: val !== undefined ? `${new Intl.NumberFormat('fr-FR').format(val)} €` : undefined,
+                    capitalSocialSource: val !== undefined ? 'Saisie manuelle' : undefined
+                  });
+                }}
+                placeholder="Ex : 50000"
+                className={`${inputClass} pr-7`}
+              />
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400">€</span>
+            </div>
+            <p className={`${hintClass} truncate`} title={data.capitalSocialSource}>
+              {data.capitalSocial
+                ? `Source : ${data.capitalSocialSource || 'non précisée'}`
+                : (data.legalForm === 'COMMERCIANT_ARTISAN_EI' || data.legalForm === 'MICRO_ENTREPRISE' ? 'Non applicable (EI)' : 'Non renseigné')}
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="company-naf" className={labelClass}>Code NAF / APE</label>
+            <input
+              id="company-naf"
+              type="text"
+              value={data.nafCode || ''}
+              onChange={(e) => onChange({ nafCode: e.target.value })}
+              placeholder="Ex : 10.71C"
+              className={`${inputClass} font-mono`}
+            />
+            <p className={`${hintClass} truncate`} title={data.nafLabel}>
+              {data.nafLabel || 'Libellé d’activité non renseigné'}
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="company-creation" className={labelClass}>Date d’immatriculation</label>
+            <input
+              id="company-creation"
+              type="date"
+              value={ageAnalysis.dateIso || (data.creationDate && data.creationDate.length === 10 && data.creationDate.includes('-') ? data.creationDate : '')}
+              onChange={(e) => handleCreationDateChange(e.target.value)}
+              className={`${inputClass} font-mono`}
+            />
+            <p className={`${hintClass} truncate`}>
+              {ageAnalysis.isDateKnown ? (
+                <span className={ageAnalysis.isUnderFiveYears ? 'font-medium text-emerald-700' : ''}>
+                  {ageAnalysis.ageLabel} · {ageAnalysis.isUnderFiveYears ? 'Éligible Impresa Sì (≤ 5 ans)' : '> 5 ans'}
+                </span>
+              ) : (
+                <span className="text-amber-700 font-medium">Date à renseigner</span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="company-legal-form" className={labelClass}>Forme juridique</label>
+            <select
+              id="company-legal-form"
+              value={data.legalForm}
+              onChange={(e) => onChange({ legalForm: e.target.value as LegalForm })}
+              className={inputClass}
+            >
+              <option value="SARL_EURL">SARL / EURL (Société à responsabilité limitée)</option>
+              <option value="SAS_SASU">SAS / SASU (Société par actions simplifiée)</option>
+              <option value="SA">SA (Société anonyme)</option>
+              <option value="COMMERCIANT_ARTISAN_EI">Entreprise Individuelle (Artisan, Commerçant en nom propre)</option>
+              <option value="MICRO_ENTREPRISE">Micro-entreprise / Auto-entrepreneur (Régime simplifié)</option>
+              <option value="ASSOCIATION_ESS">Association loi 1901 à activité économique (ESS)</option>
+              <option value="SIAE">Structure d’Insertion par l’Activité Économique (SIAE)</option>
+              <option value="COOPERATIVE_SCOP_SCIC">Société coopérative (SCOP, SCIC)</option>
+              <option value="SCI">SCI (Société Civile Immobilière)</option>
+              <option value="PROFESSION_LIBERALE">Profession libérale réglementée</option>
+              <option value="AUTRE">Autre forme juridique</option>
+            </select>
+            {(data.natureJuridiqueLibelle || data.enterpriseCategory) && (
+              <p className={`${hintClass} truncate`} title={data.natureJuridiqueLibelle}>
+                Registre : {data.natureJuridiqueLibelle || '—'}
+                {data.natureJuridiqueCode ? ` (code ${data.natureJuridiqueCode})` : ''}
+                {data.enterpriseCategory ? ` · Catégorie ${data.enterpriseCategory}` : ''}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="company-sector" className={labelClass}>Secteur d’activité principal</label>
+            <select
+              id="company-sector"
+              value={data.sector}
+              onChange={(e) => onChange({ sector: e.target.value as ActivitySector })}
+              className={inputClass}
+            >
+              <option value="INDUSTRIE">Industrie manufacturière, transformation, production</option>
+              <option value="COMMERCE">Commerce de détail et de proximité</option>
+              <option value="ARTISANAT">Artisanat de fabrication ou de services</option>
+              <option value="SERVICES">Services aux entreprises ou aux particuliers</option>
+              <option value="ESS">Économie Sociale et Solidaire (ESS)</option>
+              <option value="AGRICULTURE_PECHE_SYLVICULTURE">Agriculture, pêche, sylviculture (Production primaire)</option>
+              <option value="HEBERGEMENT_TOURISTIQUE">Hébergement touristique exclusif (Hôtels, meublés)</option>
+              <option value="FINANCE_IMMOBILIER">Intermédiation financière, assurance ou promotion</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Alertes réglementaires contextuelles */}
+        {data.legalForm === 'MICRO_ENTREPRISE' && (
+          <Notice tone="warning" title="Régime micro-entreprise">
+            Le régime des micro-entreprises est exclu du Guide des aides de l’ADEC : l’entreprise doit basculer vers un régime réel pour prétendre aux subventions.
+          </Notice>
+        )}
+
+        {data.sector === 'AGRICULTURE_PECHE_SYLVICULTURE' && (
+          <Notice tone="warning" title="Production primaire">
+            La production primaire agricole et de pêche relève des dispositifs d’aide de l’<strong>ODARC</strong> (Office du Développement Agricole et Rural de la Corse).
+          </Notice>
+        )}
+
+        {data.sector === 'HEBERGEMENT_TOURISTIQUE' && (
+          <Notice tone="warning" title="Exclusion réglementaire">
+            L’hébergement touristique exclusif est exclu du champ du Guide des aides ADEC 2026.
+          </Notice>
+        )}
+      </Panel>
+
+      {/* Volet B : implantation territoriale & dispositif Salvezza */}
+      <Panel title="Implantation en Corse et zonage Salvezza" description="Délibération 21/177 AC et Plan Salvezza." headingLevel={3}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label htmlFor="company-address" className={labelClass}>Adresse (voie)</label>
+            <input
+              id="company-address"
+              type="text"
+              value={data.address || ''}
+              onChange={(e) => onChange({ address: e.target.value })}
+              placeholder="Ex : 12 cours Paoli"
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="company-postal-code" className={labelClass}>Code postal</label>
+            <input
+              id="company-postal-code"
+              type="text"
+              value={data.postalCode || ''}
+              onChange={(e) => {
+                const cp = e.target.value;
+                const isCorse = cp.startsWith('20') || cp.startsWith('2A') || cp.startsWith('2B');
+                const autoZoning = determineCorsicaZoning(data.city, cp, data.qpvNeighborhood, data.communeCode);
+                onChange({
+                  postalCode: cp,
+                  isEstablishedInCorsica: isCorse,
+                  hasMainExploitationInCorsica: isCorse,
+                  salvezzaCommune: autoZoning.salvezzaCommune,
+                  ...(!isManualZoningOverride ? { locationType: autoZoning.locationType } : {})
+                });
+              }}
+              placeholder="Ex : 20250"
+              className={`${inputClass} font-mono`}
+            />
+          </div>
+
+          <div className="relative">
+            <label htmlFor="company-city" className={`${labelClass} flex items-center justify-between`}>
+              <span>Commune d’implantation</span>
+              {zoningAnalysis.isCorsica && (
+                <span className="text-[11px] font-normal text-neutral-500">
+                  {zoningAnalysis.departement === '2A' ? 'Corse-du-Sud (2A)' : 'Haute-Corse (2B)'}
+                </span>
+              )}
+            </label>
+            <input
+              id="company-city"
+              type="text"
+              autoComplete="off"
+              value={data.city || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                const suggestions = searchCorsicaCommunes(val);
+                setCommuneSuggestions(suggestions);
+                setShowCommuneSuggestions(suggestions.length > 0);
+
+                const autoZoning = determineCorsicaZoning(val, data.postalCode, data.qpvNeighborhood, data.communeCode);
+                onChange({
+                  city: val,
+                  communeName: val,
+                  salvezzaCommune: autoZoning.salvezzaCommune,
+                  isEstablishedInCorsica: autoZoning.isCorsica,
+                  hasMainExploitationInCorsica: autoZoning.isCorsica,
+                  ...(!isManualZoningOverride ? { locationType: autoZoning.locationType } : {})
+                });
+              }}
+              onFocus={() => {
+                if (data.city && data.city.length >= 2) {
+                  const suggestions = searchCorsicaCommunes(data.city);
+                  setCommuneSuggestions(suggestions);
+                  setShowCommuneSuggestions(suggestions.length > 0);
+                }
+              }}
+              placeholder="Ex : Corte, Ajaccio, Bastia…"
+              className={inputClass}
+            />
+
+            {/* Suggestions de communes corses */}
+            {showCommuneSuggestions && communeSuggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-neutral-200 rounded-md shadow-lg z-30 max-h-52 overflow-y-auto divide-y divide-neutral-100">
+                <div className="px-3 py-1.5 bg-neutral-50 text-[11px] font-medium text-neutral-500 flex items-center justify-between">
+                  <span>Communes corses</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowCommuneSuggestions(false)}
+                    className="text-neutral-400 hover:text-neutral-700 cursor-pointer"
+                    aria-label="Fermer les suggestions"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
+                {communeSuggestions.map((c, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      const autoZoning = determineCorsicaZoning(c.name, c.postalCode, undefined, c.inseeCode);
+                      onChange({
+                        city: c.name,
+                        communeName: c.name,
+                        postalCode: c.postalCode,
+                        communeCode: c.inseeCode,
+                        salvezzaCommune: autoZoning.salvezzaCommune,
+                        isEstablishedInCorsica: true,
+                        hasMainExploitationInCorsica: true,
+                        locationType: autoZoning.locationType,
+                        qpvNeighborhood: undefined
+                      });
+                      setShowCommuneSuggestions(false);
+                      setIsManualZoningOverride(false);
+                    }}
+                    className="w-full text-left px-3 py-1.5 hover:bg-neutral-50 transition-colors flex items-center justify-between text-xs cursor-pointer"
+                  >
+                    <span>
+                      <span className="text-neutral-900">{c.name}</span>
+                      <span className="text-neutral-500 ml-1.5 font-mono">({c.postalCode})</span>
+                    </span>
+                    <span className="text-[11px] text-neutral-500">{c.microregion}</span>
+                  </button>
+                ))}
               </div>
             )}
           </div>
         </div>
-      )}
 
-      {/* 5. PARAMÈTRES DU DOSSIER ADEC : SAISIE & AJUSTEMENT UNIFIÉS */}
-      <div className="space-y-4">
-        {/* VOLET A : IDENTIFICATION, CAPITAL & ACTIVITÉ */}
-        <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
-          <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5 uppercase tracking-wider border-b border-neutral-100 pb-2.5">
-            <FileText className="w-4 h-4 text-neutral-600" />
-            Identification Juridique, Capital Social & Activité
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                Raison Sociale / Nom Commercial
-              </label>
-              <input
-                type="text"
-                value={data.name}
-                onChange={(e) => onChange({ name: e.target.value })}
-                placeholder="Ex: Entreprise Corsica"
-                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 font-semibold"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                Capital Social
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  value={data.capitalSocial ?? ''}
-                  onChange={(e) => {
-                    const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                    onChange({
-                      capitalSocial: val,
-                      capitalSocialFormatted: val !== undefined ? `${new Intl.NumberFormat('fr-FR').format(val)} €` : undefined,
-                      capitalSocialSource: val !== undefined ? 'Saisie manuelle' : undefined
-                    });
-                  }}
-                  placeholder="Ex: 50000"
-                  className="w-full pl-3 pr-8 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 font-bold"
-                />
-                <span className="absolute right-3 top-2 text-xs font-bold text-neutral-400">€</span>
-              </div>
-              <p className="text-[11px] text-neutral-500 mt-1 truncate" title={data.capitalSocialSource}>
-                {data.capitalSocial
-                  ? `Source : ${data.capitalSocialSource || 'non précisée'}`
-                  : (data.legalForm === 'COMMERCIANT_ARTISAN_EI' || data.legalForm === 'MICRO_ENTREPRISE' ? 'Non applicable (EI)' : 'Non renseigné')}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                Code NAF / APE
-              </label>
-              <input
-                type="text"
-                value={data.nafCode || ''}
-                onChange={(e) => onChange({ nafCode: e.target.value })}
-                placeholder="Ex: 10.71C"
-                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 font-mono font-bold"
-              />
-              <p className="text-[11px] text-neutral-500 mt-1 truncate" title={data.nafLabel}>
-                {data.nafLabel || 'Libellé d’activité non renseigné'}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                Date d'Immatriculation
-              </label>
-              <input
-                type="date"
-                value={ageAnalysis.dateIso || (data.creationDate && data.creationDate.length === 10 && data.creationDate.includes('-') ? data.creationDate : '')}
-                onChange={(e) => handleCreationDateChange(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 font-mono"
-              />
-              <p className="text-[11px] mt-1 truncate">
-                {ageAnalysis.isDateKnown ? (
-                  <span className={ageAnalysis.isUnderFiveYears ? 'font-semibold text-emerald-700' : 'text-neutral-500'}>
-                    {ageAnalysis.ageLabel} · {ageAnalysis.isUnderFiveYears ? 'Éligible Impresa Sì (≤ 5 ans)' : '> 5 ans'}
-                  </span>
-                ) : (
-                  <span className="text-amber-700 font-medium">Date à renseigner</span>
+        {/* Zonage et éligibilité Salvezza */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md">
+          <div className="flex items-start gap-2.5 min-w-0">
+            <MapPin className={`w-4 h-4 shrink-0 mt-0.5 ${isSalvezzaCommune ? 'text-emerald-600' : 'text-neutral-400'}`} />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="font-medium text-neutral-900">
+                  {isSalvezzaCommune
+                    ? `Commune éligible au Fonds Salvezza (${zoningAnalysis.salvezzaCommune?.nomCorse || data.salvezzaCommune?.nomCorse || data.city})`
+                    : `Zonage d’implantation : ${zoningAnalysis.badgeLabel}`}
+                </span>
+                {zoningAnalysis.salvezzaCommune && (
+                  <Badge tone="success">Score : {zoningAnalysis.salvezzaCommune.scoreContrainte}</Badge>
                 )}
+              </div>
+              <p className="text-[11px] text-neutral-500 mt-0.5">
+                {isSalvezzaCommune
+                  ? 'Taux d’intervention majorés (+10 % à +20 %) et bonifications sur les investissements et aides à l’emploi.'
+                  : 'Régime territorial de droit commun. Les 230 communes sous contrainte bénéficient du Fonds Salvezza.'}
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                Forme Juridique
-              </label>
-              <select
-                value={data.legalForm}
-                onChange={(e) => onChange({ legalForm: e.target.value as LegalForm })}
-                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500"
-              >
-                <option value="SARL_EURL">SARL / EURL (Société à responsabilité limitée)</option>
-                <option value="SAS_SASU">SAS / SASU (Société par actions simplifiée)</option>
-                <option value="SA">SA (Société anonyme)</option>
-                <option value="COMMERCIANT_ARTISAN_EI">Entreprise Individuelle (Artisan, Commerçant en nom propre)</option>
-                <option value="MICRO_ENTREPRISE">Micro-entreprise / Auto-entrepreneur (Régime simplifié)</option>
-                <option value="ASSOCIATION_ESS">Association loi 1901 à activité économique (ESS)</option>
-                <option value="SIAE">Structure d’Insertion par l’Activité Économique (SIAE)</option>
-                <option value="COOPERATIVE_SCOP_SCIC">Société coopérative (SCOP, SCIC)</option>
-                <option value="SCI">SCI (Société Civile Immobilière)</option>
-                <option value="PROFESSION_LIBERALE">Profession libérale réglementée</option>
-                <option value="AUTRE">Autre forme juridique</option>
-              </select>
-              {(data.natureJuridiqueLibelle || data.enterpriseCategory) && (
-                <p className="text-[11px] text-neutral-500 mt-1 truncate" title={data.natureJuridiqueLibelle}>
-                  Registre : {data.natureJuridiqueLibelle || '—'}
-                  {data.natureJuridiqueCode ? ` (code ${data.natureJuridiqueCode})` : ''}
-                  {data.enterpriseCategory ? ` · Catégorie ${data.enterpriseCategory}` : ''}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                Secteur d’Activité Principal
-              </label>
-              <select
-                value={data.sector}
-                onChange={(e) => onChange({ sector: e.target.value as ActivitySector })}
-                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500"
-              >
-                <option value="INDUSTRIE">Industrie manufacturière, transformation, production</option>
-                <option value="COMMERCE">Commerce de détail et de proximité</option>
-                <option value="ARTISANAT">Artisanat de fabrication ou de services</option>
-                <option value="SERVICES">Services aux entreprises ou aux particuliers</option>
-                <option value="ESS">Économie Sociale et Solidaire (ESS)</option>
-                <option value="AGRICULTURE_PECHE_SYLVICULTURE">Agriculture, pêche, sylviculture (Production primaire)</option>
-                <option value="HEBERGEMENT_TOURISTIQUE">Hébergement touristique exclusif (Hôtels, meublés)</option>
-                <option value="FINANCE_IMMOBILIER">Intermédiation financière, assurance ou promotion</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Alertes réglementaires contextuelles */}
-          {data.legalForm === 'MICRO_ENTREPRISE' && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-xs text-amber-900">
-              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-              <span>
-                <strong>Attention :</strong> Le régime des micro-entreprises est formellement exclu du Guide des Aides de l'ADEC (l'entreprise doit basculer vers un régime réel pour prétendre aux subventions).
-              </span>
-            </div>
-          )}
-
-          {data.sector === 'AGRICULTURE_PECHE_SYLVICULTURE' && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-xs text-amber-900">
-              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-              <span>
-                <strong>Information :</strong> La production primaire agricole et de pêche relève des dispositifs d'aide de l'<strong>ODARC</strong> (Office du Développement Agricole et Rural de la Corse).
-              </span>
-            </div>
-          )}
-
-          {data.sector === 'HEBERGEMENT_TOURISTIQUE' && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-xs text-amber-900">
-              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-              <span>
-                <strong>Exclusion réglementaire :</strong> L’hébergement touristique exclusif est exclu du champ du Guide des Aides ADEC 2026.
-              </span>
-            </div>
-          )}
+          <button type="button" onClick={() => setIsSalvezzaModalOpen(true)} className={btn('secondary', 'sm')}>
+            Liste des 230 communes
+          </button>
         </div>
 
-        {/* VOLET B : IMPLANTATION TERRITORIALE & DISPOSITIF SALVEZZA */}
-        <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
-          <div className="flex items-center justify-between flex-wrap gap-2 border-b border-neutral-100 pb-2.5">
-            <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5 uppercase tracking-wider">
-              <MapPin className="w-4 h-4 text-neutral-600" />
-              Implantation & Ancrage Insulaire (Corse & Salvezza)
-            </h3>
-            <span className="text-[11px] font-medium text-neutral-500">
-              Délibération 21/177 AC & Plan Salvezza
+        {/* Déclarations d'implantation */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label className={checkRowClass}>
+            <input
+              type="checkbox"
+              checked={data.isEstablishedInCorsica}
+              onChange={(e) => onChange({ isEstablishedInCorsica: e.target.checked })}
+              className="w-4 h-4 mt-px shrink-0"
+            />
+            <span>
+              <span className="font-medium text-neutral-900 block">Établie en Corse</span>
+              <span className="text-neutral-500">Siège social ou établissement secondaire réel immatriculé en Corse</span>
             </span>
-          </div>
+          </label>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                Adresse (Voie)
-              </label>
-              <input
-                type="text"
-                value={data.address || ''}
-                onChange={(e) => onChange({ address: e.target.value })}
-                placeholder="Ex: 12 Cours Paoli"
-                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                Code Postal
-              </label>
-              <input
-                type="text"
-                value={data.postalCode || ''}
-                onChange={(e) => {
-                  const cp = e.target.value;
-                  const isCorse = cp.startsWith('20') || cp.startsWith('2A') || cp.startsWith('2B');
-                  const autoZoning = determineCorsicaZoning(data.city, cp, data.qpvNeighborhood, data.communeCode);
-                  onChange({
-                    postalCode: cp,
-                    isEstablishedInCorsica: isCorse,
-                    hasMainExploitationInCorsica: isCorse,
-                    salvezzaCommune: autoZoning.salvezzaCommune,
-                    ...(!isManualZoningOverride ? { locationType: autoZoning.locationType } : {})
-                  });
-                }}
-                placeholder="Ex: 20250"
-                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 font-mono"
-              />
-            </div>
-
-            <div className="relative">
-              <label className="block text-xs font-semibold text-neutral-700 mb-1 flex items-center justify-between">
-                <span>Commune d'implantation</span>
-                {zoningAnalysis.isCorsica && (
-                  <span className="text-[10px] text-emerald-700 font-bold">
-                    {zoningAnalysis.departement === '2A' ? 'Corse-du-Sud (2A)' : 'Haute-Corse (2B)'}
-                  </span>
-                )}
-              </label>
-              <input
-                type="text"
-                value={data.city || ''}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const suggestions = searchCorsicaCommunes(val);
-                  setCommuneSuggestions(suggestions);
-                  setShowCommuneSuggestions(suggestions.length > 0);
-
-                  const autoZoning = determineCorsicaZoning(val, data.postalCode, data.qpvNeighborhood, data.communeCode);
-                  onChange({
-                    city: val,
-                    communeName: val,
-                    salvezzaCommune: autoZoning.salvezzaCommune,
-                    isEstablishedInCorsica: autoZoning.isCorsica,
-                    hasMainExploitationInCorsica: autoZoning.isCorsica,
-                    ...(!isManualZoningOverride ? { locationType: autoZoning.locationType } : {})
-                  });
-                }}
-                onFocus={() => {
-                  if (data.city && data.city.length >= 2) {
-                    const suggestions = searchCorsicaCommunes(data.city);
-                    setCommuneSuggestions(suggestions);
-                    setShowCommuneSuggestions(suggestions.length > 0);
-                  }
-                }}
-                placeholder="Ex: Corte, Ajaccio, Bastia..."
-                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500"
-              />
-
-              {/* Suggestions de communes corses */}
-              {showCommuneSuggestions && communeSuggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg z-30 max-h-52 overflow-y-auto divide-y divide-neutral-100">
-                  <div className="p-2 bg-neutral-50 text-[10px] font-bold text-neutral-400 uppercase flex items-center justify-between">
-                    <span>Communes corses</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowCommuneSuggestions(false)}
-                      className="text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  {communeSuggestions.map((c, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        const autoZoning = determineCorsicaZoning(c.name, c.postalCode, undefined, c.inseeCode);
-                        onChange({
-                          city: c.name,
-                          communeName: c.name,
-                          postalCode: c.postalCode,
-                          communeCode: c.inseeCode,
-                          salvezzaCommune: autoZoning.salvezzaCommune,
-                          isEstablishedInCorsica: true,
-                          hasMainExploitationInCorsica: true,
-                          locationType: autoZoning.locationType,
-                          qpvNeighborhood: undefined
-                        });
-                        setShowCommuneSuggestions(false);
-                        setIsManualZoningOverride(false);
-                      }}
-                      className="w-full text-left px-3 py-2 hover:bg-emerald-50 transition flex items-center justify-between text-xs cursor-pointer"
-                    >
-                      <div>
-                        <strong className="text-neutral-900">{c.name}</strong>
-                        <span className="text-neutral-500 text-[11px] ml-1.5 font-mono">({c.postalCode})</span>
-                      </div>
-                      <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
-                        {c.microregion}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Encadré d'ancrage et éligibilité Salvezza */}
-          <div className="p-3.5 bg-neutral-50 border border-neutral-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className={`p-2 rounded-lg shrink-0 ${
-                zoningAnalysis.isSalvezza || data.salvezzaCommune
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-neutral-200 text-neutral-600'
-              }`}>
-                <Mountain className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-neutral-900">
-                    {zoningAnalysis.isSalvezza || data.salvezzaCommune
-                      ? `Commune éligible Fonds SALVEZZA (${zoningAnalysis.salvezzaCommune?.nomCorse || data.salvezzaCommune?.nomCorse || data.city})`
-                      : `Zonage d'implantation : ${zoningAnalysis.badgeLabel}`}
-                  </span>
-                  {zoningAnalysis.salvezzaCommune && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
-                      Score : {zoningAnalysis.salvezzaCommune.scoreContrainte}
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-neutral-600 mt-0.5">
-                  {zoningAnalysis.isSalvezza || data.salvezzaCommune
-                    ? 'Taux d’intervention majorés (+10 % à +20 %) et bonifications sur les investissements et aides à l’emploi.'
-                    : 'Régime territorial de droit commun. Les 230 communes sous contrainte bénéficient du Fonds SALVEZZA.'}
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsSalvezzaModalOpen(true)}
-              className="shrink-0 px-3 py-1.5 bg-white hover:bg-neutral-100 text-neutral-700 font-semibold text-xs rounded-lg border border-neutral-300 transition flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Compass className="w-3.5 h-3.5 text-emerald-700" />
-              <span>230 Communes Salvezza</span>
-            </button>
-          </div>
-
-          {/* Déclarations sur l'honneur insulaires */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-            <label className="flex items-center gap-2.5 p-2.5 bg-white border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50 transition text-xs">
-              <input
-                type="checkbox"
-                checked={data.isEstablishedInCorsica}
-                onChange={(e) => onChange({ isEstablishedInCorsica: e.target.checked })}
-                className="w-4 h-4 text-neutral-900 rounded focus:ring-prune-500"
-              />
-              <div>
-                <span className="font-semibold text-neutral-900 block">Établie en Corse</span>
-                <span className="text-neutral-500 text-[11px]">Siège social ou établissement secondaire réel immatriculé en Corse</span>
-              </div>
-            </label>
-
-            <label className="flex items-center gap-2.5 p-2.5 bg-white border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50 transition text-xs">
-              <input
-                type="checkbox"
-                checked={data.hasMainExploitationInCorsica}
-                onChange={(e) => onChange({ hasMainExploitationInCorsica: e.target.checked })}
-                className="w-4 h-4 text-neutral-900 rounded focus:ring-prune-500"
-              />
-              <div>
-                <span className="font-semibold text-neutral-900 block">Exploitation Principale en Corse</span>
-                <span className="text-neutral-500 text-[11px]">Activité opérationnelle effective exercée sur l’île</span>
-              </div>
-            </label>
-          </div>
+          <label className={checkRowClass}>
+            <input
+              type="checkbox"
+              checked={data.hasMainExploitationInCorsica}
+              onChange={(e) => onChange({ hasMainExploitationInCorsica: e.target.checked })}
+              className="w-4 h-4 mt-px shrink-0"
+            />
+            <span>
+              <span className="font-medium text-neutral-900 block">Exploitation principale en Corse</span>
+              <span className="text-neutral-500">Activité opérationnelle effective exercée sur l’île</span>
+            </span>
+          </label>
         </div>
+      </Panel>
 
-        {/* VOLET D : GOUVERNANCE & MANDATAIRES SOCIAUX HABILITÉS */}
-        <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
-          <div className="flex items-center justify-between flex-wrap gap-2 border-b border-neutral-100 pb-2.5">
-            <div>
-              <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5 uppercase tracking-wider">
-                <UserCheck className="w-4 h-4 text-aubergine-600" />
-                <span>Gouvernance & Mandataires Sociaux Déclarés (RNE · INPI)</span>
-              </h3>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                Identification des dirigeants habilités à signer les demandes de subventions ADEC.
-              </p>
-            </div>
+      {/* Volet D : gouvernance & mandataires sociaux */}
+      <Panel
+        headingLevel={3}
+        title="Gouvernance et mandataires sociaux (RNE · INPI)"
+        description="Dirigeants habilités à signer les demandes de subvention."
+        actions={
+          <>
+            <Badge>
+              {currentMandataires.length} {currentMandataires.length > 1 ? 'dirigeants' : 'dirigeant'}
+            </Badge>
+            <button type="button" onClick={handleOpenAddMandataire} className={btn('secondary', 'sm')}>
+              <UserPlus className="w-3.5 h-3.5" />
+              Ajouter un dirigeant
+            </button>
+          </>
+        }
+      >
+        {currentMandataires.length > 0 ? (
+          <div className="border border-neutral-200 rounded-md overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-neutral-200 bg-neutral-50 text-[11px] uppercase tracking-wide text-neutral-500">
+                  <th className="py-2 px-3 font-medium">Dirigeant</th>
+                  <th className="py-2 px-3 font-medium">Fonction</th>
+                  <th className="py-2 px-3 font-medium">Date de naissance</th>
+                  <th className="py-2 px-3 font-medium">Nationalité</th>
+                  <th className="py-2 px-3" aria-label="Actions" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {currentMandataires.map((m, idx) => {
+                  const isMoral = m.type === 'personne_morale';
+                  const displayName = isMoral
+                    ? (m.denomination || m.nom || 'Personne morale')
+                    : `${(m.nom || '').toUpperCase()} ${m.prenom || ''}`.trim() || 'Dirigeant';
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-aubergine-50 text-aubergine-800 border border-aubergine-200">
-                {currentMandataires.length} {currentMandataires.length > 1 ? 'dirigeants déclarés' : 'dirigeant déclaré'}
-              </span>
-              <button
-                type="button"
-                onClick={handleOpenAddMandataire}
-                className="px-2.5 py-1.5 bg-aubergine-600 hover:bg-aubergine-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1 shadow-2xs cursor-pointer"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>Ajouter un dirigeant</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Liste des cartes des mandataires / gérants */}
-          {currentMandataires.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
-              {currentMandataires.map((m, idx) => {
-                const isMoral = m.type === 'personne_morale';
-                const displayName = isMoral
-                  ? (m.denomination || m.nom || 'Personne morale')
-                  : `${(m.nom || '').toUpperCase()} ${m.prenom || ''}`.trim() || 'Dirigeant';
-
-                return (
-                  <div
-                    key={idx}
-                    className="p-3.5 bg-neutral-50/70 rounded-xl border border-neutral-200 shadow-2xs hover:border-aubergine-300 transition space-y-2.5"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-aubergine-100 text-aubergine-700 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 border border-aubergine-200">
-                          {isMoral ? <Building2 className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <strong className="text-sm font-bold text-neutral-900 block leading-tight">
-                              {displayName}
-                            </strong>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-prune-50 text-prune-800 border border-prune-200">
-                              {m.fonction || 'Gérant'}
-                            </span>
-                          </div>
-                          <span className="text-[11px] text-neutral-500 font-medium block mt-0.5">
-                            {isMoral ? 'Personne Morale' : 'Personne Physique'}
-                            {m.nationalite ? ` · Nationalité : ${m.nationalite}` : ''}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1 shrink-0">
+                  return (
+                    <tr key={idx} className="hover:bg-neutral-50">
+                      <td className="py-2 px-3">
+                        <span className="font-medium text-neutral-900 block">{displayName}</span>
+                        <span className="text-[11px] text-neutral-500">{isMoral ? 'Personne morale' : 'Personne physique'}</span>
+                      </td>
+                      <td className="py-2 px-3 text-neutral-800">{m.fonction || 'Gérant'}</td>
+                      <td className="py-2 px-3 font-mono text-neutral-700">{isMoral ? '—' : m.dateNaissance || 'Non renseignée'}</td>
+                      <td className="py-2 px-3 text-neutral-700">{m.nationalite || '—'}</td>
+                      <td className="py-1.5 px-3 text-right whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => handleOpenEditMandataire(idx)}
                           title="Modifier ce dirigeant"
-                          className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition cursor-pointer"
+                          aria-label={`Modifier ${displayName}`}
+                          className={iconBtn}
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
@@ -1111,254 +976,189 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                           type="button"
                           onClick={() => handleDeleteMandataire(idx)}
                           title="Supprimer ce dirigeant"
-                          className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                          aria-label={`Supprimer ${displayName}`}
+                          className={iconBtnDanger}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2.5 rounded-lg border border-neutral-100">
-                      <div>
-                        <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-semibold">
-                          Date de naissance
-                        </span>
-                        <span className="text-xs font-mono font-medium text-neutral-800">
-                          {m.dateNaissance || 'Non renseignée'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-semibold">
-                          Qualité à agir
-                        </span>
-                        <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
-                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                          Certifiée (RNE)
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="p-4 bg-neutral-50 border border-dashed border-neutral-300 rounded-xl text-center space-y-3">
-              <p className="text-xs text-neutral-600">
-                Aucun gérant ou mandataire social n'est actuellement renseigné pour cet établissement.
-              </p>
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleOpenAddMandataire}
-                  className="px-3 py-1.5 bg-aubergine-600 hover:bg-aubergine-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Ajouter un dirigeant</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRestoreDefaultMandataires}
-                  className="px-3 py-1.5 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-300 rounded-lg text-xs font-semibold transition cursor-pointer"
-                >
-                  Restaurer dirigeants par défaut (Antone PAOLI & Maria ALBERTI)
-                </button>
-              </div>
-            </div>
-          )}
-
-          <BeneficiairesEffectifsPanel data={data.complianceData?.beneficiairesEffectifs} />
-        </div>
-      </div>
-
-      {/* MODALE D'ÉDITION / AJOUT DE MANDATAIRE SOCIAL */}
-      {isMandataireModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-neutral-200 space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-aubergine-100 text-aubergine-700 flex items-center justify-center">
-                  <UserCheck className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-neutral-900">
-                    {editingMandataireIndex !== null ? 'Modifier le dirigeant / mandataire' : 'Ajouter un dirigeant / gérant'}
-                  </h3>
-                  <span className="text-[11px] text-neutral-500">
-                    Identification officielle pour les dossiers ADEC et RNE
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsMandataireModalOpen(false)}
-                className="text-neutral-400 hover:text-neutral-600 p-1 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="px-3 py-4 border border-dashed border-neutral-300 rounded-md text-center space-y-2.5">
+            <p className="text-xs text-neutral-600">Aucun gérant ni mandataire social renseigné pour cet établissement.</p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button type="button" onClick={handleOpenAddMandataire} className={btn('secondary', 'sm')}>
+                <UserPlus className="w-3.5 h-3.5" />
+                Ajouter un dirigeant
+              </button>
+              <button type="button" onClick={handleRestoreDefaultMandataires} className={btn('ghost', 'sm')}>
+                Restaurer les dirigeants par défaut (Antone PAOLI & Maria ALBERTI)
               </button>
             </div>
+          </div>
+        )}
 
-            <form onSubmit={handleSaveMandataire} className="space-y-4 text-xs">
-              {/* Type de personne */}
-              <div>
-                <label className="block font-semibold text-neutral-700 mb-1.5">
-                  Type de personne
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMandataireForm({ ...mandataireForm, type: 'personne_physique' })}
-                    className={`py-2 px-3 rounded-lg border text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                      mandataireForm.type !== 'personne_morale'
-                        ? 'bg-aubergine-50 border-aubergine-400 text-aubergine-900 shadow-2xs'
-                        : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-                    }`}
-                  >
-                    <UserCheck className="w-3.5 h-3.5" />
-                    <span>Personne Physique</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMandataireForm({ ...mandataireForm, type: 'personne_morale' })}
-                    className={`py-2 px-3 rounded-lg border text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                      mandataireForm.type === 'personne_morale'
-                        ? 'bg-aubergine-50 border-aubergine-400 text-aubergine-900 shadow-2xs'
-                        : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-                    }`}
-                  >
-                    <Building2 className="w-3.5 h-3.5" />
-                    <span>Personne Morale</span>
-                  </button>
-                </div>
-              </div>
+        <BeneficiairesEffectifsPanel data={data.complianceData?.beneficiairesEffectifs} />
+      </Panel>
 
-              {mandataireForm.type === 'personne_morale' ? (
-                <div>
-                  <label className="block font-semibold text-neutral-700 mb-1">
-                    Dénomination Sociale de la personne morale *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={mandataireForm.denomination || mandataireForm.nom || ''}
-                    onChange={(e) => setMandataireForm({ ...mandataireForm, denomination: e.target.value, nom: e.target.value })}
-                    placeholder="Ex: Holding Corsica Investissements SAS"
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs focus:ring-2 focus:ring-aubergine-600 focus:outline-none font-semibold"
-                  />
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-neutral-700 mb-1">
-                      Nom (Nom de famille / d'usage) *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={mandataireForm.nom || ''}
-                      onChange={(e) => setMandataireForm({ ...mandataireForm, nom: e.target.value.toUpperCase() })}
-                      placeholder="Ex: PAOLI"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs uppercase focus:ring-2 focus:ring-aubergine-600 focus:outline-none font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-neutral-700 mb-1">
-                      Prénom *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={mandataireForm.prenom || ''}
-                      onChange={(e) => setMandataireForm({ ...mandataireForm, prenom: e.target.value })}
-                      placeholder="Ex: Antone"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs focus:ring-2 focus:ring-aubergine-600 focus:outline-none font-semibold"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Fonction & Rôle */}
-              <div>
-                <label className="block font-semibold text-neutral-700 mb-1">
-                  Fonction / Mandat légal *
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <select
-                    value={['Gérant', 'Associée co-gérante', 'Président', 'Directeur Général', 'Gérant majoritaire', 'Associé unique'].includes(mandataireForm.fonction || '') ? mandataireForm.fonction : 'Autre'}
-                    onChange={(e) => {
-                      if (e.target.value !== 'Autre') {
-                        setMandataireForm({ ...mandataireForm, fonction: e.target.value });
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs focus:ring-2 focus:ring-aubergine-600 focus:outline-none"
-                  >
-                    <option value="Gérant">Gérant</option>
-                    <option value="Associée co-gérante">Associé(e) co-gérant(e)</option>
-                    <option value="Président">Président</option>
-                    <option value="Directeur Général">Directeur Général</option>
-                    <option value="Gérant majoritaire">Gérant majoritaire</option>
-                    <option value="Associé unique">Associé unique</option>
-                    <option value="Autre">Autre mandat (personnalisé)...</option>
-                  </select>
-
-                  <input
-                    type="text"
-                    required
-                    value={mandataireForm.fonction || ''}
-                    onChange={(e) => setMandataireForm({ ...mandataireForm, fonction: e.target.value })}
-                    placeholder="Intitulé exact du mandat"
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs focus:ring-2 focus:ring-aubergine-600 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Date de naissance et Nationalité pour personne physique */}
-              {mandataireForm.type !== 'personne_morale' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-neutral-700 mb-1">
-                      Date de naissance
-                    </label>
-                    <input
-                      type="text"
-                      value={mandataireForm.dateNaissance || ''}
-                      onChange={(e) => setMandataireForm({ ...mandataireForm, dateNaissance: e.target.value })}
-                      placeholder="Ex: 12/06/1984"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-aubergine-600 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-neutral-700 mb-1">
-                      Nationalité
-                    </label>
-                    <input
-                      type="text"
-                      value={mandataireForm.nationalite || ''}
-                      onChange={(e) => setMandataireForm({ ...mandataireForm, nationalite: e.target.value })}
-                      placeholder="Ex: Française"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs focus:ring-2 focus:ring-aubergine-600 focus:outline-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-3 border-t border-neutral-100 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsMandataireModalOpen(false)}
-                  className="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg font-semibold text-xs transition cursor-pointer"
-                >
+      {/* Modale d'édition / ajout de mandataire social */}
+      {isMandataireModalOpen && (
+        <Modal
+          size="md"
+          title={editingMandataireIndex !== null ? 'Modifier le dirigeant' : 'Ajouter un dirigeant'}
+          subtitle="Identification pour le dossier ADEC et le RNE."
+          onClose={() => setIsMandataireModalOpen(false)}
+          footer={
+            <>
+              <span />
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setIsMandataireModalOpen(false)} className={btn('secondary')}>
                   Annuler
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-aubergine-600 hover:bg-aubergine-700 text-white rounded-lg font-semibold text-xs transition shadow-xs cursor-pointer"
-                >
+                <button type="submit" form="mandataire-form" className={btn('primary')}>
                   {editingMandataireIndex !== null ? 'Mettre à jour' : 'Ajouter le dirigeant'}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <form id="mandataire-form" onSubmit={handleSaveMandataire} className="space-y-4 text-xs">
+            <div>
+              <span className={labelClass}>Type de personne</span>
+              <SegmentedControl
+                ariaLabel="Type de personne"
+                value={mandataireForm.type === 'personne_morale' ? 'personne_morale' : 'personne_physique'}
+                onChange={(type) => setMandataireForm({ ...mandataireForm, type })}
+                options={[
+                  { value: 'personne_physique', label: 'Personne physique' },
+                  { value: 'personne_morale', label: 'Personne morale' }
+                ]}
+              />
+            </div>
+
+            {mandataireForm.type === 'personne_morale' ? (
+              <div>
+                <label htmlFor="mandataire-denomination" className={labelClass}>
+                  Dénomination sociale de la personne morale *
+                </label>
+                <input
+                  id="mandataire-denomination"
+                  type="text"
+                  required
+                  value={mandataireForm.denomination || mandataireForm.nom || ''}
+                  onChange={(e) => setMandataireForm({ ...mandataireForm, denomination: e.target.value, nom: e.target.value })}
+                  placeholder="Ex : Holding Corsica Investissements SAS"
+                  className={inputClass}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="mandataire-nom" className={labelClass}>
+                    Nom (de famille / d’usage) *
+                  </label>
+                  <input
+                    id="mandataire-nom"
+                    type="text"
+                    required
+                    value={mandataireForm.nom || ''}
+                    onChange={(e) => setMandataireForm({ ...mandataireForm, nom: e.target.value.toUpperCase() })}
+                    placeholder="Ex : PAOLI"
+                    className={`${inputClass} uppercase`}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="mandataire-prenom" className={labelClass}>
+                    Prénom *
+                  </label>
+                  <input
+                    id="mandataire-prenom"
+                    type="text"
+                    required
+                    value={mandataireForm.prenom || ''}
+                    onChange={(e) => setMandataireForm({ ...mandataireForm, prenom: e.target.value })}
+                    placeholder="Ex : Antone"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Fonction & rôle */}
+            <div>
+              <label htmlFor="mandataire-fonction" className={labelClass}>
+                Fonction / mandat légal *
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <select
+                  aria-label="Mandat type"
+                  value={MANDAT_PRESETS.includes(mandataireForm.fonction || '') ? mandataireForm.fonction : 'Autre'}
+                  onChange={(e) => {
+                    if (e.target.value !== 'Autre') {
+                      setMandataireForm({ ...mandataireForm, fonction: e.target.value });
+                    }
+                  }}
+                  className={inputClass}
+                >
+                  <option value="Gérant">Gérant</option>
+                  <option value="Associée co-gérante">Associé(e) co-gérant(e)</option>
+                  <option value="Président">Président</option>
+                  <option value="Directeur Général">Directeur Général</option>
+                  <option value="Gérant majoritaire">Gérant majoritaire</option>
+                  <option value="Associé unique">Associé unique</option>
+                  <option value="Autre">Autre mandat (personnalisé)…</option>
+                </select>
+
+                <input
+                  id="mandataire-fonction"
+                  type="text"
+                  required
+                  value={mandataireForm.fonction || ''}
+                  onChange={(e) => setMandataireForm({ ...mandataireForm, fonction: e.target.value })}
+                  placeholder="Intitulé exact du mandat"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+
+            {/* Date de naissance et nationalité pour une personne physique */}
+            {mandataireForm.type !== 'personne_morale' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="mandataire-naissance" className={labelClass}>
+                    Date de naissance
+                  </label>
+                  <input
+                    id="mandataire-naissance"
+                    type="text"
+                    value={mandataireForm.dateNaissance || ''}
+                    onChange={(e) => setMandataireForm({ ...mandataireForm, dateNaissance: e.target.value })}
+                    placeholder="jj/mm/aaaa"
+                    className={`${inputClass} font-mono`}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="mandataire-nationalite" className={labelClass}>
+                    Nationalité
+                  </label>
+                  <input
+                    id="mandataire-nationalite"
+                    type="text"
+                    value={mandataireForm.nationalite || ''}
+                    onChange={(e) => setMandataireForm({ ...mandataireForm, nationalite: e.target.value })}
+                    placeholder="Ex : Française"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            )}
+          </form>
+        </Modal>
       )}
     </div>
   );

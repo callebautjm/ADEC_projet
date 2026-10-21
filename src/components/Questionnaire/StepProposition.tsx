@@ -9,7 +9,7 @@ import { AnalyseFicheProjetResponse } from '../../types/ficheProjet';
 import { evaluateCompanyEligibility } from '../../services/engine';
 import { useDatabases } from '../../context/DatabaseContext';
 import { ResultsView } from '../Results/ResultsView';
-import { Scale, Info, AlertTriangle } from 'lucide-react';
+import { Notice, Panel, StatGrid } from '../Layout/ui';
 
 interface StepPropositionProps {
   state: FullQuestionnaireState;
@@ -37,62 +37,53 @@ export const StepProposition: React.FC<StepPropositionProps> = ({ state, dossier
   const aapReconnu = Boolean(state.dossierSource?.primarySchemeId);
 
   return (
-    <div className="space-y-6">
+    <ResultsView report={report} company={state.company} onModifyQuestionnaire={onModifyQuestionnaire}>
       {dossier && (
-        <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 space-y-3 shadow-xs">
-          <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5 uppercase tracking-wider">
-            <Scale className="w-4 h-4 text-neutral-600" />
-            Demande de la fiche projet face à la proposition
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block">Aide sollicitée</span>
-              <span className="text-base font-extrabold text-neutral-900 block">{euro(projet?.aideSollicitee)}</span>
-              <span className="text-neutral-500">{projet?.formeAide ? FORME_LIBELLE[projet.formeAide] : 'Forme non précisée'}</span>
-            </div>
-            <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block">Mesure principale proposée</span>
-              <span className="text-sm font-bold text-neutral-900 block">{principal ? principal.scheme.name : 'Aucune mesure éligible'}</span>
-              {principal && <span className="text-neutral-500">Estimation : {euro(principal.estimatedSubsidyAmount)}</span>}
-            </div>
-            <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block">Appel à projets</span>
-              <span className="text-sm font-bold text-neutral-900 block">{aap || 'Aucun'}</span>
-              {aap && (
-                <span className={aapReconnu ? 'text-emerald-700' : 'text-amber-700'}>
-                  {aapReconnu ? `Rattaché à ${state.dossierSource?.primarySchemeName}` : 'Non référencé dans la base du simulateur'}
-                </span>
-              )}
-            </div>
-          </div>
+        <Panel headingLevel={3} title="Demande de la fiche projet face à la proposition">
+          <StatGrid
+            columnsClassName="grid-cols-1 sm:grid-cols-3"
+            items={[
+              {
+                label: 'Aide sollicitée',
+                value: euro(projet?.aideSollicitee),
+                hint: projet?.formeAide ? FORME_LIBELLE[projet.formeAide] : 'Forme non précisée'
+              },
+              {
+                label: 'Mesure principale proposée',
+                value: <span className="text-sm">{principal ? principal.scheme.name : 'Aucune mesure éligible'}</span>,
+                hint: principal ? `Estimation : ${euro(principal.estimatedSubsidyAmount)}` : undefined
+              },
+              {
+                label: 'Appel à projets',
+                value: <span className="text-sm">{aap || 'Aucun'}</span>,
+                hint: aap ? (
+                  <span className={aapReconnu ? 'text-emerald-700' : 'text-amber-700'}>
+                    {aapReconnu ? `Rattaché à ${state.dossierSource?.primarySchemeName}` : 'Non référencé dans la base du simulateur'}
+                  </span>
+                ) : undefined
+              }
+            ]}
+          />
 
           {aap && !aapReconnu && (
-            <p className="text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>
-                L’entreprise répond à l’appel à projets « {aap} », que le simulateur ne connaît pas : ses règles propres (taux, plafonds, critères) priment
-                sur les mesures ci-dessous, données à titre indicatif.
-              </span>
-            </p>
+            <Notice tone="warning">
+              L’entreprise répond à l’appel à projets « {aap} », que le simulateur ne connaît pas : ses règles propres (taux, plafonds, critères) priment
+              sur les mesures ci-dessous, données à titre indicatif.
+            </Notice>
           )}
           {projet?.formeAide && projet.formeAide !== 'SUBVENTION' && (
-            <p className="text-xs text-petrole-900 bg-petrole-50 border border-petrole-200 rounded-lg p-2.5 flex items-start gap-2">
-              <Info className="w-4 h-4 text-petrole-600 shrink-0" />
-              <span>
-                La fiche sollicite un(e) {FORME_LIBELLE[projet.formeAide].toLowerCase()}. Le simulateur estime des subventions ADEC :
-                un financement remboursable relève aussi des partenaires (CADEC, fonds de prêts d’honneur).
-              </span>
-            </p>
+            <Notice tone="info">
+              La fiche sollicite un(e) {FORME_LIBELLE[projet.formeAide].toLowerCase()}. Le simulateur estime des subventions ADEC :
+              un financement remboursable relève aussi des partenaires (CADEC, fonds de prêts d’honneur).
+            </Notice>
           )}
           {principal && projet?.aideSollicitee !== undefined && principal.estimatedSubsidyAmount < projet.aideSollicitee && (
             <p className="text-xs text-neutral-700">
               L’estimation de la mesure principale est inférieure de {euro(projet.aideSollicitee - principal.estimatedSubsidyAmount)} à l’aide sollicitée.
             </p>
           )}
-        </div>
+        </Panel>
       )}
-
-      <ResultsView report={report} company={state.company} onModifyQuestionnaire={onModifyQuestionnaire} />
-    </div>
+    </ResultsView>
   );
 };

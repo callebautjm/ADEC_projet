@@ -1,5 +1,5 @@
 /**
- * Fenêtre Modale de Configuration du Token API Entreprise
+ * Fenêtre modale de configuration du jeton API Entreprise
  * Protégée par mot de passe administrateur.
  * Permet de renseigner, modifier et tester le jeton d'accès pour entreprise.api.gouv.fr
  */
@@ -21,23 +21,18 @@ import {
 } from '../services/apiEntreprise';
 import { cleanSiret, isForbiddenSiretKey } from '../utils/siret';
 import {
-  Key,
-  Shield,
   Eye,
   EyeOff,
   CheckCircle2,
   AlertTriangle,
   ExternalLink,
   X,
-  Sparkles,
-  Server,
   Lock,
-  Unlock,
   Building,
   KeyRound,
-  ShieldCheck,
   RefreshCw
 } from 'lucide-react';
+import { Badge, Modal, Notice, btn, inputClass, labelClass, linkClass } from './Layout/ui';
 
 interface ApiEntrepriseModalProps {
   isOpen: boolean;
@@ -106,7 +101,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
     if (e) e.preventDefault();
     setPasswordError('');
     if (!passwordInput.trim()) {
-      setPasswordError('Veuillez renseigner le mot de passe administrateur.');
+      setPasswordError('Renseigner le mot de passe administrateur.');
       return;
     }
     if (verifyAdminPassword(passwordInput)) {
@@ -144,7 +139,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
 
     const res = setAdminPassword(newPasswordInput);
     if (res.success) {
-      setPasswordChangeNotice({ success: true, text: 'Mot de passe administrateur mis à jour avec succès !' });
+      setPasswordChangeNotice({ success: true, text: 'Mot de passe administrateur mis à jour.' });
       setCurrentPasswordInput('');
       setNewPasswordInput('');
       setConfirmPasswordInput('');
@@ -219,7 +214,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
       setTestResult({
         success: true,
         source: res.source,
-        message: `Connexion réussie ! Établissement identifié : "${res.mappedProfile.name}" (SIRET: ${res.mappedProfile.siret || testIdentifier})`,
+        message: `Connexion réussie : établissement « ${res.mappedProfile.name} » (SIRET ${res.mappedProfile.siret || testIdentifier})`,
         details: `Forme : ${res.mappedProfile.legalForm} | Commune : ${res.mappedProfile.city} (${res.mappedProfile.postalCode}) | Effectif : ~${res.mappedProfile.headcount} ETP\nConformité & Pièces certifiées : [${complianceSummary}]`
       });
     } else {
@@ -235,616 +230,372 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
   const cleanInput = (testIdentifier || '').replace(/\s+/g, '');
   const displayTarget = `/v4/insee/sirene/etablissements/${cleanInput || '{siret}'}`;
 
+  const lockBadge = <Badge tone={isUnlocked ? 'success' : 'warning'}>{isUnlocked ? 'Déverrouillé' : 'Verrouillé'}</Badge>;
+
+  // Écran 1 : verrouillé (saisie du mot de passe)
+  if (!isUnlocked) {
+    return (
+      <Modal
+        size="md"
+        title="Jeton API Entreprise"
+        subtitle="entreprise.api.gouv.fr · API Entreprise v4 · accès restreint"
+        headerActions={lockBadge}
+        onClose={onClose}
+        bodyClassName="p-4 space-y-4"
+        footer={
+          <>
+            <span />
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={onClose} className={btn('secondary')}>
+                Fermer
+              </button>
+              <button type="submit" form="api-token-unlock" className={btn('primary')}>
+                <KeyRound className="w-3.5 h-3.5" />
+                Déverrouiller
+              </button>
+            </div>
+          </>
+        }
+      >
+        <p className="text-xs text-neutral-600 leading-relaxed">
+          Le jeton permet d’interroger directement la <strong>DGFiP</strong>, l’<strong>URSSAF</strong>, l’<strong>INPI</strong> et l’<strong>INSEE</strong>. Sa consultation et sa modification sont protégées par le mot de passe d’administration.
+        </p>
+
+        <form id="api-token-unlock" onSubmit={handleUnlock} className="space-y-1">
+          <label htmlFor="api-admin-password" className={labelClass}>
+            Mot de passe d’administration
+          </label>
+          <div className="relative">
+            <input
+              id="api-admin-password"
+              type={showAdminPassword ? 'text' : 'password'}
+              value={passwordInput}
+              onChange={(e) => {
+                setPasswordInput(e.target.value);
+                if (passwordError) setPasswordError('');
+              }}
+              placeholder="Mot de passe"
+              autoFocus
+              className={`${inputClass} pr-9`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowAdminPassword(!showAdminPassword)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+              title={showAdminPassword ? 'Masquer' : 'Afficher'}
+            >
+              {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          {passwordError && (
+            <p className="text-xs text-red-700 font-medium flex items-center gap-1.5 pt-1">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+              {passwordError}
+            </p>
+          )}
+        </form>
+
+        {/* Indication du mot de passe par défaut */}
+        <Notice
+          action={
+            <button
+              type="button"
+              onClick={() => {
+                setPasswordInput(DEFAULT_ADMIN_PASSWORD);
+                setPasswordError('');
+              }}
+              className={btn('secondary', 'sm')}
+            >
+              Insérer
+            </button>
+          }
+        >
+          Mot de passe initial : <code className="font-mono font-semibold">{DEFAULT_ADMIN_PASSWORD}</code>, modifiable une fois l’accès déverrouillé.
+        </Notice>
+      </Modal>
+    );
+  }
+
+  // Écran 2 : déverrouillé (modification du jeton et gestion)
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-xl w-full flex flex-col shadow-2xl border border-neutral-200 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-        {/* Header commun */}
-        <div className="p-5 bg-prune-900 text-white flex items-start justify-between gap-4 border-b border-prune-950">
-          <div className="flex items-start gap-3">
-            <div className={`p-2.5 rounded-xl shrink-0 mt-0.5 border ${
-              isUnlocked
-                ? 'bg-emerald-950/80 text-emerald-400 border-emerald-700/60'
-                : 'bg-prune-900/60 text-petrole-300 border-prune-700/60'
-            }`}>
-              {isUnlocked ? <Unlock className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+    <Modal
+      size="lg"
+      title="Jeton API Entreprise"
+      subtitle="entreprise.api.gouv.fr · API Entreprise v4 · session d’administration ouverte"
+      headerActions={lockBadge}
+      onClose={onClose}
+      bodyClassName="p-4 space-y-5 text-xs text-neutral-700"
+      footer={
+        <>
+          {isConfirmingClear ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-red-700 font-medium">Supprimer le jeton ?</span>
+              <button
+                type="button"
+                onClick={handleClear}
+                className="inline-flex items-center h-7 px-2.5 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-medium cursor-pointer"
+              >
+                Oui, supprimer
+              </button>
+              <button type="button" onClick={() => setIsConfirmingClear(false)} className={btn('secondary', 'sm')}>
+                Annuler
+              </button>
+            </div>
+          ) : (
+            <button type="button" onClick={handleClear} className={btn('danger')}>
+              Effacer le jeton
+            </button>
+          )}
+
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={onClose} className={btn('secondary')}>
+              Fermer
+            </button>
+            <button type="button" onClick={handleSave} className={btn('primary')}>
+              Enregistrer
+            </button>
+          </div>
+        </>
+      }
+    >
+      {/* Session d'administration */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <span className="text-neutral-600">Le jeton peut être modifié, effacé ou testé.</span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setIsChangingPassword(!isChangingPassword);
+              setPasswordChangeNotice(null);
+            }}
+            className={btn('secondary', 'sm')}
+          >
+            <KeyRound className="w-3 h-3" />
+            {isChangingPassword ? 'Masquer' : 'Changer le mot de passe'}
+          </button>
+          <button type="button" onClick={handleLock} className={btn('secondary', 'sm')} title="Verrouiller à nouveau">
+            <Lock className="w-3 h-3" />
+            Verrouiller
+          </button>
+        </div>
+      </div>
+
+      {/* Changement de mot de passe */}
+      {isChangingPassword && (
+        <div className="px-3 py-3 border border-neutral-200 rounded-md bg-neutral-50 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold text-neutral-900">Modifier le mot de passe d’administration</span>
+            {hasCustomAdminPassword() && (
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                className={`inline-flex items-center gap-1 text-[11px] ${linkClass}`}
+                title={`Rétablir « ${DEFAULT_ADMIN_PASSWORD} »`}
+              >
+                <RefreshCw className="w-3 h-3" />
+                Rétablir le mot de passe par défaut ({DEFAULT_ADMIN_PASSWORD})
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+              <label htmlFor="admin-current" className={labelClass}>Mot de passe actuel</label>
+              <input id="admin-current" type="password" value={currentPasswordInput} onChange={(e) => setCurrentPasswordInput(e.target.value)} className={inputClass} />
             </div>
             <div>
-              <div className="flex items-center gap-2 text-xs font-mono mb-0.5">
-                <span className={isUnlocked ? 'text-emerald-400 font-semibold' : 'text-petrole-300'}>
-                  entreprise.api.gouv.fr · API Entreprise v4
-                </span>
-                <span className="text-prune-500">|</span>
-                <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full border ${
-                  isUnlocked
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                }`}>
-                  {isUnlocked ? 'Déverrouillé' : 'Verrouillé'}
-                </span>
-              </div>
-              <h2 className="text-lg font-bold tracking-tight text-white">
-                Configuration du Jeton API Entreprise
-              </h2>
-              <p className="text-xs text-prune-200/80 mt-0.5 leading-relaxed">
-                {isUnlocked
-                  ? 'Gestion sécurisée du jeton Bearer et des habilitations officielles.'
-                  : 'Accès restreint · Authentification requise pour toute consultation ou modification.'}
-              </p>
+              <label htmlFor="admin-new" className={labelClass}>Nouveau mot de passe</label>
+              <input id="admin-new" type="password" value={newPasswordInput} onChange={(e) => setNewPasswordInput(e.target.value)} placeholder="4 caractères minimum" className={inputClass} />
+            </div>
+            <div>
+              <label htmlFor="admin-confirm" className={labelClass}>Confirmation</label>
+              <input id="admin-confirm" type="password" value={confirmPasswordInput} onChange={(e) => setConfirmPasswordInput(e.target.value)} className={inputClass} />
             </div>
           </div>
 
+          {passwordChangeNotice && (
+            <Notice tone={passwordChangeNotice.success ? 'success' : 'danger'}>{passwordChangeNotice.text}</Notice>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setIsChangingPassword(false)} className={btn('secondary', 'sm')}>
+              Annuler
+            </button>
+            <button type="button" onClick={handleChangePassword} className={btn('primary', 'sm')}>
+              Valider le nouveau mot de passe
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Habilitations */}
+      <div className="space-y-2">
+        <p className="leading-relaxed">
+          L’API Entreprise exige un jeton <code className="font-mono">Bearer</code> et le <strong>SIRET</strong> de l’organisme demandeur (paramètre <code className="font-mono">recipient</code>). Habilitations couvertes :
+        </p>
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-[11px]">
+          <div><dt className="inline font-semibold text-neutral-900">DGFiP : </dt><dd className="inline">attestation fiscale, CA (3 exercices) et liasses</dd></div>
+          <div><dt className="inline font-semibold text-neutral-900">URSSAF : </dt><dd className="inline">attestation de vigilance et cotisations</dd></div>
+          <div><dt className="inline font-semibold text-neutral-900">INPI · RNE : </dt><dd className="inline">mandataires sociaux et dirigeants</dd></div>
+          <div><dt className="inline font-semibold text-neutral-900">INSEE Sirene : </dt><dd className="inline">établissements (dont non diffusibles)</dd></div>
+        </dl>
+        <a href="https://entreprise.api.gouv.fr" target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-1 text-[11px] ${linkClass}`}>
+          Vérifier les habilitations sur entreprise.api.gouv.fr
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
+
+      {/* Jeton */}
+      <div>
+        <div className="flex items-center justify-between">
+          <label htmlFor="api-token" className={labelClass}>Jeton Bearer API Entreprise</label>
+          {token.trim() && (
+            <span className="text-[11px] font-medium text-emerald-700 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" />
+              Jeton présent
+            </span>
+          )}
+        </div>
+        <div className="relative">
+          <input
+            id="api-token"
+            type={showToken ? 'text' : 'password'}
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"
+            className={`${inputClass} pr-9 font-mono`}
+          />
           <button
-            onClick={onClose}
-            className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition"
-            title="Fermer"
+            type="button"
+            onClick={() => setShowToken(!showToken)}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+            title={showToken ? 'Masquer le jeton' : 'Afficher le jeton'}
           >
-            <X className="w-5 h-5" />
+            {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+        {saveSuccessNotice && (
+          <p className="text-[11px] text-emerald-700 font-medium flex items-center gap-1 mt-1">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Paramètres enregistrés.
+          </p>
+        )}
+      </div>
+
+      {/* SIRET de l'organisme demandeur */}
+      <div>
+        <label htmlFor="api-recipient" className={`${labelClass} flex items-center justify-between`}>
+          <span className="flex items-center gap-1.5">
+            <Building className="w-3.5 h-3.5 text-neutral-400" />
+            SIRET de l’organisme demandeur (paramètre recipient)
+          </span>
+          <span className="text-[11px] font-normal text-neutral-500 font-mono">{(recipientSiret || '').length}/14</span>
+        </label>
+        <div className="relative">
+          <input
+            id="api-recipient"
+            type="text"
+            value={recipientSiret}
+            onChange={(e) => setRecipientSiret(cleanSiret(e.target.value))}
+            onKeyDown={(e) => {
+              if (isForbiddenSiretKey(e.key)) e.preventDefault();
+            }}
+            onPaste={(e) => {
+              e.preventDefault();
+              const text = e.clipboardData.getData('text');
+              setRecipientSiret(cleanSiret(text));
+            }}
+            placeholder="Ex : 20007695800012 (Collectivité de Corse) ou 39217556800022 (ADEC)"
+            className={`${inputClass} pr-8 font-mono`}
+          />
+          {recipientSiret && (
+            <button
+              type="button"
+              onClick={() => setRecipientSiret('')}
+              title="Effacer"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        <p className="text-[11px] text-neutral-500 mt-1">
+          Par défaut, SIRET du siège de la Collectivité de Corse (<code className="font-mono">20007695800012</code>) ; possible aussi : SIRET de l’ADEC (<code className="font-mono">39217556800022</code>) ou celui rattaché au compte API Entreprise.
+        </p>
+      </div>
+
+      {/* Test du jeton */}
+      <div className="px-3 py-3 border border-neutral-200 rounded-md space-y-2">
+        <label htmlFor="api-test-siret" className={labelClass}>Tester le jeton sur un SIRET</label>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <input
+              id="api-test-siret"
+              type="text"
+              value={testIdentifier}
+              onChange={(e) => setTestIdentifier(cleanSiret(e.target.value))}
+              onKeyDown={(e) => {
+                if (isForbiddenSiretKey(e.key)) e.preventDefault();
+              }}
+              onPaste={(e) => {
+                e.preventDefault();
+                const text = e.clipboardData.getData('text');
+                setTestIdentifier(cleanSiret(text));
+              }}
+              placeholder="14 chiffres"
+              className={`${inputClass} pr-12 font-mono`}
+            />
+            <span className={`absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-mono ${(testIdentifier || '').length === 14 ? 'text-emerald-700' : 'text-neutral-400'}`}>
+              {(testIdentifier || '').length}/14
+            </span>
+          </div>
+          <button type="button" onClick={handleTestToken} disabled={isTesting || !testIdentifier.trim()} className={btn('secondary')}>
+            {isTesting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+            {isTesting ? 'Test en cours…' : 'Tester'}
           </button>
         </div>
 
-        {/* ÉCRAN 1 : VERROUILLÉ (SAISIE DU MOT DE PASSE) */}
-        {!isUnlocked ? (
-          <div className="p-6 sm:p-7 space-y-6">
-            <div className="text-center space-y-2 max-w-md mx-auto">
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-prune-50 border border-prune-200 flex items-center justify-center text-prune-700 shadow-sm">
-                <Shield className="w-7 h-7" />
-              </div>
-              <h3 className="text-base font-bold text-neutral-900">
-                Accès Administrateur Restreint
-              </h3>
-              <p className="text-xs text-neutral-600 leading-relaxed">
-                Le jeton API Entreprise permet d’interroger directement les serveurs certifiés de la <strong>DGFIP</strong>, de l’<strong>URSSAF</strong>, d’<strong>Infogreffe</strong> et de l’<strong>INSEE</strong>. Sa modification est protégée par un mot de passe.
-              </p>
-            </div>
+        {/* Exemples */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] text-neutral-500 mr-1">Exemples :</span>
+          {[
+            { siret: '40001662200013', label: 'Brasserie Pietra' },
+            { siret: '39217556800022', label: 'ADEC Ajaccio' },
+            { siret: '84920194800018', label: 'Démo locale', title: 'Numéro fictif de démonstration' }
+          ].map((ex) => (
+            <button
+              key={ex.siret}
+              type="button"
+              title={ex.title}
+              onClick={() => setTestIdentifier(ex.siret)}
+              className="text-[11px] px-2 py-0.5 bg-white hover:bg-neutral-50 text-neutral-700 rounded border border-neutral-200 cursor-pointer"
+            >
+              {ex.label} <span className="font-mono text-neutral-500">({ex.siret})</span>
+            </button>
+          ))}
+        </div>
 
-            <form onSubmit={handleUnlock} className="space-y-4 max-w-md mx-auto">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
-                  Mot de passe d'administration
-                </label>
-                <div className="relative">
-                  <input
-                    type={showAdminPassword ? 'text' : 'password'}
-                    value={passwordInput}
-                    onChange={(e) => {
-                      setPasswordInput(e.target.value);
-                      if (passwordError) setPasswordError('');
-                    }}
-                    placeholder="Saisissez le mot de passe"
-                    autoFocus
-                    className="w-full pl-3.5 pr-10 py-2.5 text-sm bg-white border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-prune-600 font-medium"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowAdminPassword(!showAdminPassword)}
-                    className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 transition"
-                    title={showAdminPassword ? 'Masquer' : 'Afficher'}
-                  >
-                    {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-
-                {passwordError && (
-                  <p className="text-xs text-red-600 font-semibold flex items-center gap-1.5 pt-1">
-                    <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>{passwordError}</span>
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 px-4 bg-prune-600 hover:bg-prune-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2"
-                >
-                  <KeyRound className="w-4 h-4" />
-                  <span>Déverrouiller l'accès au token</span>
-                </button>
-              </div>
-
-              {/* Raccourci / Indication du mot de passe par défaut */}
-              <div className="p-3 bg-prune-50/70 border border-prune-200/80 rounded-xl text-xs text-prune-950 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-[11px] text-prune-900">Mot de passe initial du simulateur :</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPasswordInput(DEFAULT_ADMIN_PASSWORD);
-                      setPasswordError('');
-                    }}
-                    className="text-[10px] font-bold text-prune-700 hover:text-prune-900 underline bg-white px-2 py-0.5 rounded border border-prune-200 transition"
-                  >
-                    Insérer "{DEFAULT_ADMIN_PASSWORD}"
-                  </button>
-                </div>
-                <p className="text-[11px] text-prune-800/90 leading-snug">
-                  Par défaut, le code est <code className="font-mono font-bold bg-white px-1.5 py-0.5 rounded text-prune-900 border border-prune-200">adec2026</code>. Vous pourrez le personnaliser une fois déverrouillé.
-                </p>
-              </div>
-            </form>
-
-            <div className="p-4 bg-neutral-50 border-t border-neutral-200 flex justify-end -mx-6 -mb-6 sm:-mx-7 sm:-mb-7">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-xs font-semibold text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-100 transition"
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* ÉCRAN 2 : DÉVERROUILLÉ (MODIFICATION DU TOKEN & GESTION) */
-          <>
-            <div className="p-6 space-y-5 text-xs text-neutral-700 max-h-[75vh] overflow-y-auto">
-              {/* Barre de statut administrateur & Action de changement de mot de passe */}
-              <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <div>
-                    <span className="font-bold text-xs text-emerald-950 block">
-                      Session administrateur active
-                    </span>
-                    <span className="text-[10px] text-emerald-800">
-                      Vous pouvez modifier, effacer ou tester le jeton Bearer.
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsChangingPassword(!isChangingPassword);
-                      setPasswordChangeNotice(null);
-                    }}
-                    className="text-[11px] font-semibold text-aubergine-700 bg-white hover:bg-aubergine-50 border border-aubergine-200 px-2.5 py-1 rounded-lg transition flex items-center gap-1 shadow-2xs"
-                  >
-                    <KeyRound className="w-3 h-3 text-aubergine-600" />
-                    <span>{isChangingPassword ? 'Masquer' : 'Changer le mot de passe'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleLock}
-                    className="text-[11px] font-semibold text-neutral-700 bg-white hover:bg-neutral-100 border border-neutral-200 px-2.5 py-1 rounded-lg transition flex items-center gap-1 shadow-2xs"
-                    title="Verrouiller à nouveau"
-                  >
-                    <Lock className="w-3 h-3 text-neutral-500" />
-                    <span>Verrouiller</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Formulaire rétractable : Changement de mot de passe */}
-              {isChangingPassword && (
-                <div className="p-4 bg-aubergine-50/60 border border-aubergine-200 rounded-xl space-y-3 animate-in fade-in duration-150">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-aubergine-950 flex items-center gap-1.5">
-                      <KeyRound className="w-3.5 h-3.5 text-aubergine-600" />
-                      Modifier le mot de passe d'administration
-                    </span>
-                    {hasCustomAdminPassword() && (
-                      <button
-                        type="button"
-                        onClick={handleResetPassword}
-                        className="text-[10px] font-semibold text-aubergine-700 hover:text-aubergine-900 underline flex items-center gap-1"
-                        title="Rétablir 'adec2026'"
-                      >
-                        <RefreshCw className="w-3 h-3" />
-                        Rétablir le code par défaut ({DEFAULT_ADMIN_PASSWORD})
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <div>
-                      <label className="text-[10px] font-bold text-neutral-600 uppercase block mb-1">
-                        Mot de passe actuel
-                      </label>
-                      <input
-                        type="password"
-                        value={currentPasswordInput}
-                        onChange={(e) => setCurrentPasswordInput(e.target.value)}
-                        placeholder="Actuel"
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-neutral-300 rounded-lg focus:ring-1 focus:ring-aubergine-600"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-neutral-600 uppercase block mb-1">
-                        Nouveau mot de passe
-                      </label>
-                      <input
-                        type="password"
-                        value={newPasswordInput}
-                        onChange={(e) => setNewPasswordInput(e.target.value)}
-                        placeholder="Nouveau (min. 4 car.)"
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-neutral-300 rounded-lg focus:ring-1 focus:ring-aubergine-600"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-neutral-600 uppercase block mb-1">
-                        Confirmer
-                      </label>
-                      <input
-                        type="password"
-                        value={confirmPasswordInput}
-                        onChange={(e) => setConfirmPasswordInput(e.target.value)}
-                        placeholder="Confirmer"
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-neutral-300 rounded-lg focus:ring-1 focus:ring-aubergine-600"
-                      />
-                    </div>
-                  </div>
-
-                  {passwordChangeNotice && (
-                    <p className={`text-xs font-semibold flex items-center gap-1.5 ${
-                      passwordChangeNotice.success ? 'text-emerald-700' : 'text-red-700'
-                    }`}>
-                      {passwordChangeNotice.success ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      ) : (
-                        <AlertTriangle className="w-4 h-4 text-red-600" />
-                      )}
-                      <span>{passwordChangeNotice.text}</span>
-                    </p>
-                  )}
-
-                  <div className="flex justify-end gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setIsChangingPassword(false)}
-                      className="px-3 py-1 bg-white border border-neutral-300 text-neutral-700 text-xs font-medium rounded-lg hover:bg-neutral-100"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleChangePassword}
-                      className="px-3 py-1 bg-aubergine-700 hover:bg-aubergine-800 text-white text-xs font-bold rounded-lg shadow-2xs"
-                    >
-                      Valider le nouveau mot de passe
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Information box */}
-              <div className="p-3.5 bg-neutral-50 border border-neutral-200 rounded-xl space-y-2 leading-relaxed">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-bold text-neutral-900 text-xs">
-                    <Lock className="w-3.5 h-3.5 text-neutral-600" />
-                    Habilitations & Traçabilité API Entreprise
-                  </div>
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded">
-                    4 Administrations
-                  </span>
-                </div>
-                <p className="text-neutral-600 text-[11px]">
-                  L’API Entreprise impose la transmission d’un jeton d’accès <code>Bearer</code> ainsi que du numéro <strong>SIRET (14 chiffres)</strong> de l'organisme demandeur (paramètre <code>recipient</code>). Les habilitations actives couvrent :
-                </p>
-                <div className="grid grid-cols-2 gap-1.5 text-[10px] pt-0.5">
-                  <div className="p-1.5 rounded bg-white border border-neutral-200">
-                    <strong className="text-aubergine-700 block">DGFIP :</strong> Attestation fiscale, CA (3 exercices) & Liasses
-                  </div>
-                  <div className="p-1.5 rounded bg-white border border-neutral-200">
-                    <strong className="text-emerald-700 block">URSSAF :</strong> Attestation de vigilance & cotisations
-                  </div>
-                  <div className="p-1.5 rounded bg-white border border-neutral-200">
-                    <strong className="text-aubergine-700 block">INPI · RNE :</strong> Mandataires sociaux & dirigeants d'entreprise
-                  </div>
-                  <div className="p-1.5 rounded bg-white border border-neutral-200">
-                    <strong className="text-petrole-700 block">INSEE Sirene :</strong> Établissements (dont non-diffusibles)
-                  </div>
-                </div>
-                <div className="pt-1">
-                  <a
-                    href="https://entreprise.api.gouv.fr"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-petrole-600 hover:text-petrole-800 font-semibold inline-flex items-center gap-1 text-[11px]"
-                  >
-                    Obtenir ou vérifier les scopes sur le portail entreprise.api.gouv.fr
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
-
-              {/* Champ d'édition du Token */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700">
-                    Jeton Bearer API Entreprise
-                  </label>
-                  {token.trim() && (
-                    <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Jeton présent
-                    </span>
-                  )}
-                </div>
-
-                <div className="relative">
-                  <input
-                    type={showToken ? 'text' : 'password'}
-                    value={token}
-                    onChange={(e) => setToken(e.target.value)}
-                    placeholder="Ex: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    className="w-full pl-3.5 pr-10 py-2.5 text-xs font-mono bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-600 transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowToken(!showToken)}
-                    className="absolute right-3 top-2.5 text-neutral-400 hover:text-neutral-600 transition"
-                    title={showToken ? 'Masquer le token' : 'Afficher le token'}
-                  >
-                    {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-
-                {saveSuccessNotice && (
-                  <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1 animate-in fade-in">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Paramètres enregistrés avec succès !
-                  </p>
-                )}
-              </div>
-
-              {/* Recipient SIRET input */}
-              <div className="space-y-1.5">
-                <label className="block font-bold text-neutral-900 uppercase tracking-wider text-[11px] flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Building className="w-3.5 h-3.5 text-neutral-500" />
-                    SIRET Organisme Demandeur (paramètre `recipient`)
-                  </span>
-                  <span className="text-[10px] text-neutral-500 font-mono">14 chiffres</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={recipientSiret}
-                    onChange={(e) => setRecipientSiret(cleanSiret(e.target.value))}
-                    onKeyDown={(e) => {
-                      if (isForbiddenSiretKey(e.key)) e.preventDefault();
-                    }}
-                    onPaste={(e) => {
-                      e.preventDefault();
-                      const text = e.clipboardData.getData('text');
-                      setRecipientSiret(cleanSiret(text));
-                    }}
-                    placeholder="Ex: 20007695800012 (Collectivité de Corse) ou 39217556800022 (ADEC)"
-                    className="w-full px-3.5 pr-20 py-2 bg-white border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-prune-600 text-xs font-mono"
-                  />
-                  <div className="absolute right-2.5 top-2 flex items-center gap-1.5">
-                    {recipientSiret && (
-                      <button
-                        type="button"
-                        onClick={() => setRecipientSiret('')}
-                        title="Effacer"
-                        className="p-0.5 text-neutral-400 hover:text-neutral-600 rounded transition text-xs"
-                      >
-                        ✕
-                      </button>
-                    )}
-                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
-                      (recipientSiret || '').length === 14
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-neutral-100 text-neutral-500'
-                    }`}>
-                      {(recipientSiret || '').length}/14
-                    </span>
-                  </div>
-                </div>
-                <p className="text-[11px] text-neutral-500">
-                  Configuré par défaut sur le SIRET valide du siège de la Collectivité de Corse (<code>20007695800012</code>). Vous pouvez aussi renseigner le SIRET de l’ADEC (<code>39217556800022</code>) ou le SIRET rattaché à votre compte API Entreprise.
-                </p>
-              </div>
-
-              {/* Zone de test */}
-              <div className="p-4 bg-neutral-50/80 border border-neutral-200 rounded-xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="block font-bold text-neutral-800 text-[11px] uppercase tracking-wider">
-                    Tester le jeton sur un numéro SIRET (14 chiffres)
-                  </span>
-                  <span className="text-[10px] text-emerald-700 font-mono font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    API v4 officielle
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      type="text"
-                      value={testIdentifier}
-                      onChange={(e) => setTestIdentifier(cleanSiret(e.target.value))}
-                      onKeyDown={(e) => {
-                        if (isForbiddenSiretKey(e.key)) e.preventDefault();
-                      }}
-                      onPaste={(e) => {
-                        e.preventDefault();
-                        const text = e.clipboardData.getData('text');
-                        setTestIdentifier(cleanSiret(text));
-                      }}
-                      placeholder="Numéro SIRET (14 chiffres)"
-                      className="w-full px-3 pr-20 py-2 text-xs font-mono bg-white border border-neutral-300 rounded-lg focus:ring-1 focus:ring-prune-600 font-bold"
-                    />
-                    <div className="absolute right-2.5 top-2 flex items-center gap-1.5">
-                      {testIdentifier && (
-                        <button
-                          type="button"
-                          onClick={() => setTestIdentifier('')}
-                          title="Effacer"
-                          className="p-0.5 text-neutral-400 hover:text-neutral-600 rounded transition text-xs"
-                        >
-                          ✕
-                        </button>
-                      )}
-                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
-                        (testIdentifier || '').length === 14
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-neutral-100 text-neutral-500'
-                      }`}>
-                        {(testIdentifier || '').length}/14
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleTestToken}
-                    disabled={isTesting || !testIdentifier.trim()}
-                    className="px-3.5 py-2 bg-prune-600 hover:bg-prune-700 text-white font-semibold text-xs rounded-lg transition disabled:opacity-50 shrink-0 flex items-center gap-1.5 shadow-2xs"
-                  >
-                    {isTesting ? (
-                      <>
-                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Test en cours...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-3.5 h-3.5 text-petrole-300" />
-                        Tester via l'API v4
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {/* Boutons d'exemples rapides */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                  <span className="text-[10px] text-neutral-500 font-semibold mr-1">Exemples :</span>
-                  <button
-                    type="button"
-                    onClick={() => setTestIdentifier('40001662200013')}
-                    className="text-[10px] font-mono px-2 py-1 bg-white hover:bg-prune-50 text-neutral-700 rounded border border-neutral-200 transition"
-                  >
-                    Brasserie Pietra (40001662200013)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTestIdentifier('39217556800022')}
-                    className="text-[10px] font-mono px-2 py-1 bg-white hover:bg-prune-50 text-neutral-700 rounded border border-neutral-200 transition"
-                  >
-                    ADEC Ajaccio (39217556800022)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTestIdentifier('84920194800018')}
-                    className="text-[10px] font-mono px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded border border-amber-200 transition"
-                    title="Numéro fictif de démonstration insulaire"
-                  >
-                    Démo locale (84920194800018)
-                  </button>
-                </div>
-
-                {testResult && (
-                  <div
-                    className={`p-3 rounded-lg border text-[11px] space-y-1 ${
-                      testResult.success
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
-                        : 'bg-red-50 border-red-200 text-red-950'
-                    }`}
-                  >
-                    <div className="flex items-start gap-1.5 font-bold">
-                      {testResult.success ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                      ) : (
-                        <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                      )}
-                      <span>{testResult.message}</span>
-                    </div>
-                    {testResult.source && (
-                      <p className="text-[10px] text-neutral-500 font-mono">
-                        Source de réponse : {testResult.source}
-                      </p>
-                    )}
-                    {testResult.details && (
-                      <p className="text-[11px] opacity-90 pl-5 break-all">
-                        {testResult.details}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Inspecteur de la Requête HTTP envoyée */}
-              <div className="p-4 bg-neutral-900 text-neutral-200 rounded-xl space-y-2 border border-neutral-800">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold text-petrole-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Server className="w-3.5 h-3.5" />
-                    Requête HTTP exacte transmise à l'API Entreprise (v4)
-                  </span>
-                  <span className="text-[10px] bg-neutral-800 text-emerald-400 px-2 py-0.5 rounded font-mono font-bold border border-neutral-700">
-                    v4 INSEE Sirene
-                  </span>
-                </div>
-
-                <div className="bg-neutral-950 p-3 rounded-lg font-mono text-[11px] text-neutral-300 overflow-x-auto space-y-1.5 border border-neutral-800">
-                  <div className="text-emerald-400 font-bold break-all">
-                    GET {displayTarget}?context=Instruction%20dossier%20aide&recipient={cleanRecipient}&object=Diagnostic%20ADEC%202026 HTTP/1.1
-                  </div>
-                  <div className="text-neutral-400">Host: entreprise.api.gouv.fr</div>
-                  <div className="text-neutral-400">
-                    Authorization: Bearer {token.trim() ? (showToken ? token.trim() : `${token.trim().slice(0, 8)}...${token.trim().slice(-6)}`) : '<VOTRE_TOKEN_API_ENTREPRISE>'}
-                  </div>
-                  <div className="text-neutral-400">User-Agent: ADEC-Corse-Diagnostic/1.0 (https://www.adec.corsica)</div>
-                  <div className="text-neutral-400">Accept: application/json</div>
-                </div>
-
-                <p className="text-[10px] text-neutral-400 leading-relaxed">
-                  <strong>Point d'accès v4 actif :</strong><br />
-                  • Point d'accès officiel : <code className="text-petrole-300">https://entreprise.api.gouv.fr/v4/insee/sirene/etablissements/&#123;siret&#125;</code><br />
-                  • Paramètre <code className="text-petrole-300">recipient</code> (SIRET demandeur) : <code>{cleanRecipient}</code>
-                </p>
-              </div>
-            </div>
-
-            {/* Footer déverrouillé */}
-            <div className="p-4 bg-neutral-50 border-t border-neutral-200 flex items-center justify-between gap-3">
-              {isConfirmingClear ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-red-700 font-medium">Confirmer la suppression du jeton ?</span>
-                  <button
-                    type="button"
-                    onClick={handleClear}
-                    className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition shadow-xs"
-                  >
-                    Oui, supprimer
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsConfirmingClear(false)}
-                    className="px-2 py-1 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-lg text-xs transition"
-                  >
-                    Annuler
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  className="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 transition"
-                >
-                  Effacer le jeton
-                </button>
-              )}
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 text-xs font-semibold text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-100 transition"
-                >
-                  Fermer
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  className="px-4 py-2 text-xs font-bold text-white bg-prune-600 rounded-lg hover:bg-prune-700 transition shadow-xs"
-                >
-                  Enregistrer les paramètres
-                </button>
-              </div>
-            </div>
-          </>
+        {testResult && (
+          <Notice tone={testResult.success ? 'success' : 'danger'} title={testResult.message}>
+            {testResult.source && <p className="font-mono text-[11px] opacity-80">Source : {testResult.source}</p>}
+            {testResult.details && <p className="whitespace-pre-line break-all">{testResult.details}</p>}
+          </Notice>
         )}
       </div>
-    </div>
+
+      {/* Requête HTTP transmise */}
+      <div className="space-y-1.5">
+        <p className="text-[11px] font-medium text-neutral-500">Requête transmise à l’API Entreprise (v4, INSEE Sirene)</p>
+        <pre className="bg-neutral-900 text-neutral-300 p-3 rounded-md font-mono text-[11px] leading-relaxed overflow-x-auto whitespace-pre-wrap break-all">
+          <span className="text-emerald-400">
+            GET {displayTarget}?context=Instruction%20dossier%20aide&amp;recipient={cleanRecipient}&amp;object=Diagnostic%20ADEC%202026 HTTP/1.1
+          </span>
+          {'\n'}Host: entreprise.api.gouv.fr
+          {'\n'}Authorization: Bearer {token.trim() ? (showToken ? token.trim() : `${token.trim().slice(0, 8)}...${token.trim().slice(-6)}`) : '<JETON_API_ENTREPRISE>'}
+          {'\n'}User-Agent: ADEC-Corse-Diagnostic/1.0 (https://www.adec.corsica)
+          {'\n'}Accept: application/json
+        </pre>
+      </div>
+    </Modal>
   );
 };

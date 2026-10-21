@@ -1,19 +1,20 @@
 /**
- * Application Principale : Diagnostic & Optimisation des Aides ADEC 2026
+ * Outils d'instruction des aides ADEC 2026, à l'usage des agents
  * Collectivité de Corse / Agence de Développement Économique de la Corse
  */
 
 import React, { useEffect, useState } from 'react';
-import { DatabaseProvider } from './context/DatabaseContext';
-import { Header } from './components/Header';
+import { RotateCcw } from 'lucide-react';
+import { DatabaseProvider, useDatabases } from './context/DatabaseContext';
 import { QuestionnaireWizard } from './components/Questionnaire/QuestionnaireWizard';
 import { DocumentaryExplorerView } from './components/DocumentaryExplorer/DocumentaryExplorerView';
 import { DatabaseManagerView } from './components/DatabaseManager/DatabaseManagerView';
 import { HomePage } from './components/Home/HomePage';
 import { AttestationsPage } from './components/Attestations/AttestationsPage';
 import { ProjectSheetPreloader } from './components/Dossier/ProjectSheetPreloader';
-import { PageHero } from './components/Layout/PageHero';
-import { Footer } from './components/Layout/Footer';
+import { AppNav } from './components/Layout/AppNav';
+import { PageHeader } from './components/Layout/PageHeader';
+import { Panel, btn, linkClass, pageContainer } from './components/Layout/ui';
 import { CompanyProfile, FullQuestionnaireState } from './types';
 import { AnalyseFicheProjetResponse } from './types/ficheProjet';
 import { AppPage, APP_PAGES } from './types/navigation';
@@ -82,7 +83,17 @@ function readPageFromHash(): AppPage {
   return APP_PAGES.includes(page) ? page : 'accueil';
 }
 
+/** Titre de l'onglet du navigateur pour chaque page */
+const PAGE_TITLES: Record<AppPage, string> = {
+  accueil: 'Accueil',
+  attestations: 'Attestations',
+  guide: 'Guide des aides',
+  simulation: 'Simulation',
+  textes: 'Textes officiels'
+};
+
 const MainAppContent: React.FC = () => {
+  const { allActiveSchemes } = useDatabases();
   const [activePage, setActivePage] = useState<AppPage>(readPageFromHash);
   const [dossier, setDossier] = useState<AnalyseFicheProjetResponse | null>(null);
   const [questionnaireState, setQuestionnaireState] = useState<FullQuestionnaireState>(EMPTY_QUESTIONNAIRE_STATE);
@@ -100,6 +111,10 @@ const MainAppContent: React.FC = () => {
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
+
+  useEffect(() => {
+    document.title = `${PAGE_TITLES[activePage]} · Outils ADEC`;
+  }, [activePage]);
 
   const navigate = (page: AppPage) => {
     window.location.hash = page === 'accueil' ? '' : `/${page}`;
@@ -135,13 +150,25 @@ const MainAppContent: React.FC = () => {
     navigate('simulation');
   };
 
+  const handleStartManualSimulation = () => {
+    setIsManualSimulation(true);
+    navigate('simulation');
+  };
+
+  const isSimulationStarted = Boolean(dossier) || isManualSimulation;
+  const ongoingSimulation = dossier
+    ? dossier.fiche.entreprise.raisonSociale || 'fiche projet'
+    : isManualSimulation
+      ? questionnaireState.company.name || 'saisie manuelle'
+      : undefined;
+
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col font-sans">
-      <Header
+    <div className="min-h-screen bg-neutral-100 text-neutral-900 font-sans lg:flex">
+      <AppNav
         activePage={activePage}
         onNavigate={navigate}
-        onResetQuestionnaire={activePage === 'simulation' ? handleResetQuestionnaire : undefined}
         onOpenTokenModal={() => setIsTokenModalOpen(true)}
+        schemesCount={allActiveSchemes.length}
       />
 
       <ApiEntrepriseModal
@@ -175,8 +202,18 @@ const MainAppContent: React.FC = () => {
         }}
       />
 
-      <main className="flex-1">
-        {activePage === 'accueil' && <HomePage onNavigate={navigate} />}
+      <main className="flex-1 min-w-0">
+        {activePage === 'accueil' && (
+          <HomePage
+            onNavigate={navigate}
+            onCompanyFound={(profile) => setAttestationsCompany({ ...EMPTY_QUESTIONNAIRE_STATE.company, ...profile })}
+            onFicheAnalysee={handleFicheAnalysee}
+            onStartManualSimulation={handleStartManualSimulation}
+            onOpenTokenModal={() => setIsTokenModalOpen(true)}
+            lastCompany={attestationsCompany}
+            ongoingSimulation={ongoingSimulation}
+          />
+        )}
 
         {activePage === 'attestations' && (
           <AttestationsPage
@@ -189,13 +226,20 @@ const MainAppContent: React.FC = () => {
 
         {activePage === 'simulation' && (
           <div>
-            <PageHero
-              eyebrow="Simulateur & diagnostic d'éligibilité"
-              title="Simulation à partir de la fiche projet"
-              description="Déposez le PDF de la fiche projet ADEC : le simulateur est pré-rempli, vérifie les critères d'accès et calcule la proposition de mesures."
+            <PageHeader
+              title="Simulation"
+              description="Pré-remplissage à partir de la fiche projet (PDF OpenSub), contrôle des critères d’accès et proposition de mesures."
+              actions={
+                isSimulationStarted && (
+                  <button type="button" onClick={handleResetQuestionnaire} className={btn('secondary')} title="Abandonner la simulation en cours et repartir de zéro">
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Nouvelle simulation
+                  </button>
+                )
+              }
             />
 
-            {dossier || isManualSimulation ? (
+            {isSimulationStarted ? (
               <QuestionnaireWizard
                 key={wizardKey}
                 state={questionnaireState}
@@ -205,18 +249,20 @@ const MainAppContent: React.FC = () => {
                 onRemoveDossier={handleResetQuestionnaire}
               />
             ) : (
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-3">
-                <ProjectSheetPreloader dossier={null} onFicheAnalysee={handleFicheAnalysee} onRemoveDossier={handleResetQuestionnaire} />
-                <p className="text-xs text-neutral-500 text-center">
-                  Pas de fiche projet ?{' '}
-                  <button
-                    type="button"
-                    onClick={() => setIsManualSimulation(true)}
-                    className="font-semibold text-prune-700 underline hover:text-prune-900 cursor-pointer"
-                  >
-                    Saisir la simulation manuellement
-                  </button>
-                </p>
+              <div className={`${pageContainer} py-5`}>
+                <Panel
+                  title="Fiche projet"
+                  description="Les rubriques de la fiche pré-remplissent les étapes de la simulation ; une synthèse du projet et des contrôles de cohérence sont produits."
+                >
+                  <ProjectSheetPreloader dossier={null} onFicheAnalysee={handleFicheAnalysee} onRemoveDossier={handleResetQuestionnaire} />
+                  <p className="text-xs text-neutral-500">
+                    Pas de fiche projet ?{' '}
+                    <button type="button" onClick={() => setIsManualSimulation(true)} className={linkClass}>
+                      Saisir la simulation manuellement
+                    </button>{' '}
+                    (recherche SIRET à l’étape 1, sans synthèse du projet).
+                  </p>
+                </Panel>
               </div>
             )}
           </div>
@@ -224,8 +270,6 @@ const MainAppContent: React.FC = () => {
 
         {activePage === 'textes' && <DatabaseManagerView />}
       </main>
-
-      <Footer />
     </div>
   );
 };

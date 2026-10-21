@@ -6,25 +6,15 @@
 
 import React, { useState } from 'react';
 import { useDatabases } from '../../context/DatabaseContext';
-import { DispositifScheme, ActivitySector, CompanySize } from '../../types';
+import { DispositifScheme } from '../../types';
 import { DispositifDetailModal } from '../Results/DispositifDetailModal';
-import { PageHero, heroSecondaryActionClass } from '../Layout/PageHero';
+import { shortCategoryLabel } from '../DocumentaryExplorer/DocumentaryExplorerView';
+import { PageHeader } from '../Layout/PageHeader';
 import { TabButton } from '../Layout/TabButton';
-import {
-  Plus,
-  Upload,
-  Download,
-  RotateCcw,
-  FileCode,
-  CheckCircle2,
-  Trash2,
-  ToggleLeft,
-  ToggleRight,
-  Search,
-  BookOpen,
-  Sparkles,
-  AlertCircle
-} from 'lucide-react';
+import { Badge, Notice, Panel, SegmentedControl, btn, iconBtnDanger, inputClass, inputSmClass, labelClass, pageContainer } from '../Layout/ui';
+import { Upload, Download, RotateCcw, Trash2, Search } from 'lucide-react';
+
+const formatRate = (rate?: number) => (rate ? `${Math.round(rate * 100)} %` : '–');
 
 export const DatabaseManagerView: React.FC = () => {
   const {
@@ -32,7 +22,6 @@ export const DatabaseManagerView: React.FC = () => {
     allActiveSchemes,
     selectedDatabaseId,
     setSelectedDatabaseId,
-    addScheme,
     deleteScheme,
     toggleSchemeActive,
     importFromJson,
@@ -63,6 +52,12 @@ export const DatabaseManagerView: React.FC = () => {
     return matchesSearch;
   });
 
+  /** Changement d'onglet : le message de la dernière intégration n'est plus pertinent */
+  const goToTab = (tab: typeof activeSubTab) => {
+    setActiveSubTab(tab);
+    setIngestStatus(null);
+  };
+
   const handleAutoIngest = (e: React.FormEvent) => {
     e.preventDefault();
     setIngestStatus(null);
@@ -70,7 +65,7 @@ export const DatabaseManagerView: React.FC = () => {
     if (res.success && res.scheme) {
       setIngestStatus({
         success: true,
-        message: `Dispositif "${res.scheme.name}" analysé et intégré avec succès au moteur de règles ! Code attribué : ${res.scheme.code}`
+        message: `Dispositif « ${res.scheme.name} » analysé et intégré au moteur de règles (code attribué : ${res.scheme.code}).`
       });
       setIngestTitle('');
       setIngestRawText('');
@@ -83,7 +78,7 @@ export const DatabaseManagerView: React.FC = () => {
   const handleJsonImport = () => {
     setImportStatus(null);
     if (!jsonInput.trim()) {
-      setImportStatus({ success: false, message: 'Veuillez coller un JSON valide.' });
+      setImportStatus({ success: false, message: 'Coller un export JSON valide.' });
       return;
     }
     const res = importFromJson(jsonInput);
@@ -105,346 +100,265 @@ export const DatabaseManagerView: React.FC = () => {
 
   return (
     <div>
-      <PageHero
-        eyebrow="Gestionnaire de bases documentaires"
+      <PageHeader
         title="Textes officiels"
-        description="Consultez, mettez à jour ou intégrez de nouveaux textes, arrêtés et bases de dispositifs pour enrichir le moteur de diagnostic en temps réel."
+        description="Bases documentaires du moteur d’éligibilité : consultation des dispositifs, intégration d’un nouveau texte, import et export."
         actions={
-          <button
-            onClick={resetToOfficial}
-            title="Restaurer la base officielle ADEC 2026 certifiée"
-            className={heroSecondaryActionClass}
-          >
+          <button onClick={resetToOfficial} title="Restaurer la base officielle ADEC 2026" className={btn('secondary')}>
             <RotateCcw className="w-3.5 h-3.5" />
             Réinitialiser la base officielle
           </button>
         }
+        tabs={
+          <>
+            <TabButton active={activeSubTab === 'schemes'} onClick={() => goToTab('schemes')}>
+              Dispositifs référencés
+              <span className="text-xs text-neutral-400 font-normal">{allActiveSchemes.length}</span>
+            </TabButton>
+            <TabButton active={activeSubTab === 'ingest'} onClick={() => goToTab('ingest')}>
+              Intégrer un texte réglementaire
+            </TabButton>
+            <TabButton active={activeSubTab === 'import_export'} onClick={() => goToTab('import_export')}>
+              Import / export JSON
+            </TabButton>
+          </>
+        }
       />
 
-      <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 space-y-6">
+      <div className={`${pageContainer} py-5 space-y-4`}>
         {/* Sélecteur des bases actives */}
-        <div className="bg-white border border-neutral-200 p-4 flex items-center gap-2 flex-wrap text-xs">
-          <span className="text-neutral-500 font-bold uppercase tracking-wider text-[11px] mr-1">Bases actives :</span>
-          <button
-            onClick={() => setSelectedDatabaseId('ALL')}
-            className={`px-3.5 py-1.5 rounded-full border transition font-semibold cursor-pointer ${
-              selectedDatabaseId === 'ALL'
-                ? 'bg-prune-600 border-prune-600 text-white'
-                : 'bg-white border-neutral-300 text-neutral-700 hover:border-prune-400 hover:text-prune-700'
-            }`}
-          >
-            Toutes les bases ({allActiveSchemes.length} mesures)
-          </button>
-          {databases.map((db) => (
-            <button
-              key={db.id}
-              onClick={() => setSelectedDatabaseId(db.id)}
-              className={`px-3.5 py-1.5 rounded-full border transition font-semibold flex items-center gap-1.5 cursor-pointer ${
-                selectedDatabaseId === db.id
-                  ? 'bg-prune-600 border-prune-600 text-white'
-                  : 'bg-white border-neutral-300 text-neutral-700 hover:border-prune-400 hover:text-prune-700'
-              }`}
-            >
-              {db.isOfficialBase && (
-                <CheckCircle2 className={`w-3 h-3 ${selectedDatabaseId === db.id ? 'text-white' : 'text-emerald-600'}`} />
-              )}
-              {db.title} ({db.schemes.length})
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-neutral-500">Bases actives :</span>
+          <SegmentedControl
+            ariaLabel="Bases actives"
+            value={selectedDatabaseId}
+            onChange={setSelectedDatabaseId}
+            options={[
+              { value: 'ALL', label: `Toutes (${databases.reduce((n, db) => n + db.schemes.length, 0)})` },
+              ...databases.map((db) => ({
+                value: db.id,
+                label: `${db.title} (${db.schemes.length})`,
+                title: db.isOfficialBase ? 'Base officielle' : undefined
+              }))
+            ]}
+          />
         </div>
 
-        {/* Onglets */}
-        <div className="flex items-center gap-6 border-b border-neutral-200 overflow-x-auto">
-          <TabButton active={activeSubTab === 'schemes'} onClick={() => setActiveSubTab('schemes')}>
-            <BookOpen className="w-4 h-4" />
-            Dispositifs référencés ({allActiveSchemes.length})
-          </TabButton>
-          <TabButton active={activeSubTab === 'ingest'} onClick={() => setActiveSubTab('ingest')}>
-            <Sparkles className="w-4 h-4" />
-            Analyser & intégrer un nouveau texte réglementaire
-          </TabButton>
-          <TabButton active={activeSubTab === 'import_export'} onClick={() => setActiveSubTab('import_export')}>
-            <FileCode className="w-4 h-4" />
-            Import / Export JSON
-          </TabButton>
-        </div>
+        {ingestStatus?.success && activeSubTab === 'schemes' && (
+          <Notice tone="success">{ingestStatus.message}</Notice>
+        )}
 
-        {/* SUB-TAB 1 : LIST OF REFERENCED SCHEMES */}
+        {/* Onglet 1 : dispositifs référencés */}
         {activeSubTab === 'schemes' && (
-          <div className="space-y-4">
+          <>
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="relative max-w-md w-full">
-                <Search className="w-4 h-4 absolute left-3 top-2.5 text-neutral-400" />
+              <div className="relative w-full sm:max-w-sm">
+                <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input
-                  type="text"
+                  type="search"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Rechercher par mot-clé, code ou objectif..."
-                  className="w-full pl-9 pr-3.5 py-2 text-xs bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-prune-500"
+                  placeholder="Mot clé, code ou objectif…"
+                  className={`${inputClass} pl-8`}
                 />
               </div>
               <span className="text-xs text-neutral-500">
-                {filteredSchemes.length} dispositif(s) affiché(s)
+                {filteredSchemes.length} dispositif{filteredSchemes.length > 1 ? 's' : ''} affiché{filteredSchemes.length > 1 ? 's' : ''}
               </span>
             </div>
 
-            <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-neutral-50 border-b border-neutral-200 text-neutral-600 font-semibold uppercase tracking-wider text-[11px]">
-                      <th className="py-3 px-4">Code & Nom</th>
-                      <th className="py-3 px-4">Catégorie & Source</th>
-                      <th className="py-3 px-4">Éval. Qual.</th>
-                      <th className="py-3 px-4">Taux Indicatifs</th>
-                      <th className="py-3 px-4 text-right">Plafond</th>
-                      <th className="py-3 px-4 text-center">Statut</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
+            <Panel bodyClassName="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-neutral-200 bg-neutral-50 text-[11px] uppercase tracking-wide text-neutral-500">
+                    <th className="py-2 px-4 font-medium">Code & nom</th>
+                    <th className="py-2 px-3 font-medium">Catégorie & source</th>
+                    <th className="py-2 px-3 font-medium">Éval. qual.</th>
+                    <th className="py-2 px-3 font-medium">Taux TPE / PE</th>
+                    <th className="py-2 px-3 font-medium text-right">Plafond</th>
+                    <th className="py-2 px-3 font-medium text-center">Statut</th>
+                    <th className="py-2 px-4 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {filteredSchemes.map((s) => (
+                    <tr key={s.id} className="hover:bg-neutral-50 align-top">
+                      <td className="py-2.5 px-4">
+                        <div className="font-mono text-neutral-500">{s.code}</div>
+                        <div className="font-medium text-neutral-900">{s.name}</div>
+                      </td>
+                      <td className="py-2.5 px-3 text-neutral-600">
+                        <span className="block">{shortCategoryLabel(s.category)}</span>
+                        <span className="text-[11px] text-neutral-400">{s.sourceDocumentPages}</span>
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        {s.requiresQualitativeEvaluation ? <Badge>≥ 3 OUI</Badge> : <Badge tone="info">Non requise</Badge>}
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap text-neutral-700">
+                        {s.rates.tpeMaxRate
+                          ? `${formatRate(s.rates.tpeMaxRate)} / ${formatRate(s.rates.peMaxRate)}`
+                          : s.rates.flatAmount
+                            ? s.rates.flatAmount.label
+                            : 'Selon barème'}
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap text-right font-medium text-neutral-900">
+                        {s.rates.ceilingAmount.toLocaleString('fr-FR')} €
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => toggleSchemeActive(s.id)}
+                          title={s.isActive ? 'Désactiver ce dispositif' : 'Activer ce dispositif'}
+                          className="cursor-pointer"
+                        >
+                          {s.isActive ? <Badge tone="success">Actif</Badge> : <Badge>Désactivé</Badge>}
+                        </button>
+                      </td>
+                      <td className="py-2 px-4 text-right whitespace-nowrap">
+                        <button type="button" onClick={() => setSelectedSchemeForModal(s)} className={btn('ghost', 'sm')}>
+                          Détails
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteScheme(s.id)}
+                          className={iconBtnDanger}
+                          title="Supprimer le dispositif"
+                          aria-label={`Supprimer ${s.name}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-200">
-                    {filteredSchemes.map((s) => (
-                      <tr key={s.id} className="hover:bg-neutral-50/80 transition">
-                        <td className="py-3 px-4">
-                          <div className="font-mono text-neutral-500 font-bold">{s.code}</div>
-                          <div className="font-bold text-neutral-900 text-xs">{s.name}</div>
-                        </td>
-                        <td className="py-3 px-4 text-neutral-600">
-                          <span className="block font-medium">{s.category}</span>
-                          <span className="text-[11px] text-neutral-400">{s.sourceDocumentPages}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          {s.requiresQualitativeEvaluation ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                              ≥ 3 OUI requis
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-100 text-neutral-600">
-                              Exemptée
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 font-mono text-neutral-700">
-                          {s.rates.tpeMaxRate ? `${s.rates.tpeMaxRate * 100}% TPE / ${s.rates.peMaxRate ? s.rates.peMaxRate * 100 : '-'}% PE` : s.rates.flatAmount ? s.rates.flatAmount.label : 'Selon barème'}
-                        </td>
-                        <td className="py-3 px-4 font-mono text-right font-bold text-neutral-900">
-                          {s.rates.ceilingAmount.toLocaleString('fr-FR')} €
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <button
-                            onClick={() => toggleSchemeActive(s.id)}
-                            className="text-neutral-600 hover:text-neutral-900"
-                          >
-                            {s.isActive ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                                Actif
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded">
-                                Désactivé
-                              </span>
-                            )}
-                          </button>
-                        </td>
-                        <td className="py-3 px-4 text-right space-x-1 whitespace-nowrap">
-                          <button
-                            onClick={() => setSelectedSchemeForModal(s)}
-                            className="px-2.5 py-1 text-neutral-700 hover:bg-neutral-200 rounded font-medium text-[11px] transition"
-                          >
-                            Détails
-                          </button>
-                          <button
-                            onClick={() => deleteScheme(s.id)}
-                            className="p-1 text-neutral-400 hover:text-red-600 transition"
-                            title="Supprimer le dispositif"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 inline" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+                  ))}
+                  {filteredSchemes.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-neutral-500">
+                        Aucun dispositif ne correspond à la recherche.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </Panel>
+          </>
         )}
 
-        {/* SUB-TAB 2 : AUTO-INGESTION DE TEXTE RÉGLEMENTAIRE */}
+        {/* Onglet 2 : intégration d'un texte réglementaire */}
         {activeSubTab === 'ingest' && (
-          <div className="bg-white border border-neutral-200 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xs">
-            <div>
-              <h2 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-emerald-600" />
-                Analyseur Automatique de Nouveau Dispositif ou Texte Réglementaire
-              </h2>
-              <p className="text-xs text-neutral-500 mt-1">
-                Collez le texte officiel d'une nouvelle délibération, d'un appel à projets de l'ADEC ou d'un décret territorial. L'analyseur extrait automatiquement les critères d'éligibilité, taux, planchers et plafonds et l'intègre au moteur de diagnostic.
-              </p>
-            </div>
-
-            {ingestStatus && (
-              <div
-                className={`p-4 rounded-xl text-xs flex items-start gap-2.5 ${
-                  ingestStatus.success
-                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-900'
-                    : 'bg-red-50 border border-red-200 text-red-900'
-                }`}
-              >
-                {ingestStatus.success ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                )}
-                <span>{ingestStatus.message}</span>
-              </div>
-            )}
+          <Panel
+            title="Analyser un nouveau dispositif ou texte réglementaire"
+            description="Coller le texte d’une délibération, d’un appel à projets ou d’un règlement : critères d’éligibilité, taux, planchers et plafonds sont extraits puis intégrés au moteur."
+          >
+            {ingestStatus && !ingestStatus.success && <Notice tone="danger">{ingestStatus.message}</Notice>}
 
             <form onSubmit={handleAutoIngest} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1">
-                    Intitulé officiel de la nouvelle mesure
+                  <label htmlFor="ingest-title" className={labelClass}>
+                    Intitulé officiel de la mesure
                   </label>
                   <input
+                    id="ingest-title"
                     type="text"
                     required
                     value={ingestTitle}
                     onChange={(e) => setIngestTitle(e.target.value)}
-                    placeholder="Ex: Mesure d'aide à la Décarbonation et Transition Bleue 2026"
-                    className="w-full px-3.5 py-2 text-xs bg-white border border-neutral-300 rounded-lg focus:ring-1 focus:ring-prune-500"
+                    placeholder="Ex : Mesure d’aide à la décarbonation 2026"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1">
-                    Catégorie / Rattachement
+                  <label htmlFor="ingest-category" className={labelClass}>
+                    Rattachement
                   </label>
                   <select
+                    id="ingest-category"
                     value={ingestCategory}
                     onChange={(e) => setIngestCategory(e.target.value as any)}
-                    className="w-full px-3.5 py-2 text-xs bg-white border border-neutral-300 rounded-lg"
+                    className={inputClass}
                   >
-                    <option value="Base Personnalisée">Nouvelle Base Réglementaire Additionnelle</option>
-                    <option value="Guide des Aides - Évaluation Qualitative">
-                      Guide des Aides ADEC (Soumis à l'évaluation qualitative 21/177 AC)
-                    </option>
-                    <option value="Pattu Risilienzia è Territorii">
-                      Pattu Risilienzia è Territorii (Non soumis à l'évaluation qualitative)
-                    </option>
+                    <option value="Base Personnalisée">Nouvelle base réglementaire additionnelle</option>
+                    <option value="Guide des Aides - Évaluation Qualitative">Guide des aides ADEC (soumis à l’évaluation qualitative 21/177 AC)</option>
+                    <option value="Pattu Risilienzia è Territorii">Pattu Risilienzia è Territorii (non soumis à l’évaluation qualitative)</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1">
-                  Texte intégral ou extrait du règlement / appel à projet
+                <label htmlFor="ingest-text" className={labelClass}>
+                  Texte intégral ou extrait du règlement / appel à projets
                 </label>
                 <textarea
-                  rows={8}
+                  id="ingest-text"
+                  rows={10}
                   required
                   value={ingestRawText}
                   onChange={(e) => setIngestRawText(e.target.value)}
-                  placeholder="Collez ici les articles du dispositif (Objectifs, Bénéficiaires, Exclusions, Dépenses éligibles, Taux d'intensité max 70% pour TPE, Plafond 300 000 euros, assise de minimis)..."
-                  className="w-full px-3.5 py-2 text-xs font-mono bg-neutral-50 border border-neutral-300 rounded-lg focus:ring-1 focus:ring-prune-500 leading-relaxed"
+                  placeholder="Objectifs, bénéficiaires, exclusions, dépenses éligibles, taux d’intensité (ex. 70 % pour les TPE), plafond (ex. 300 000 €), régime de minimis…"
+                  className={`${inputSmClass} font-mono leading-relaxed`}
                 />
               </div>
 
               <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-prune-600 hover:bg-aubergine-600 text-white text-xs font-bold rounded-full shadow-sm flex items-center gap-2 transition"
-                >
-                  <Sparkles className="w-4 h-4 text-emerald-400" />
-                  Analyser et Intégrer au Moteur d’Éligibilité
+                <button type="submit" className={btn('primary')}>
+                  Analyser et intégrer au moteur
                 </button>
               </div>
             </form>
-          </div>
+          </Panel>
         )}
 
-        {/* SUB-TAB 3 : IMPORT / EXPORT JSON */}
+        {/* Onglet 3 : import / export JSON */}
         {activeSubTab === 'import_export' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-4 shadow-xs">
-              <div className="flex items-center gap-2 text-neutral-900 font-bold text-sm">
-                <Upload className="w-4 h-4 text-neutral-600" />
-                Importer une Base Documentaire (JSON)
-              </div>
-              <p className="text-xs text-neutral-500">
-                Collez un export JSON de règles pour charger de nouveaux dispositifs ou remplacer le catalogue actif.
-              </p>
-
-              {importStatus && (
-                <div
-                  className={`p-3 rounded-lg text-xs ${
-                    importStatus.success
-                      ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
-                      : 'bg-red-50 text-red-900 border border-red-200'
-                  }`}
-                >
-                  {importStatus.message}
-                </div>
-              )}
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Panel title="Importer une base (JSON)" icon={Upload} description="Charger de nouveaux dispositifs ou remplacer le catalogue actif.">
+              {importStatus && <Notice tone={importStatus.success ? 'success' : 'danger'}>{importStatus.message}</Notice>}
               <textarea
-                rows={8}
+                rows={9}
                 value={jsonInput}
                 onChange={(e) => setJsonInput(e.target.value)}
-                placeholder="Collez votre code JSON ici..."
-                className="w-full px-3 py-2 text-xs font-mono bg-neutral-50 border border-neutral-300 rounded-lg focus:ring-1 focus:ring-prune-500"
+                placeholder="Coller l’export JSON ici…"
+                aria-label="Contenu JSON à importer"
+                className={`${inputSmClass} font-mono`}
               />
-
-              <button
-                onClick={handleJsonImport}
-                className="w-full py-2 bg-prune-600 text-white text-xs font-semibold rounded-full hover:bg-aubergine-600 transition"
-              >
-                Valider et Importer les Données
-              </button>
-            </div>
-
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-4 shadow-xs flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-neutral-900 font-bold text-sm">
-                  <Download className="w-4 h-4 text-neutral-600" />
-                  Exporter la Base Active (JSON)
-                </div>
-                <p className="text-xs text-neutral-500">
-                  Sauvegardez l'intégralité des bases documentaires actuellement actives, incluant les règles officielles et vos dispositifs ajoutés.
-                </p>
-
-                <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-200 text-xs text-neutral-600 space-y-2">
-                  <div className="flex justify-between">
-                    <span>Total des bases :</span>
-                    <span className="font-bold text-neutral-900">{databases.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total des dispositifs modélisés :</span>
-                    <span className="font-bold text-neutral-900">{allActiveSchemes.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Format :</span>
-                    <span className="font-mono text-neutral-700">JSON v2026.1</span>
-                  </div>
-                </div>
+              <div className="flex justify-end">
+                <button type="button" onClick={handleJsonImport} className={btn('primary')}>
+                  Valider et importer
+                </button>
               </div>
+            </Panel>
 
-              <button
-                onClick={handleDownloadExport}
-                className="w-full py-2 bg-prune-600 hover:bg-aubergine-600 text-white text-xs font-bold rounded-full transition flex items-center justify-center gap-2 shadow-xs"
-              >
-                <Download className="w-4 h-4" />
-                Télécharger le Fichier d'Exportation JSON
-              </button>
-            </div>
+            <Panel
+              title="Exporter la base active (JSON)"
+              icon={Download}
+              description="Sauvegarde de toutes les bases actives : règles officielles et dispositifs ajoutés."
+            >
+              <dl className="text-xs divide-y divide-neutral-100 border border-neutral-200 rounded-md">
+                <div className="flex justify-between px-3 py-2">
+                  <dt className="text-neutral-500">Bases</dt>
+                  <dd className="font-medium text-neutral-900">{databases.length}</dd>
+                </div>
+                <div className="flex justify-between px-3 py-2">
+                  <dt className="text-neutral-500">Dispositifs modélisés</dt>
+                  <dd className="font-medium text-neutral-900">{allActiveSchemes.length}</dd>
+                </div>
+                <div className="flex justify-between px-3 py-2">
+                  <dt className="text-neutral-500">Format</dt>
+                  <dd className="font-mono text-neutral-700">JSON v2026.1</dd>
+                </div>
+              </dl>
+              <div className="flex justify-end">
+                <button type="button" onClick={handleDownloadExport} className={btn('primary')}>
+                  <Download className="w-3.5 h-3.5" />
+                  Télécharger l’export
+                </button>
+              </div>
+            </Panel>
           </div>
         )}
 
-        {/* Modal inspect */}
-        <DispositifDetailModal
-          scheme={selectedSchemeForModal}
-          onClose={() => setSelectedSchemeForModal(null)}
-        />
+        <DispositifDetailModal scheme={selectedSchemeForModal} onClose={() => setSelectedSchemeForModal(null)} />
       </div>
     </div>
   );

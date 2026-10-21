@@ -5,10 +5,11 @@
 
 import React, { useState } from 'react';
 import { ProjectFinancials, NeedCategory, RegulatoryStatus, CompanyProfile, DispositifScheme } from '../../types';
-import { Target, Check, AlertCircle, Info, Sparkles, ShieldCheck, Award, Eye, Database } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { analyzeCompanyCreationDate } from '../../utils/companyAge';
 import { useDatabases } from '../../context/DatabaseContext';
 import { DispositifDetailModal } from '../Results/DispositifDetailModal';
+import { Badge, Notice, Panel, SectionHeading, inputClass, labelClass } from '../Layout/ui';
 
 interface StepProjectNeedProps {
   data: ProjectFinancials;
@@ -57,7 +58,7 @@ const NEED_OPTIONS: NeedOption[] = [
     recommendedWhen: (_, company) => {
       const age = analyzeCompanyCreationDate(company?.creationDate);
       if (age.isDateKnown && age.isUnderFiveYears) {
-        return `Recommandé pour votre entreprise créée il y a ${age.ageLabel} (≤ 5 ans)`;
+        return `Recommandé : entreprise créée il y a ${age.ageLabel} (≤ 5 ans)`;
       }
       return null;
     }
@@ -70,7 +71,7 @@ const NEED_OPTIONS: NeedOption[] = [
     isExemptFromQualitative: true,
     recommendedWhen: (regulatory) =>
       regulatory?.isCompanyInDifficultyEU
-        ? 'Recommandé suite à votre déclaration en étape 2 (Entreprise en difficulté)'
+        ? 'Recommandé : entreprise déclarée en difficulté (étape 2)'
         : null
   },
   {
@@ -95,7 +96,7 @@ const NEED_OPTIONS: NeedOption[] = [
     isExemptFromQualitative: true,
     recommendedWhen: (_, company) =>
       company?.locationType === 'RURAL_SALVEZZA_UNDER_1000' || company?.locationType === 'POLE_RURAL_STRUCTURANT'
-        ? 'Adapté à votre implantation en territoire rural ou de montagne (Étape 1)'
+        ? 'Adapté : implantation en territoire rural ou de montagne (étape 1)'
         : null
   },
   {
@@ -155,7 +156,7 @@ const NEED_OPTIONS: NeedOption[] = [
     isExemptFromQualitative: false,
     recommendedWhen: (_, company) =>
       company?.legalForm === 'ASSOCIATION_ESS' || company?.legalForm === 'SIAE' || company?.sector === 'ESS'
-        ? 'Adapté à votre statut ESS (Étape 1)'
+        ? 'Adapté : structure de l’ESS (étape 1)'
         : null
   },
   {
@@ -166,6 +167,21 @@ const NEED_OPTIONS: NeedOption[] = [
     isExemptFromQualitative: false
   }
 ];
+
+/** Case de sélection d'un besoin ou d'un dispositif */
+const SelectableCard: React.FC<{ selected: boolean; onToggle: () => void; children: React.ReactNode }> = ({ selected, onToggle, children }) => (
+  <label
+    className={`flex items-start gap-2.5 px-3 py-2.5 border rounded-md cursor-pointer transition-colors ${
+      selected ? 'border-prune-600 bg-prune-50/50' : 'border-neutral-200 bg-white hover:bg-neutral-50'
+    }`}
+  >
+    <input type="checkbox" checked={selected} onChange={onToggle} className="w-4 h-4 mt-0.5 shrink-0" />
+    <span className="min-w-0 flex-1 space-y-1">{children}</span>
+  </label>
+);
+
+const QualitativeBadge: React.FC<{ exempt: boolean }> = ({ exempt }) =>
+  exempt ? <Badge tone="info">Sans évaluation qualitative (Annexe 1)</Badge> : <Badge>Évaluation qualitative : ≥ 3 OUI</Badge>;
 
 export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulatory, company, onChange, embedded = false }) => {
   const { allActiveSchemes } = useDatabases();
@@ -186,260 +202,107 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {!embedded && (
-        <div className="border-b border-neutral-200 pb-4">
-          <h2 className="text-xl font-bold text-neutral-900 tracking-tight flex items-center gap-2">
-            <Target className="w-5 h-5 text-neutral-700" />
-            3. Identification des Besoins Spécifiques & Typologie du Projet
-          </h2>
-          <p className="text-sm text-neutral-500 mt-1">
-            Sélectionnez les axes correspondant précisément à votre projet d’entreprise pour activer les dispositifs réglementaires adéquats.
-          </p>
-        </div>
+        <SectionHeading
+          title="3. Besoins spécifiques et typologie du projet"
+          description="Axes correspondant au projet : ils déterminent les dispositifs analysés par le moteur."
+        />
       )}
 
       {regulatory?.isCompanyInDifficultyEU && (
-        <div className="p-3.5 bg-petrole-50 border border-petrole-200 rounded-xl flex items-start gap-2.5 text-xs text-petrole-950">
-          <Info className="w-4 h-4 text-petrole-600 shrink-0 mt-0.5" />
-          <div>
-            <strong className="block">Orientation automatique prise en compte (Étape 2) :</strong>
-            <span>
-              Votre entreprise a été déclarée en situation de difficulté financière. Le besoin <strong>« Rebond & Restructuration (Ribumbà) »</strong> a été automatiquement sélectionné pour assurer son éligibilité à ce dispositif d'urgence. Vous pouvez affiner ou ajouter d'autres besoins complémentaires ci-dessous.
-            </span>
-          </div>
-        </div>
+        <Notice tone="info" title="Orientation automatique (étape 2)">
+          L’entreprise est déclarée en difficulté financière : le besoin <strong>« Rebond & Restructuration (Ribumbà) »</strong> est sélectionné automatiquement. D’autres besoins peuvent être ajoutés ci-dessous.
+        </Notice>
       )}
 
-      <div>
-        <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
-          Description synthétique du projet (optionnelle mais recommandée)
-        </label>
-        <textarea
-          rows={3}
-          value={data.projectDescription || ''}
-          onChange={(e) => onChange({ projectDescription: e.target.value })}
-          placeholder="Ex: Acquisition d’une nouvelle ligne de conditionnement moderne et développement d’un site de vente en ligne multilingue..."
-          className="w-full px-3.5 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 transition"
-        />
-      </div>
-
-      {/* SECTION NOUVEAUX DISPOSITIFS / BASES DOCUMENTAIRES AJOUTÉES */}
-      {customSchemes.length > 0 && (
-        <div className="p-4 bg-aubergine-50/70 border-2 border-aubergine-300/80 rounded-2xl shadow-xs space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2.5">
-              <span className="p-1.5 rounded-lg bg-aubergine-600 text-white shadow-2xs">
-                <Database className="w-4 h-4" />
-              </span>
-              <div>
-                <h3 className="text-sm font-bold text-aubergine-950 flex items-center gap-2">
-                  Nouveaux Dispositifs & Bases Documentaires Ajoutées ({customSchemes.length})
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-aubergine-200/80 text-aubergine-900 border border-aubergine-300">
-                    Actifs
-                  </span>
-                </h3>
-                <p className="text-[11px] text-aubergine-800">
-                  Dispositifs récemment importés ou analysés dans votre base documentaire. Cochez-les pour les cibler en priorité dans votre diagnostic.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {customSchemes.map((scheme) => {
-              const isSelected = data.selectedNeedCategories.includes(scheme.id);
-              return (
-                <div
-                  key={scheme.id}
-                  onClick={() => toggleNeed(scheme.id)}
-                  className={`p-3.5 border rounded-xl cursor-pointer transition text-left relative flex flex-col justify-between ${
-                    isSelected
-                      ? 'border-aubergine-600 bg-white shadow-xs ring-2 ring-aubergine-500/20'
-                      : 'border-neutral-200 bg-white hover:border-aubergine-300 hover:bg-neutral-50/80'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="text-[10px] font-mono font-bold text-aubergine-800 bg-aubergine-50 px-1.5 py-0.5 rounded border border-aubergine-200">
-                            {scheme.code}
-                          </span>
-                          <span className="text-[10px] text-neutral-500 font-medium">
-                            {scheme.category}
-                          </span>
-                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-petrole-100 text-petrole-800 border border-petrole-200">
-                            Nouveau
-                          </span>
-                        </div>
-                        <h4 className={`text-sm font-bold leading-snug ${isSelected ? 'text-aubergine-950' : 'text-neutral-900'}`}>
-                          {scheme.name}
-                        </h4>
-                      </div>
-                      <div
-                        className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition ${
-                          isSelected
-                            ? 'bg-aubergine-600 text-white shadow-xs'
-                            : 'border border-neutral-300 bg-white'
-                        }`}
-                      >
-                        {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                      </div>
-                    </div>
-                    <p className="text-xs text-neutral-600 leading-relaxed mb-2.5 line-clamp-2">
-                      {scheme.objective || scheme.subtitle}
-                    </p>
-                  </div>
-
-                  <div className="pt-2.5 border-t border-neutral-100 flex flex-col gap-1.5 text-[11px]">
-                    <div className="flex items-center justify-between gap-1.5">
-                      <span className="text-neutral-400 font-medium">Taux d'aide indicatif :</span>
-                      <span className="font-bold text-aubergine-700">
-                        {scheme.rates?.tpeMaxRate ? `${(scheme.rates.tpeMaxRate * 100).toFixed(0)} %` : 'Selon barème'}
-                        {scheme.rates?.ceilingAmount ? ` (Plafond : ${scheme.rates.ceilingAmount.toLocaleString('fr-FR')} €)` : ''}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between flex-wrap gap-1">
-                      {!scheme.requiresQualitativeEvaluation ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                          <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
-                          Non soumis à l'évaluation qualitative
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-normal text-neutral-500 bg-neutral-50 px-2 py-0.5 rounded border border-neutral-200/80">
-                          <Award className="w-3 h-3 text-neutral-400 shrink-0" />
-                          Soumis à l'évaluation qualitative (≥ 3 OUI)
-                        </span>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedSchemeDetail(scheme);
-                        }}
-                        className="text-[11px] text-aubergine-600 hover:text-aubergine-800 font-semibold flex items-center gap-1 hover:underline ml-auto"
-                      >
-                        <Eye className="w-3 h-3" />
-                        Fiche
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-            Sélectionnez les besoins concernés ({data.selectedNeedCategories.length} sélectionné(s))
+      {/* La description du projet est saisie dans le panneau « Projet » quand cette section y est intégrée */}
+      {!embedded && (
+        <div>
+          <label htmlFor="need-description" className={labelClass}>
+            Description synthétique du projet (facultative)
           </label>
-          <span className="text-xs text-neutral-500">
-            Sélection multiple autorisée · Cliquez pour activer ou désactiver
-          </span>
+          <textarea
+            id="need-description"
+            rows={3}
+            value={data.projectDescription || ''}
+            onChange={(e) => onChange({ projectDescription: e.target.value })}
+            placeholder="Ex : acquisition d’une ligne de conditionnement et développement d’un site de vente en ligne multilingue…"
+            className={inputClass}
+          />
         </div>
+      )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {/* Dispositifs ajoutés aux bases documentaires */}
+      {customSchemes.length > 0 && (
+        <Panel
+          headingLevel={3}
+          title={`Dispositifs ajoutés à la base (${customSchemes.length})`}
+          description="Dispositifs importés ou analysés dans les bases documentaires : les cocher pour les cibler dans la simulation."
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {customSchemes.map((scheme) => (
+              <SelectableCard key={scheme.id} selected={data.selectedNeedCategories.includes(scheme.id)} onToggle={() => toggleNeed(scheme.id)}>
+                <span className="flex items-center gap-2 flex-wrap text-[11px] text-neutral-500">
+                  <span className="font-mono text-neutral-700">{scheme.code}</span>
+                  <span>{scheme.category}</span>
+                </span>
+                <span className="block text-sm font-medium text-neutral-900 leading-snug">{scheme.name}</span>
+                <span className="block text-xs text-neutral-600 leading-relaxed line-clamp-2">{scheme.objective || scheme.subtitle}</span>
+                <span className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+                  <span className="text-neutral-600">
+                    Taux indicatif : {scheme.rates?.tpeMaxRate ? `${(scheme.rates.tpeMaxRate * 100).toFixed(0)} %` : 'selon barème'}
+                    {scheme.rates?.ceilingAmount ? ` · plafond ${scheme.rates.ceilingAmount.toLocaleString('fr-FR')} €` : ''}
+                  </span>
+                  <QualitativeBadge exempt={!scheme.requiresQualitativeEvaluation} />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedSchemeDetail(scheme);
+                    }}
+                    className="ml-auto inline-flex items-center gap-1 font-medium text-prune-700 hover:text-prune-900 cursor-pointer"
+                  >
+                    <Eye className="w-3 h-3" />
+                    Fiche
+                  </button>
+                </span>
+              </SelectableCard>
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      <Panel
+        headingLevel={3}
+        title="Besoins concernés"
+        description="Sélection multiple possible."
+        actions={<Badge tone={data.selectedNeedCategories.length > 0 ? 'accent' : 'neutral'}>{data.selectedNeedCategories.length} sélectionné(s)</Badge>}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {NEED_OPTIONS.map((opt) => {
-            const isSelected = data.selectedNeedCategories.includes(opt.id);
             const recommendation = opt.recommendedWhen ? opt.recommendedWhen(regulatory, company) : null;
-
             return (
-              <div
-                key={opt.id}
-                onClick={() => toggleNeed(opt.id)}
-                className={`p-3.5 border rounded-xl cursor-pointer transition text-left relative flex flex-col justify-between ${
-                  isSelected
-                    ? 'border-prune-600 bg-prune-50/80 shadow-xs ring-2 ring-prune-500/20'
-                    : 'border-neutral-200 bg-white hover:border-prune-300 hover:bg-neutral-50/80'
-                }`}
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <div>
-                      <h3 className={`text-sm font-bold leading-snug ${isSelected ? 'text-prune-950' : 'text-neutral-900'}`}>
-                        {opt.title}
-                      </h3>
-                      {recommendation && (
-                        <span className="inline-block mt-1 text-[10px] font-bold text-prune-800 bg-prune-100 px-2 py-0.5 rounded border border-prune-200">
-                          {recommendation}
-                        </span>
-                      )}
-                    </div>
-                    <div
-                      className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition ${
-                        isSelected
-                          ? 'bg-prune-600 text-white shadow-xs'
-                          : 'border border-neutral-300 bg-white'
-                      }`}
-                    >
-                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                    </div>
-                  </div>
-                  <p className="text-xs text-neutral-600 leading-relaxed mb-2.5">
-                    {opt.tagline}
-                  </p>
-                </div>
-
-                <div className="pt-2.5 border-t border-neutral-100 flex flex-col gap-1.5 text-[11px]">
-                  <div className="flex items-center gap-1.5 font-medium">
-                    <span className="text-neutral-400">Mesure cible :</span>
-                    <span className={`px-2 py-0.5 rounded text-[11px] font-semibold truncate ${
-                      isSelected
-                        ? 'bg-prune-100/80 text-prune-900 border border-prune-200'
-                        : 'bg-neutral-100 text-neutral-700'
-                    }`}>
-                      {opt.dispositifsAssocies}
-                    </span>
-                  </div>
-
-                  {opt.isExemptFromQualitative ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 w-fit">
-                      <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
-                      Non soumis à l'évaluation qualitative (Annexe 1)
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-normal text-neutral-500 bg-neutral-50 px-2 py-0.5 rounded border border-neutral-200/80 w-fit">
-                      <Award className="w-3 h-3 text-neutral-400 shrink-0" />
-                      Soumis à l'évaluation qualitative (≥ 3 OUI)
-                    </span>
-                  )}
-                </div>
-              </div>
+              <SelectableCard key={opt.id} selected={data.selectedNeedCategories.includes(opt.id)} onToggle={() => toggleNeed(opt.id)}>
+                <span className="block text-sm font-medium text-neutral-900 leading-snug">{opt.title}</span>
+                {recommendation && <span className="block text-[11px] font-medium text-prune-800">{recommendation}</span>}
+                <span className="block text-xs text-neutral-600 leading-relaxed">{opt.tagline}</span>
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-[11px]">
+                  <span className="text-neutral-500">Mesure cible :</span>
+                  <span className="font-medium text-neutral-800">{opt.dispositifsAssocies}</span>
+                  <QualitativeBadge exempt={Boolean(opt.isExemptFromQualitative)} />
+                </span>
+              </SelectableCard>
             );
           })}
         </div>
 
-        {/* Information Base Documentaire Personnalisée si aucun dispositif personnalisé actif */}
-        {customSchemes.length === 0 && (
-          <div className="p-3 bg-neutral-50 border border-neutral-200/80 rounded-xl text-xs text-neutral-500 flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-aubergine-500 shrink-0" />
-              <span>
-                Vous souhaitez intégrer un autre arrêté ou dispositif d’aide spécifique ? Vous pouvez enrichir la base à tout moment via l’onglet <strong>Base Documentaire</strong>.
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Note officielle sur les 2 régimes d'instruction */}
-        <div className="p-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-600 flex items-start gap-2.5">
-          <Info className="w-4 h-4 text-neutral-500 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <span className="font-bold text-neutral-800 block">
-              Information sur l'étape suivante (Évaluation Qualitative) :
-            </span>
-            <p className="text-[11px] leading-relaxed text-neutral-600">
-              Les mesures de l'Annexe 1 (<strong className="text-neutral-800">U PATTU RISILIENZA È TERRITORII</strong> : Risilienza, Impresi Paisani, Rinascita, Ribumbà) ne relèvent pas de la grille d'évaluation qualitative de la Délibération N° 21/177 AC et font l'objet d'une instruction directe sans exigence de score minimal.
-            </p>
-          </div>
-        </div>
-      </div>
+        <Notice>
+          Les mesures de l’Annexe 1 (<strong>U Pattu Risilienza è Territorii</strong> : Risilienza, Impresi Paisani, Rinascita, Ribumbà) ne relèvent pas de la grille d’évaluation qualitative de la délibération n° 21/177 AC : instruction directe, sans score minimal.
+          {customSchemes.length === 0 && ' D’autres arrêtés ou dispositifs peuvent être ajoutés à la base depuis la page Textes officiels.'}
+        </Notice>
+      </Panel>
 
       {/* Modale d'aperçu d'un dispositif personnalisé */}
       {selectedSchemeDetail && (

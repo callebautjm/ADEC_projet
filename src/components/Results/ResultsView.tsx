@@ -1,6 +1,6 @@
 /**
- * Vue des Résultats & Recommandations d'Accompagnement ADEC 2026
- * Analyse rigoureuse et personnalisée
+ * Résultat de la simulation : dispositifs éligibles, sous condition ou non retenus,
+ * avec le détail des calculs, motifs et rappels d'instruction.
  */
 
 import React, { useState } from 'react';
@@ -13,50 +13,100 @@ import {
 import { DispositifDetailModal } from './DispositifDetailModal';
 import { PrintDiagnosticModal } from './PrintDiagnosticModal';
 import { analyzeCompanyCreationDate } from '../../utils/companyAge';
-import {
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Award,
-  Euro,
-  FileText,
-  Printer,
-  ExternalLink,
-  ChevronRight,
-  Info,
-  Building,
-  MapPin,
-  Calendar,
-  Sparkles,
-  ArrowRight,
-  Mountain,
-  ShieldCheck
-} from 'lucide-react';
+import { Printer, Check, AlertTriangle, X, MapPin, ChevronRight } from 'lucide-react';
 import { SalvezzaCommunesModal } from '../Salvezza/SalvezzaCommunesModal';
+import { shortCategoryLabel } from '../DocumentaryExplorer/DocumentaryExplorerView';
+import { Badge, Notice, Panel, SectionHeading, SegmentedControl, StatGrid, btn } from '../Layout/ui';
 
 interface ResultsViewProps {
   report: ComprehensiveEvaluationReport;
   company: CompanyProfile;
   onModifyQuestionnaire: () => void;
+  /** Contenu inséré sous les chiffres clés (comparaison avec la fiche projet) */
+  children?: React.ReactNode;
 }
+
+type FilterView = 'all' | 'eligible' | 'conditional' | 'ineligible';
+
+const euro = (n: number) => `${n.toLocaleString('fr-FR')} €`;
+
+/** Ligne d'un dispositif : en-tête cliquable (ouvre la fiche) et détail */
+const SchemeRow: React.FC<{
+  item: EvaluationResultItem;
+  onOpen: (scheme: DispositifScheme) => void;
+  badges?: React.ReactNode;
+  aside?: React.ReactNode;
+  children?: React.ReactNode;
+}> = ({ item, onOpen, badges, aside, children }) => (
+  <li className="group px-4 py-3 hover:bg-neutral-50 cursor-pointer" onClick={() => onOpen(item.scheme)}>
+    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-x-4 gap-y-1">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap text-[11px] text-neutral-500">
+          <span className="font-mono text-neutral-700">{item.scheme.code}</span>
+          <span>{shortCategoryLabel(item.scheme.category)}</span>
+          {badges}
+        </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpen(item.scheme);
+          }}
+          className="mt-0.5 text-left text-sm font-medium text-neutral-900 group-hover:text-prune-800 cursor-pointer"
+        >
+          {item.scheme.name}
+        </button>
+        {item.scheme.subtitle && <p className="text-xs text-neutral-500 line-clamp-1">{item.scheme.subtitle}</p>}
+      </div>
+      <div className="flex items-start gap-2 sm:shrink-0 sm:max-w-64">
+        {aside && <div className="min-w-0 sm:text-right">{aside}</div>}
+        <ChevronRight className="hidden sm:block w-4 h-4 mt-0.5 shrink-0 text-neutral-300 group-hover:text-prune-700" />
+      </div>
+    </div>
+    {children && <div className="mt-2 space-y-1.5 text-[11px]">{children}</div>}
+  </li>
+);
+
+const BulletList: React.FC<{ items: string[]; tone: 'ok' | 'warning' | 'motif' }> = ({ items, tone }) => {
+  if (items.length === 0) return null;
+  const icon =
+    tone === 'ok' ? <Check className="w-3 h-3 text-emerald-600 shrink-0 mt-0.5" />
+      : tone === 'warning' ? <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0 mt-0.5" />
+        : <X className="w-3 h-3 text-red-600 shrink-0 mt-0.5" />;
+  const textClass = tone === 'ok' ? 'text-neutral-600' : tone === 'warning' ? 'text-amber-900' : 'text-red-900';
+  return (
+    <ul className="space-y-0.5">
+      {items.map((text, idx) => (
+        <li key={idx} className={`flex items-start gap-1.5 ${textClass}`}>
+          {icon}
+          <span>{text}</span>
+        </li>
+      ))}
+    </ul>
+  );
+};
 
 export const ResultsView: React.FC<ResultsViewProps> = ({
   report,
   company,
-  onModifyQuestionnaire
+  onModifyQuestionnaire,
+  children
 }) => {
   const [selectedScheme, setSelectedScheme] = useState<DispositifScheme | null>(null);
-  const [filterView, setFilterView] = useState<'all' | 'eligible' | 'conditional' | 'ineligible'>('all');
+  const [filterView, setFilterView] = useState<FilterView>('all');
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isSalvezzaModalOpen, setIsSalvezzaModalOpen] = useState(false);
+  // Les dispositifs non retenus sont repliés dans la vue « Tous » pour garder la page lisible
+  const [showIneligible, setShowIneligible] = useState(false);
 
   const totalSimulatedEligibleGrant = report.eligibleSchemes.reduce(
     (acc, curr) => acc + curr.estimatedSubsidyAmount,
     0
   );
+  const totalAnalysed = report.eligibleSchemes.length + report.conditionalSchemes.length + report.ineligibleSchemes.length;
 
   const handlePrint = () => {
-    // Toujours ouvrir la modale d'impression officielle pour garantir l'accès
+    // Toujours ouvrir la modale d'impression pour garantir l'accès
     // et éviter les blocages de fenêtres modales par les iframes de navigateurs
     setIsPrintModalOpen(true);
     try {
@@ -67,617 +117,253 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
   };
 
   const companyAge = analyzeCompanyCreationDate(company.creationDate);
+  const salvezzaCommune = report.salvezzaCommune || company.salvezzaCommune;
+  const show = (view: FilterView) => filterView === 'all' || filterView === view;
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 space-y-6">
-      {/* Fenêtre Modale de la Liste des 230 Communes SALVEZZA */}
+    <div className="space-y-4">
       <SalvezzaCommunesModal
         isOpen={isSalvezzaModalOpen}
         onClose={() => setIsSalvezzaModalOpen(false)}
         selectedCommuneCode={company.communeCode || report.salvezzaCommune?.codeCommune}
       />
 
-      {/* Top Banner & Summary Card - Style sobre, institutionnel et lisible */}
-      <div className="bg-white border border-neutral-200 rounded-xl p-6 sm:p-7 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-neutral-200">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-neutral-500 mb-1">
-              <span>Collectivité de Corse · Agence de Développement Économique de la Corse</span>
-              <span>·</span>
-              <span>Guide 2026 & Annexe 1</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight">
-              Bilan d'Éligibilité & Diagnostic d'Aides ADEC
-            </h1>
-            <p className="text-sm text-neutral-600 mt-1">
-              Dossier instruit pour <strong className="text-neutral-900">{company.name || 'Entreprise candidate'}</strong> · Catégorie retenue : <strong className="text-neutral-900">{company.size}</strong> ({company.headcount} ETP)
-            </p>
-            <div className="flex items-center gap-3 mt-2 text-xs">
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border font-medium ${
-                companyAge.isDateKnown 
-                  ? 'bg-neutral-50 border-neutral-200 text-neutral-700' 
-                  : 'bg-amber-50 border-amber-300 text-amber-900'
-              }`}>
-                <Calendar className="w-3.5 h-3.5" />
-                {companyAge.isDateKnown ? (
-                  <span>Immatriculée le {companyAge.dateFormattedFr} ({companyAge.ageLabel})</span>
-                ) : (
-                  <span>Date d'immatriculation non communiquée</span>
-                )}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={onModifyQuestionnaire}
-              className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-medium rounded-lg transition"
-            >
-              Modifier le questionnaire
+      <SectionHeading
+        title="5. Proposition de mesures"
+        description={
+          <>
+            {company.name || 'Entreprise'} · catégorie {company.size} ({company.headcount} ETP) ·{' '}
+            {companyAge.isDateKnown
+              ? `immatriculée le ${companyAge.dateFormattedFr} (${companyAge.ageLabel})`
+              : 'date d’immatriculation non communiquée'}
+          </>
+        }
+        actions={
+          <>
+            <button type="button" onClick={onModifyQuestionnaire} className={btn('secondary')}>
+              Modifier les données
             </button>
-            <button
-              onClick={handlePrint}
-              className="px-4 py-2 bg-prune-600 text-white hover:bg-aubergine-600 text-xs font-medium rounded-full transition flex items-center gap-1.5 shadow-xs"
-            >
+            <button type="button" onClick={handlePrint} className={btn('primary')}>
               <Printer className="w-3.5 h-3.5" />
-              Imprimer le diagnostic
+              Imprimer / exporter
             </button>
-          </div>
-        </div>
+          </>
+        }
+      />
 
-        {/* Key Indicators Grid - Teintes distinctes et valorisantes */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 text-xs">
-          <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 shadow-2xs">
-            <span className="text-emerald-800 font-semibold block mb-1">Dispositifs éligibles</span>
-            <span className="text-2xl font-bold font-mono text-emerald-700">
-              {report.eligibleSchemes.length}
-            </span>
-            <span className="text-[11px] text-emerald-700/80 block mt-0.5">
-              sur {report.eligibleSchemes.length + report.conditionalSchemes.length + report.ineligibleSchemes.length} analysés
-            </span>
-          </div>
+      <StatGrid
+        items={[
+          { label: 'Dispositifs éligibles', value: report.eligibleSchemes.length, hint: `sur ${totalAnalysed} analysés` },
+          { label: 'Aide simulée (éligibles)', value: euro(totalSimulatedEligibleGrant), hint: 'selon assiette et plafonds ADEC' },
+          {
+            label: 'Score qualitatif (21/177 AC)',
+            value: `${report.qualitativeTotalYes} / 8`,
+            hint: report.qualitativeValidated ? 'Seuil atteint (≥ 3)' : 'Seuil non atteint · non requis pour l’Annexe 1',
+            valueClassName: report.qualitativeValidated ? 'text-emerald-700' : 'text-amber-700'
+          },
+          { label: 'De minimis disponible', value: euro(report.deMinimisAvailableRemaining), hint: 'sur 300 000 € (Règl. 2023/2831)' }
+        ]}
+      />
 
-          <div className="bg-prune-50 p-4 rounded-xl border border-prune-200 shadow-2xs">
-            <span className="text-prune-800 font-semibold block mb-1">Subvention simulée</span>
-            <span className="text-2xl font-bold font-mono text-prune-900">
-              {totalSimulatedEligibleGrant.toLocaleString('fr-FR')} €
-            </span>
-            <span className="text-[11px] text-prune-700/80 block mt-0.5">
-              selon assiette et plafonds ADEC
-            </span>
-          </div>
+      {children}
 
-          <div className="bg-petrole-50 p-4 rounded-xl border border-petrole-200 shadow-2xs">
-            <span className="text-petrole-800 font-semibold block mb-1">Score qualitatif (21/177 AC)</span>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold font-mono text-petrole-950">
-                {report.qualitativeTotalYes}/8
-              </span>
-              <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs ${
-                  report.qualitativeValidated
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-amber-600 text-white'
-                }`}
-              >
-                {report.qualitativeValidated ? 'Validé (≥ 3)' : 'Seuil non atteint (< 3)'}
-              </span>
-            </div>
-            <span className="text-[11px] text-petrole-800/90 block mt-0.5">
-              {report.qualitativeValidated ? 'Accès ouvert aux aides du Guide' : 'Non requis pour U Pattu Risilienza'}
-            </span>
-          </div>
-
-          <div className="bg-aubergine-50 p-4 rounded-xl border border-aubergine-200 shadow-2xs">
-            <span className="text-aubergine-800 font-semibold block mb-1">Règle de Minimis disponible</span>
-            <span className="text-2xl font-bold font-mono text-aubergine-900">
-              {report.deMinimisAvailableRemaining.toLocaleString('fr-FR')} €
-            </span>
-            <span className="text-[11px] text-aubergine-700/80 block mt-0.5">
-              sur 300 000 € autorisés (Règl. 2023/2831)
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Encart Synchronisation Fiche Projet */}
-      {report.dossierSource && (
-        <div className="p-4 rounded-xl bg-prune-900 text-white shadow-xs border border-prune-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold text-white text-sm block">
-                Simulation alimentée par votre Fiche Projet ({report.dossierSource.dossierNumber || 'Dossier officiel'})
-              </span>
-              <p className="text-prune-200 mt-0.5">
-                Section Appel à projet : <strong className="text-amber-300 font-semibold">{report.dossierSource.primarySchemeName || report.dossierSource.aapTitre}</strong>. La cohérence entre votre document et les dispositifs d'aide de l'ADEC est garantie à 100%.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Alerte si date de création non communiquée */}
       {!companyAge.isDateKnown && (
-        <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-950 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <span className="font-bold text-amber-900 block">
-              Attention : Date d'immatriculation non renseignée (aucune hypothèse inventée)
-            </span>
-            <p className="leading-relaxed text-amber-800">
-              L'éligibilité aux volets sensibles à l'ancienneté d'entreprise (notamment <strong>Impresa Sì – Volet Création</strong> qui exige ≤ 5 ans d'immatriculation, et <strong>Impresa Sì – Reprise</strong> qui exige ≥ 12 mois) ne peut être certifiée sans date officielle. Vous pouvez modifier le questionnaire pour saisir la date figurant sur l'extrait Kbis de l'entreprise.
-            </p>
-          </div>
-        </div>
+        <Notice tone="warning" title="Date d’immatriculation non renseignée">
+          L’éligibilité aux volets liés à l’ancienneté (<strong>Impresa Sì – Création</strong> : ≤ 5 ans ; <strong>Impresa Sì – Reprise</strong> : ≥ 12 mois) ne peut pas être établie sans date officielle. Saisir la date de l’extrait Kbis à l’étape 1.
+        </Notice>
       )}
 
-      {/* Synthèse Diagnostique & Message Global */}
-      <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-700 flex items-start gap-3">
-        <Info className="w-5 h-5 text-neutral-600 shrink-0 mt-0.5" />
+      {/* Conclusion du moteur */}
+      <Panel headingLevel={3} title="Conclusion du moteur">
         <div className="space-y-1">
-          <span className="font-bold text-neutral-900 block">
-            Conclusion officielle du diagnostic :
-          </span>
-          <p className="leading-relaxed">
-            {report.overallDiagnosisSummary}
-          </p>
+          <p className="text-sm text-neutral-800 leading-relaxed">{report.overallDiagnosisSummary}</p>
+          {report.dossierSource && (
+            <p className="text-[11px] text-neutral-500">
+              Source : fiche projet {report.dossierSource.dossierNumber ? `n° ${report.dossierSource.dossierNumber}` : ''}
+              {(report.dossierSource.primarySchemeName || report.dossierSource.aapTitre) &&
+                ` · appel à projets « ${report.dossierSource.primarySchemeName || report.dossierSource.aapTitre} »`}
+            </p>
+          )}
         </div>
-      </div>
+      </Panel>
 
-      {/* Statut & Bonifications Fonds SALVEZZA */}
-      <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-        report.salvezzaCommune || company.salvezzaCommune || company.locationType === 'RURAL_SALVEZZA_UNDER_1000'
-          ? 'bg-emerald-50 border-emerald-300 shadow-2xs'
-          : 'bg-white border-neutral-200'
-      }`}>
-        <div className="flex items-start gap-3">
-          <div className={`p-2.5 rounded-xl shrink-0 ${
-            report.salvezzaCommune || company.salvezzaCommune
-              ? 'bg-emerald-600 text-white shadow-xs'
-              : 'bg-neutral-100 text-neutral-500'
-          }`}>
-            <Mountain className="w-5 h-5" />
-          </div>
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-xs text-neutral-900">
-                Fonds SALVEZZA · Volets « Économique » & « Emploi »
-              </span>
-              {(report.salvezzaCommune || company.salvezzaCommune) ? (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-200/80 text-emerald-900 border border-emerald-300">
-                  Bonification active : {(report.salvezzaCommune || company.salvezzaCommune)?.nom} ({(report.salvezzaCommune || company.salvezzaCommune)?.nomCorse})
-                </span>
+      {/* Fonds Salvezza */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-2.5 bg-white border border-neutral-200 rounded-md">
+        <div className="flex items-start gap-2.5 min-w-0 text-xs">
+          <MapPin className={`w-4 h-4 shrink-0 mt-0.5 ${salvezzaCommune ? 'text-emerald-600' : 'text-neutral-400'}`} />
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 flex-wrap font-medium text-neutral-900">
+              Fonds Salvezza · volets « Économique » et « Emploi »
+              {salvezzaCommune ? (
+                <Badge tone="success">
+                  Bonification : {salvezzaCommune.nom} ({salvezzaCommune.nomCorse})
+                </Badge>
               ) : (
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-neutral-100 text-neutral-600">
-                  230 communes sous contraintes éligibles
-                </span>
+                <Badge>Commune non éligible</Badge>
               )}
-            </div>
-            <p className="text-xs text-neutral-600 leading-relaxed">
-              {(report.salvezzaCommune || company.salvezzaCommune) ? (
-                <>
-                  Implantation certifiée en commune éligible (Score de contrainte : <strong>{(report.salvezzaCommune || company.salvezzaCommune)?.scoreContrainte}</strong>{(report.salvezzaCommune || company.salvezzaCommune)?.altitudeSup350m ? ' · Chef-lieu > 350 m' : ''}). Les dispositifs des volets Économique et Emploi intègrent les majorations de taux et primes prévues par la Délibération 21/177 AC.
-                </>
-              ) : (
-                <>
-                  Les 230 communes classées en zones de montagne ou intérieures sous fortes contraintes bénéficient d'un soutien majoré (taux d'aide bonifié et priorité ADEC).
-                </>
-              )}
+            </p>
+            <p className="text-neutral-500 mt-0.5">
+              {salvezzaCommune
+                ? `Commune éligible (score de contrainte : ${salvezzaCommune.scoreContrainte}${salvezzaCommune.altitudeSup350m ? ' · chef-lieu > 350 m' : ''}) : les dispositifs des volets Économique et Emploi intègrent les majorations prévues par la délibération 21/177 AC.`
+                : 'Les 230 communes de montagne ou de l’intérieur sous fortes contraintes bénéficient d’un soutien majoré (taux bonifié et priorité ADEC).'}
             </p>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setIsSalvezzaModalOpen(true)}
-          className="shrink-0 px-3.5 py-2 bg-prune-600 hover:bg-aubergine-600 text-white font-bold text-xs rounded-full shadow-xs transition flex items-center justify-center gap-1.5"
-        >
-          <Mountain className="w-4 h-4 text-emerald-200" />
-          <span>Consulter les 230 communes</span>
+        <button type="button" onClick={() => setIsSalvezzaModalOpen(true)} className={btn('secondary', 'sm')}>
+          Liste des 230 communes
         </button>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center justify-between flex-wrap gap-3 border-b border-neutral-200 pb-3">
-        <div className="flex items-center gap-1.5 p-1 bg-neutral-100 rounded-lg">
-          <button
-            onClick={() => setFilterView('all')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${
-              filterView === 'all'
-                ? 'bg-white text-neutral-900 shadow-xs'
-                : 'text-neutral-600 hover:text-neutral-900'
-            }`}
-          >
-            Tous ({report.eligibleSchemes.length + report.conditionalSchemes.length + report.ineligibleSchemes.length})
-          </button>
-          <button
-            onClick={() => setFilterView('eligible')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition flex items-center gap-1 ${
-              filterView === 'eligible'
-                ? 'bg-white text-emerald-800 shadow-xs'
-                : 'text-neutral-600 hover:text-neutral-900'
-            }`}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            Éligibles ({report.eligibleSchemes.length})
-          </button>
-          <button
-            onClick={() => setFilterView('conditional')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition flex items-center gap-1 ${
-              filterView === 'conditional'
-                ? 'bg-white text-amber-800 shadow-xs'
-                : 'text-neutral-600 hover:text-neutral-900'
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-            Sous Condition ({report.conditionalSchemes.length})
-          </button>
-          <button
-            onClick={() => setFilterView('ineligible')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition flex items-center gap-1 ${
-              filterView === 'ineligible'
-                ? 'bg-white text-red-800 shadow-xs'
-                : 'text-neutral-600 hover:text-neutral-900'
-            }`}
-          >
-            <XCircle className="w-3.5 h-3.5 text-red-600" />
-            Non Éligibles ({report.ineligibleSchemes.length})
-          </button>
-        </div>
-
-        <span className="text-xs text-neutral-500">
-          Cliquez sur une mesure pour afficher sa fiche réglementaire intégrale
-        </span>
+      {/* Filtre */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <SegmentedControl
+          ariaLabel="Filtrer les dispositifs"
+          value={filterView}
+          onChange={setFilterView}
+          options={[
+            { value: 'all', label: `Tous (${totalAnalysed})` },
+            { value: 'eligible', label: `Éligibles (${report.eligibleSchemes.length})` },
+            { value: 'conditional', label: `Sous condition (${report.conditionalSchemes.length})` },
+            { value: 'ineligible', label: `Non retenus (${report.ineligibleSchemes.length})` }
+          ]}
+        />
+        <span className="text-xs text-neutral-500">Cliquer sur un dispositif pour afficher sa fiche réglementaire.</span>
       </div>
 
-      {/* SECTION 1 : DISPOSITIFS PLEINEMENT ÉLIGIBLES */}
-      {(filterView === 'all' || filterView === 'eligible') && report.eligibleSchemes.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            <h2 className="text-lg font-bold text-neutral-900">
-              Dispositifs Pleinement Recommandés & Éligibles ({report.eligibleSchemes.length})
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Dispositifs éligibles */}
+      {show('eligible') && report.eligibleSchemes.length > 0 && (
+        <Panel
+          headingLevel={3}
+          title={<>Éligibles <Badge tone="success">{report.eligibleSchemes.length}</Badge></>}
+          bodyClassName=""
+        >
+          <ul className="divide-y divide-neutral-100">
             {report.eligibleSchemes.map((item) => (
-              <div
+              <SchemeRow
                 key={item.scheme.id}
-                onClick={() => setSelectedScheme(item.scheme)}
-                className={`bg-white border rounded-xl p-5 hover:shadow-xs transition cursor-pointer flex flex-col justify-between group shadow-2xs ${
-                  item.isPrimaryFromDossierAAP
-                    ? 'border-amber-400 border-l-4 border-l-amber-500 ring-2 ring-amber-400/20 bg-amber-50/20'
-                    : 'border-neutral-200 border-l-4 border-l-emerald-500 hover:border-emerald-300'
-                }`}
-              >
-                <div>
-                  {item.isPrimaryFromDossierAAP && (
-                    <div className="mb-3 px-2.5 py-1 rounded-md bg-safran-300 text-neutral-900 flex items-center justify-between text-[11px] font-bold shadow-2xs">
-                      <span className="flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-neutral-900" />
-                        ★ Dispositif issu de l'Appel à projet de votre Fiche Projet
-                      </span>
-                      <span className="text-[10px] uppercase font-mono bg-neutral-900 px-1.5 py-0.5 rounded text-safran-300">
-                        Priorité N° 1
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div>
-                      <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 mb-1">
-                        <span className="font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">
-                          {item.scheme.code}
-                        </span>
-                        <span>·</span>
-                        <span>{item.scheme.category}</span>
-                      </div>
-                      <h3 className="text-base font-bold text-neutral-900 group-hover:text-emerald-800 transition">
-                        {item.scheme.name}
-                      </h3>
-                      <p className="text-xs text-neutral-600 mt-1 line-clamp-2">
-                        {item.scheme.subtitle}
-                      </p>
-
-                      {!item.scheme.requiresQualitativeEvaluation ? (
-                        <div className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded border border-emerald-300/80">
-                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                          <span>Non soumis à l’évaluation qualitative (U Pattu Risilienza è Territorii)</span>
-                        </div>
-                      ) : (
-                        <div className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-semibold text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">
-                          <Award className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-                          <span>Évaluation qualitative préalable validée (≥ 3 OUI)</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <span className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-full block border border-emerald-300/80 shadow-2xs">
-                        Éligible
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Financial calculation block */}
-                  <div className="my-3 p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-lg space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-emerald-900 font-medium">Aide prévisionnelle simulée :</span>
-                      <span className="font-bold font-mono text-base text-emerald-700">
-                        {item.estimatedSubsidyAmount > 0
-                          ? `${item.estimatedSubsidyAmount.toLocaleString('fr-FR')} €`
-                          : 'Montant forfaitaire / Devis'}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-neutral-600 leading-tight">
-                      {item.subsidyCalculationDetails}
+                item={item}
+                onOpen={setSelectedScheme}
+                badges={
+                  <>
+                    {item.isPrimaryFromDossierAAP && <Badge tone="accent">Appel à projets de la fiche</Badge>}
+                    {item.scheme.requiresQualitativeEvaluation ? <Badge>Éval. qualitative validée</Badge> : <Badge tone="info">Sans éval. qualitative</Badge>}
+                  </>
+                }
+                aside={
+                  <>
+                    <p className="text-base font-semibold text-neutral-900 tabular-nums">
+                      {item.estimatedSubsidyAmount > 0 ? euro(item.estimatedSubsidyAmount) : 'Forfait / devis'}
                     </p>
-                  </div>
-
-                  {/* Bonification SALVEZZA si appliquée */}
-                  {item.salvezzaBonusApplied && (
-                    <div className="my-2.5 p-2.5 bg-emerald-100/80 border border-emerald-300 rounded-lg text-xs text-emerald-950 flex items-start gap-2 shadow-2xs">
-                      <Sparkles className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
-                      <div>
-                        <strong className="block text-emerald-900 font-bold">Bonification SALVEZZA appliquée :</strong>
-                        <span className="text-[11px] text-emerald-800 leading-snug">{item.salvezzaBonusDetails}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Reasons & conditions checked */}
-                  <div className="space-y-1 text-[11px] text-neutral-600 mb-3">
-                    {item.reasons.map((r, i) => (
-                      <div key={i} className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
-                        <span>{r}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Warnings if any */}
-                  {item.warningNotes.length > 0 && (
-                    <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-900 space-y-1 mb-3">
-                      {item.warningNotes.map((w, idx) => (
-                        <div key={idx} className="flex items-start gap-1">
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                          <span>{w}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-neutral-100 flex items-center justify-between text-xs font-medium text-neutral-700">
-                  <span className="text-neutral-500 font-normal">
-                    {item.scheme.procedure.decisionBody}
-                  </span>
-                  <span className="text-neutral-900 group-hover:text-emerald-800 transition flex items-center gap-1">
-                    Consulter la fiche
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </span>
-                </div>
-              </div>
+                    <p className="text-[11px] text-neutral-500">{item.scheme.procedure.decisionBody}</p>
+                  </>
+                }
+              >
+                {item.subsidyCalculationDetails && <p className="text-neutral-600">{item.subsidyCalculationDetails}</p>}
+                {item.salvezzaBonusApplied && (
+                  <p className="text-emerald-800">
+                    <strong className="font-medium">Bonification Salvezza :</strong> {item.salvezzaBonusDetails}
+                  </p>
+                )}
+                <BulletList items={item.reasons} tone="ok" />
+                <BulletList items={item.warningNotes} tone="warning" />
+              </SchemeRow>
             ))}
-          </div>
-        </div>
+          </ul>
+        </Panel>
       )}
 
-      {/* SECTION 2 : DISPOSITIFS SOUS CONDITION QUALITATIVE */}
-      {(filterView === 'all' || filterView === 'conditional') && report.conditionalSchemes.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
-            <h2 className="text-lg font-bold text-neutral-900">
-              Dispositifs Conditionnés au Seuil de l’Évaluation Qualitative ({report.conditionalSchemes.length})
-            </h2>
-          </div>
-
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
-            <span className="font-bold block mb-1">Règle de la Délibération N° 21/177 AC :</span>
-            Ces dispositifs relèvent du Guide des Aides 2026 et nécessitent d’obtenir au moins <strong>3 « OUI »</strong> sur la grille des 8 critères qualitatifs pour que l'ADEC puisse engager une instruction financière. <em>Rappel : les mesures du dispositif <strong>U PATTU RISILIENZA È TERRITORII</strong> (Risilienza, Impresi Paisani, Rinascita, Ribumbà) ne relèvent pas de cette grille et sont instruites directement sans ce seuil.</em>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Dispositifs sous condition qualitative */}
+      {show('conditional') && report.conditionalSchemes.length > 0 && (
+        <Panel
+          headingLevel={3}
+          title={<>Sous condition <Badge tone="warning">{report.conditionalSchemes.length}</Badge></>}
+          description="Dispositifs du Guide 2026 : au moins 3 « OUI » sur les 8 critères qualitatifs sont requis avant toute instruction financière (délib. 21/177 AC). Les mesures de l’Annexe 1 ne sont pas concernées."
+          bodyClassName=""
+        >
+          <ul className="divide-y divide-neutral-100">
             {report.conditionalSchemes.map((item) => (
-              <div
+              <SchemeRow
                 key={item.scheme.id}
-                onClick={() => setSelectedScheme(item.scheme)}
-                className="bg-white border border-neutral-200 border-l-4 border-l-amber-500 rounded-xl p-5 hover:border-amber-300 hover:shadow-xs transition cursor-pointer flex flex-col justify-between group shadow-2xs"
+                item={item}
+                onOpen={setSelectedScheme}
+                aside={<p className="text-[11px] text-neutral-500">Plafond : {euro(item.scheme.rates.ceilingAmount)}</p>}
               >
-                <div>
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div>
-                      <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 mb-1">
-                        <span className="font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                          {item.scheme.code}
-                        </span>
-                        <span>·</span>
-                        <span>{item.scheme.category}</span>
-                      </div>
-                      <h3 className="text-base font-bold text-neutral-900 group-hover:text-amber-800 transition">
-                        {item.scheme.name}
-                      </h3>
-                      <p className="text-xs text-neutral-600 mt-1 line-clamp-2">
-                        {item.scheme.subtitle}
-                      </p>
-
-                      <div className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-semibold text-amber-900 bg-amber-100/70 px-2 py-0.5 rounded border border-amber-300/80">
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                        <span>Soumis à l'évaluation qualitative préalable (≥ 3 OUI requis)</span>
-                      </div>
-                    </div>
-
-                    <span className="text-xs font-bold text-amber-900 bg-amber-100/80 border border-amber-300 px-2.5 py-0.5 rounded-full shrink-0 shadow-2xs">
-                      Sous condition
-                    </span>
-                  </div>
-
-                  <div className="my-3 p-3 bg-amber-50/70 border border-amber-200 rounded-lg space-y-1 text-xs text-amber-950">
-                    <span className="font-semibold block text-amber-900">Critère bloquant :</span>
-                    <p className="text-[11px] leading-relaxed">
-                      {item.warningNotes[0] || 'Seuil d’au moins 3 OUI requis sur l’évaluation qualitative.'}
-                    </p>
-                  </div>
-
-                  {/* Bonification SALVEZZA potentielle après levée de condition */}
-                  {item.salvezzaBonusApplied && (
-                    <div className="mb-3 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-950 flex items-start gap-2">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                      <span className="text-[11px] text-emerald-900 leading-snug">
-                        <strong>Fonds SALVEZZA réservé :</strong> {item.salvezzaBonusDetails}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-neutral-100 flex items-center justify-between text-xs font-medium text-neutral-700">
-                  <span className="text-neutral-500 font-normal">
-                    Plafond : {item.scheme.rates.ceilingAmount.toLocaleString('fr-FR')} €
-                  </span>
-                  <span className="text-amber-800 font-semibold group-hover:text-amber-950 transition flex items-center gap-1">
-                    Consulter les conditions
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </span>
-                </div>
-              </div>
+                <p className="text-amber-900">
+                  <strong className="font-medium">Critère bloquant :</strong>{' '}
+                  {item.warningNotes[0] || 'Seuil d’au moins 3 OUI requis sur l’évaluation qualitative.'}
+                </p>
+                {item.salvezzaBonusApplied && (
+                  <p className="text-emerald-800">
+                    <strong className="font-medium">Fonds Salvezza réservé :</strong> {item.salvezzaBonusDetails}
+                  </p>
+                )}
+              </SchemeRow>
             ))}
-          </div>
-        </div>
+          </ul>
+        </Panel>
       )}
 
-      {/* SECTION 3 : DISPOSITIFS NON ÉLIGIBLES */}
-      {(filterView === 'all' || filterView === 'ineligible') && report.ineligibleSchemes.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <XCircle className="w-5 h-5 text-neutral-500" />
-            <h2 className="text-lg font-bold text-neutral-900">
-              Dispositifs Non Retenus / Inéligibles ({report.ineligibleSchemes.length})
-            </h2>
-          </div>
-
-          <p className="text-xs text-neutral-500">
-            Ces dispositifs ont été analysés par le moteur et rejetés sur la base de critères d'exclusion officiels et objectifs (forme juridique, secteur, historique ou critères d’âge).
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {report.ineligibleSchemes.map((item) => (
-              <div
-                key={item.scheme.id}
-                onClick={() => setSelectedScheme(item.scheme)}
-                className="bg-white border border-neutral-200 border-l-4 border-l-neutral-300 rounded-xl p-5 hover:border-neutral-400 transition cursor-pointer flex flex-col justify-between opacity-85 hover:opacity-100"
+      {/* Dispositifs non retenus */}
+      {show('ineligible') && report.ineligibleSchemes.length > 0 && (
+        <Panel
+          headingLevel={3}
+          title={<>Non retenus <Badge>{report.ineligibleSchemes.length}</Badge></>}
+          description="Écartés sur des critères d’exclusion objectifs (forme juridique, secteur, antécédents, ancienneté…)."
+          actions={
+            filterView === 'all' && (
+              <button
+                type="button"
+                onClick={() => setShowIneligible(!showIneligible)}
+                aria-expanded={showIneligible}
+                className={btn('secondary', 'sm')}
               >
-                <div>
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div>
-                      <span className="text-xs font-mono font-bold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
-                        {item.scheme.code}
-                      </span>
-                      <h3 className="text-sm font-bold text-neutral-900 mt-1">
-                        {item.scheme.name}
-                      </h3>
-                    </div>
-                    <span className="text-[11px] font-bold text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded shrink-0">
-                      Non éligible
-                    </span>
-                  </div>
-
-                  <div className="my-2.5 p-3 bg-red-50/60 border border-red-100 rounded-xl space-y-1 text-xs">
-                    <span className="font-bold text-red-900 block text-[11px] uppercase">
-                      Motifs réglementaires d’exclusion :
-                    </span>
-                    <ul className="list-disc pl-4 space-y-1 text-red-950 text-[11px]">
-                      {item.ineligibilityMotifs.map((m, idx) => (
-                        <li key={idx}>{m}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-neutral-100 text-right">
-                  <span className="text-xs font-semibold text-neutral-500 hover:text-neutral-800">
-                    Détails du règlement →
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+                {showIneligible ? 'Masquer les motifs' : 'Afficher les motifs'}
+              </button>
+            )
+          }
+          bodyClassName=""
+        >
+          {(filterView === 'ineligible' || showIneligible) && (
+            <ul className="divide-y divide-neutral-100">
+              {report.ineligibleSchemes.map((item) => (
+                <SchemeRow key={item.scheme.id} item={item} onOpen={setSelectedScheme}>
+                  <BulletList items={item.ineligibilityMotifs} tone="motif" />
+                </SchemeRow>
+              ))}
+            </ul>
+          )}
+        </Panel>
       )}
 
-      {/* PLAN D'ACTION & RECOMMANDATIONS PRATIQUES POUR LE DÉPÔT ADEC */}
-      <div className="bg-white border border-neutral-200 rounded-xl p-6 sm:p-7 space-y-6">
-        <div className="flex items-center gap-2 border-b border-neutral-200 pb-4">
-          <FileText className="w-5 h-5 text-neutral-700" />
-          <h2 className="text-lg font-bold text-neutral-900">
-            Démarches & Recommandations pour le dépôt auprès de l'ADEC
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-neutral-700">
-          <div className="space-y-3">
-            <h3 className="font-semibold text-neutral-900 text-sm">
-              1. Règle d'antériorité des dépenses
-            </h3>
-            <p className="leading-relaxed text-neutral-600">
-              <strong>Aucune dépense ne doit être engagée</strong> (signature de devis, bon de commande, acompte, facture) avant le dépôt effectif de votre dossier auprès des services de l'ADEC. Tout engagement antérieur rend la dépense inéligible (hors mesure Rinascita).
+      {/* Rappels d'instruction */}
+      <Panel headingLevel={3} title="Rappels pour l’instruction">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4 text-xs text-neutral-700">
+          <div className="space-y-1">
+            <p className="font-semibold text-neutral-900">Antériorité des dépenses</p>
+            <p className="leading-relaxed">
+              Aucune dépense ne doit être engagée (devis signé, bon de commande, acompte, facture) avant le dépôt du dossier auprès de l’ADEC : tout engagement antérieur rend la dépense inéligible (hors mesure Rinascita).
             </p>
-
-            <h3 className="font-semibold text-neutral-900 text-sm pt-2">
-              2. Pièces justificatives usuelles
-            </h3>
-            <ul className="list-disc pl-4 space-y-1 text-neutral-600">
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-neutral-900">Pièces justificatives usuelles</p>
+            <ul className="list-disc pl-4 space-y-0.5">
               <li>Extrait Kbis de moins de 3 mois ou inscription au registre</li>
               <li>Liasses fiscales et bilans des 3 derniers exercices</li>
-              <li>Devis détaillés et non signés des investissements projetés</li>
+              <li>Devis détaillés et non signés des investissements</li>
               <li>Plan de financement prévisionnel équilibré</li>
               <li>Déclaration des aides de minimis obtenues (plafond 300 000 €)</li>
-              <li>Attestations de régularité fiscale et sociale (URSSAF, DGFIP)</li>
+              <li>Attestations de régularité fiscale et sociale (URSSAF, DGFiP)</li>
             </ul>
           </div>
-
-          <div className="space-y-3">
-            <h3 className="font-semibold text-neutral-900 text-sm">
-              3. Circuit et décision d'attribution
-            </h3>
-            <p className="leading-relaxed text-neutral-600">
-              L'instruction administrative et technique est menée par les instructeurs de l'ADEC. L'octroi des subventions est voté formellement par le <strong>Bureau de l'ADEC</strong> selon la disponibilité budgétaire territoriale.
+          <div className="space-y-1">
+            <p className="font-semibold text-neutral-900">Circuit de décision</p>
+            <p className="leading-relaxed">
+              Instruction administrative et technique par les services de l’ADEC ; l’octroi des subventions est voté par le <strong>Bureau de l’ADEC</strong> selon la disponibilité budgétaire.
             </p>
-
-            <div className="mt-4 p-4 bg-neutral-50 border border-neutral-200 rounded-lg space-y-2">
-              <span className="font-semibold block text-sm text-neutral-900">
-                Portail officiel de dépôt :
-              </span>
-              <p className="text-neutral-600 text-xs">
-                Les dépôts se font directement en ligne sur la plateforme dématérialisée de l'ADEC.
-              </p>
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <a
-                  href="https://www.adec.corsica"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-prune-600 text-white font-medium text-xs rounded-full hover:bg-aubergine-600 transition"
-                >
-                  Accéder au portail www.adec.corsica
-                  <ExternalLink className="w-3.5 h-3.5 text-neutral-300" />
-                </a>
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-neutral-50 text-neutral-800 font-medium text-xs rounded-lg transition border border-neutral-200"
-                >
-                  <Printer className="w-3.5 h-3.5 text-neutral-500" />
-                  Imprimer la synthèse
-                </button>
-              </div>
-            </div>
           </div>
         </div>
-      </div>
+      </Panel>
 
-      {/* Modal d'impression et export officiel */}
       <PrintDiagnosticModal
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}
@@ -685,11 +371,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
         company={company}
       />
 
-      {/* Modal d'inspection */}
-      <DispositifDetailModal
-        scheme={selectedScheme}
-        onClose={() => setSelectedScheme(null)}
-      />
+      <DispositifDetailModal scheme={selectedScheme} onClose={() => setSelectedScheme(null)} />
     </div>
   );
 };

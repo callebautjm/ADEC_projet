@@ -7,24 +7,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { 
-  MapPin, 
-  Mountain, 
-  Check, 
-  Building, 
-  Layers, 
-  Compass, 
-  ZoomIn, 
-  ZoomOut, 
-  Info,
-  Sparkles,
-  Maximize2,
-  TrendingUp,
-  Users,
-  X
-} from 'lucide-react';
+import { MapPin, Mountain, Check, ZoomIn, ZoomOut, Maximize2, X } from 'lucide-react';
 import { SalvezzaCommune } from '../../types';
 import { SALVEZZA_COORDINATES } from '../../data/salvezzaGeoCoords';
+import { SCORE_TONES } from './scoreTones';
+import { Badge, SegmentedControl, btn } from '../Layout/ui';
 
 interface SalvezzaMapProps {
   communes: SalvezzaCommune[];
@@ -41,6 +28,13 @@ const CORSICA_BOUNDS: L.LatLngBoundsLiteral = [
 
 const CORSICA_CENTER: L.LatLngExpression = [42.15, 9.1];
 
+/** Fonds de carte utilisables sans clé d'API (les tuiles CARTO en exigent désormais une) */
+const TILE_LAYERS = {
+  osm: { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' },
+  topo: { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', maxZoom: 17, attribution: '&copy; OpenTopoMap contributors' }
+};
+type TileStyle = keyof typeof TILE_LAYERS;
+
 export const SalvezzaMap: React.FC<SalvezzaMapProps> = ({
   communes,
   selectedCommuneCode,
@@ -51,7 +45,7 @@ export const SalvezzaMap: React.FC<SalvezzaMapProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const [activeCommune, setActiveCommune] = useState<SalvezzaCommune | null>(null);
-  const [tileStyle, setTileStyle] = useState<'voyager' | 'osm' | 'topo'>('voyager');
+  const [tileStyle, setTileStyle] = useState<TileStyle>('osm');
 
   // Trouver la commune actuellement sélectionnée dans les props
   useEffect(() => {
@@ -83,20 +77,7 @@ export const SalvezzaMap: React.FC<SalvezzaMapProps> = ({
       attributionControl: true
     });
 
-    // Tuiles par défaut (CartoDB Voyager: clair, esthétique et très lisible)
-    const tileLayer = L.tileLayer(
-      tileStyle === 'topo' 
-        ? 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
-        : tileStyle === 'osm'
-        ? 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-      {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO / Collectivité de Corse'
-      }
-    );
-    tileLayer.addTo(map);
-
+    // Le fond de carte est ajouté par l'effet ci-dessous (et remplacé à chaque changement de style)
     const markersGroup = L.layerGroup();
     markersGroup.addTo(map);
 
@@ -104,12 +85,14 @@ export const SalvezzaMap: React.FC<SalvezzaMapProps> = ({
     markersLayerRef.current = markersGroup;
 
     // Ajustement de taille après montage dans la modal
-    setTimeout(() => {
+    const resizeTimer = setTimeout(() => {
       map.invalidateSize();
       map.fitBounds(CORSICA_BOUNDS, { padding: [20, 20] });
     }, 150);
 
     return () => {
+      // Le minuteur ne doit pas agir sur une carte déjà détruite (démontage, double montage en développement)
+      clearTimeout(resizeTimer);
       map.remove();
       mapInstanceRef.current = null;
       markersLayerRef.current = null;
@@ -127,18 +110,8 @@ export const SalvezzaMap: React.FC<SalvezzaMapProps> = ({
       }
     });
 
-    let url = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-    let attr = '&copy; OpenStreetMap contributors &copy; CARTO';
-
-    if (tileStyle === 'osm') {
-      url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-      attr = '&copy; OpenStreetMap contributors';
-    } else if (tileStyle === 'topo') {
-      url = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
-      attr = '&copy; OpenTopoMap contributors';
-    }
-
-    L.tileLayer(url, { maxZoom: 18, attribution: attr }).addTo(map);
+    const { url, maxZoom, attribution } = TILE_LAYERS[tileStyle];
+    L.tileLayer(url, { maxZoom, attribution }).addTo(map);
   }, [tileStyle]);
 
   // Rendu des repères de communes sur la carte
@@ -161,21 +134,13 @@ export const SalvezzaMap: React.FC<SalvezzaMapProps> = ({
       const isSelected = selectedCommuneCode && selectedCommuneCode.toUpperCase() === commune.codeCommune.toUpperCase();
       const isActive = activeCommune?.codeCommune.toUpperCase() === commune.codeCommune.toUpperCase();
 
-      // Couleur selon score de contrainte
-      let fillColor = '#0284c7'; // Sky-600 (score 3 à 3.5)
-      let borderColor = '#0369a1';
-      if (commune.scoreContrainte === 'au dessus de 4') {
-        fillColor = '#e11d48'; // Rose-600
-        borderColor = '#be123c';
-      } else if (commune.scoreContrainte === 'de 3,5 à 4') {
-        fillColor = '#d97706'; // Amber-600
-        borderColor = '#b45309';
-      }
+      // Couleur selon score de contrainte (même palette que la légende et le tableau)
+      const fillColor = SCORE_TONES[commune.scoreContrainte]?.hex || '#177a9c';
 
-      // Si commune active ou sélectionnée, anneau d'accentuation
+      // Commune active ou sélectionnée : repère agrandi, cerclé de prune
       const radius = isActive || isSelected ? 8.5 : 5.5;
       const weight = isActive || isSelected ? 3 : 1.5;
-      const markerBorder = isActive || isSelected ? '#10b981' : '#ffffff';
+      const markerBorder = isActive || isSelected ? '#8b2778' : '#ffffff';
 
       const circle = L.circleMarker(latLng, {
         radius,
@@ -188,13 +153,13 @@ export const SalvezzaMap: React.FC<SalvezzaMapProps> = ({
       // Tooltip rapide au survol
       const tooltipContent = `
         <div style="font-family: system-ui, sans-serif; font-size: 11px; padding: 2px;">
-          <strong style="color: #0f172a; font-size: 12px;">${commune.nom}</strong> 
-          <span style="color: #64748b; font-style: italic;">« ${commune.nomCorse} »</span>
-          <div style="margin-top: 3px; display: flex; gap: 4px; align-items: center;">
-            <span style="background: ${fillColor}; color: white; border-radius: 4px; padding: 1px 5px; font-weight: 600; font-size: 10px;">
+          <strong style="color: #171717; font-size: 12px;">${commune.nom}</strong>
+          <span style="color: #737373;">« ${commune.nomCorse} »</span>
+          <div style="margin-top: 3px; display: flex; gap: 6px; align-items: center;">
+            <span style="background: ${fillColor}; color: white; border-radius: 3px; padding: 1px 5px; font-weight: 600; font-size: 10px;">
               Score ${commune.scoreContrainte}
             </span>
-            ${commune.altitudeSup350m ? '<span style="color: #047857; font-weight: 600; font-size: 10px;">⛰️ >350m</span>' : ''}
+            ${commune.altitudeSup350m ? '<span style="color: #525252; font-size: 10px;">Chef-lieu &gt; 350 m</span>' : ''}
           </div>
         </div>
       `;
@@ -254,254 +219,146 @@ export const SalvezzaMap: React.FC<SalvezzaMapProps> = ({
     );
   };
 
+  const isSelectedActive = Boolean(
+    activeCommune && selectedCommuneCode && selectedCommuneCode.toUpperCase() === activeCommune.codeCommune.toUpperCase()
+  );
+  const floatingBox = 'absolute z-10 bg-white border border-neutral-200 rounded-md shadow-sm';
+  const mapButton = 'p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded transition-colors cursor-pointer';
+
   return (
-    <div className={`relative flex flex-col md:flex-row w-full h-[520px] sm:h-[580px] bg-neutral-100 overflow-hidden ${className}`}>
-      
-      {/* Conteneur de la Carte Leaflet */}
+    <div className={`relative flex flex-col md:flex-row w-full h-[520px] sm:h-[560px] bg-neutral-100 overflow-hidden ${className}`}>
+      {/* Carte Leaflet */}
       <div className="relative flex-1 h-full min-h-[320px]">
         <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-        {/* Commandes flottantes de Navigation */}
-        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 shadow-md rounded-xl bg-white/95 backdrop-blur-xs p-1 border border-neutral-200">
-          <button
-            type="button"
-            onClick={() => mapInstanceRef.current?.zoomIn()}
-            className="p-1.5 text-neutral-700 hover:text-prune-700 hover:bg-neutral-100 rounded-lg transition"
-            title="Zoom avant"
-          >
+        {/* Zoom */}
+        <div className={`${floatingBox} top-3 left-3 flex flex-col p-0.5`}>
+          <button type="button" onClick={() => mapInstanceRef.current?.zoomIn()} className={mapButton} title="Zoom avant" aria-label="Zoom avant">
             <ZoomIn className="w-4 h-4" />
           </button>
-          <button
-            type="button"
-            onClick={() => mapInstanceRef.current?.zoomOut()}
-            className="p-1.5 text-neutral-700 hover:text-prune-700 hover:bg-neutral-100 rounded-lg transition"
-            title="Zoom arrière"
-          >
+          <button type="button" onClick={() => mapInstanceRef.current?.zoomOut()} className={mapButton} title="Zoom arrière" aria-label="Zoom arrière">
             <ZoomOut className="w-4 h-4" />
           </button>
-          <div className="h-px bg-neutral-200 mx-1" />
-          <button
-            type="button"
-            onClick={handleResetView}
-            className="p-1.5 text-neutral-700 hover:text-prune-700 hover:bg-neutral-100 rounded-lg transition"
-            title="Vue d'ensemble de la Corse"
-          >
+          <span className="h-px bg-neutral-200 mx-1 my-0.5" />
+          <button type="button" onClick={handleResetView} className={mapButton} title="Vue d'ensemble de la Corse" aria-label="Vue d'ensemble">
             <Maximize2 className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Sélecteur de secteur insulaire (2A / 2B / Corse) */}
-        <div className="absolute top-3 right-3 z-10 flex items-center gap-1 shadow-md rounded-xl bg-white/95 backdrop-blur-xs p-1 border border-neutral-200 text-xs font-semibold">
-          <button
-            type="button"
-            onClick={handleResetView}
-            className="px-2.5 py-1 text-neutral-700 hover:text-prune-700 hover:bg-neutral-100 rounded-lg transition"
-          >
-            Toute la Corse
-          </button>
-          <button
-            type="button"
-            onClick={handleZoom2B}
-            className="px-2.5 py-1 text-neutral-700 hover:text-prune-700 hover:bg-neutral-100 rounded-lg transition"
-          >
-            Haute-Corse (2B)
-          </button>
-          <button
-            type="button"
-            onClick={handleZoom2A}
-            className="px-2.5 py-1 text-neutral-700 hover:text-prune-700 hover:bg-neutral-100 rounded-lg transition"
-          >
-            Corse-du-Sud (2A)
-          </button>
+        {/* Cadrage par département */}
+        <div className={`${floatingBox} top-3 right-3 flex items-center p-0.5 text-xs`}>
+          <button type="button" onClick={handleResetView} className={`${mapButton} px-2`}>Corse</button>
+          <button type="button" onClick={handleZoom2B} className={`${mapButton} px-2`}>Haute-Corse (2B)</button>
+          <button type="button" onClick={handleZoom2A} className={`${mapButton} px-2`}>Corse-du-Sud (2A)</button>
         </div>
 
-        {/* Légende interactive permanente en bas à gauche */}
-        <div className="absolute bottom-3 left-3 z-10 bg-white/95 backdrop-blur-xs border border-neutral-200 rounded-xl p-2.5 shadow-lg text-[11px] max-w-xs">
-          <span className="font-bold text-neutral-900 block mb-1.5 flex items-center gap-1.5">
-            <Compass className="w-3.5 h-3.5 text-prune-700" />
-            Scores de contrainte territoriale
-          </span>
-          <div className="space-y-1 text-neutral-700">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-rose-600 ring-2 ring-white shrink-0 shadow-2xs" />
-              <span>Score &gt; 4 (Contrainte forte)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-amber-500 ring-2 ring-white shrink-0 shadow-2xs" />
-              <span>Score 3,5 à 4 (Contrainte moyenne)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-petrole-500 ring-2 ring-white shrink-0 shadow-2xs" />
-              <span>Score 3 à 3,5 (Contrainte de base)</span>
-            </div>
-            <div className="flex items-center gap-2 pt-0.5 border-t border-neutral-100 mt-1">
-              <Mountain className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>Chef-lieu &gt; 350 m d'altitude</span>
-            </div>
-          </div>
+        {/* Légende */}
+        <div className={`${floatingBox} bottom-3 left-3 px-2.5 py-2 text-[11px] text-neutral-700 space-y-1`}>
+          <p className="font-semibold text-neutral-900">Score de contrainte territoriale</p>
+          {(['au dessus de 4', 'de 3,5 à 4', 'de 3 à 3,5'] as const).map((score) => (
+            <p key={score} className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${SCORE_TONES[score].dot}`} />
+              {SCORE_TONES[score].label}
+            </p>
+          ))}
         </div>
 
-        {/* Sélecteur de style de carte (Fond) */}
-        <div className="absolute bottom-3 right-3 z-10 bg-white/95 backdrop-blur-xs border border-neutral-200 rounded-xl p-1 shadow-md flex items-center gap-1 text-[10px] font-semibold text-neutral-600">
-          <button
-            type="button"
-            onClick={() => setTileStyle('voyager')}
-            className={`px-2 py-1 rounded-lg transition ${tileStyle === 'voyager' ? 'bg-prune-600 text-white' : 'hover:bg-neutral-100'}`}
-          >
-            Plan Clair
-          </button>
-          <button
-            type="button"
-            onClick={() => setTileStyle('osm')}
-            className={`px-2 py-1 rounded-lg transition ${tileStyle === 'osm' ? 'bg-prune-600 text-white' : 'hover:bg-neutral-100'}`}
-          >
-            OpenStreetMap
-          </button>
-          <button
-            type="button"
-            onClick={() => setTileStyle('topo')}
-            className={`px-2 py-1 rounded-lg transition ${tileStyle === 'topo' ? 'bg-prune-600 text-white' : 'hover:bg-neutral-100'}`}
-          >
-            Relief Topo
-          </button>
+        {/* Fond de carte */}
+        <div className="absolute z-10 bottom-3 right-3">
+          <SegmentedControl
+            ariaLabel="Fond de carte"
+            value={tileStyle}
+            onChange={setTileStyle}
+            options={[
+              { value: 'osm', label: 'Plan' },
+              { value: 'topo', label: 'Relief' }
+            ]}
+          />
         </div>
       </div>
 
-      {/* Panneau latéral / Fiche d'information de la commune active */}
-      <div className="w-full md:w-80 bg-white border-t md:border-t-0 md:border-l border-neutral-200 flex flex-col overflow-y-auto max-h-[260px] md:max-h-none shrink-0 p-4">
+      {/* Fiche de la commune active */}
+      <div className="w-full md:w-72 bg-white border-t md:border-t-0 md:border-l border-neutral-200 flex flex-col overflow-y-auto max-h-[260px] md:max-h-none shrink-0 p-4">
         {activeCommune ? (
-          <div className="space-y-3.5">
-            <div className="flex items-start justify-between gap-2 border-b border-neutral-100 pb-3">
+          <div className="space-y-3 text-xs">
+            <div className="flex items-start justify-between gap-2 pb-3 border-b border-neutral-100">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-prune-700 bg-prune-50 px-2 py-0.5 rounded-full border border-prune-200">
-                  Département {activeCommune.departement}
-                </span>
-                <h3 className="text-base font-bold text-neutral-900 mt-1">
-                  {activeCommune.nom}
-                </h3>
-                <p className="text-xs text-neutral-500 italic font-serif">
-                  « {activeCommune.nomCorse} »
-                </p>
+                <p className="text-[11px] text-neutral-500">Département {activeCommune.departement}</p>
+                <h3 className="text-base font-semibold text-neutral-900">{activeCommune.nom}</h3>
+                <p className="text-neutral-500">« {activeCommune.nomCorse} »</p>
               </div>
               <button
                 type="button"
                 onClick={() => setActiveCommune(null)}
-                className="text-neutral-400 hover:text-neutral-700 p-1 rounded-md"
+                className="p-1 rounded text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 cursor-pointer"
                 title="Désélectionner"
+                aria-label="Désélectionner la commune"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Caractéristiques réglementaires */}
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-neutral-50 p-2 rounded-lg border border-neutral-100">
-                <span className="text-[10px] text-neutral-500 block uppercase font-medium">Code INSEE</span>
-                <span className="font-mono font-bold text-neutral-800">{activeCommune.codeCommune}</span>
+            <dl className="space-y-1.5">
+              <div className="flex justify-between gap-2">
+                <dt className="text-neutral-500">Code INSEE</dt>
+                <dd className="font-mono text-neutral-900">{activeCommune.codeCommune}</dd>
               </div>
-              <div className="bg-neutral-50 p-2 rounded-lg border border-neutral-100">
-                <span className="text-[10px] text-neutral-500 block uppercase font-medium">Altitude chef-lieu</span>
-                <span className={`font-semibold flex items-center gap-1 ${activeCommune.altitudeSup350m ? 'text-emerald-700' : 'text-neutral-700'}`}>
+              <div className="flex justify-between gap-2">
+                <dt className="text-neutral-500">Chef-lieu</dt>
+                <dd className="text-neutral-900 inline-flex items-center gap-1">
                   {activeCommune.altitudeSup350m ? (
                     <>
-                      <Mountain className="w-3.5 h-3.5 text-emerald-600" /> &gt; 350 m
+                      <Mountain className="w-3.5 h-3.5 text-neutral-500" /> &gt; 350 m
                     </>
                   ) : (
-                    'Standard'
+                    '≤ 350 m'
                   )}
-                </span>
+                </dd>
               </div>
-            </div>
+              <div className="flex justify-between items-center gap-2">
+                <dt className="text-neutral-500">Score de contrainte</dt>
+                <dd>
+                  <Badge tone={SCORE_TONES[activeCommune.scoreContrainte].tone}>{activeCommune.scoreContrainte}</Badge>
+                </dd>
+              </div>
+            </dl>
 
-            {/* Badge Score de contrainte */}
-            <div className="p-2.5 rounded-xl border bg-neutral-50 border-neutral-200 space-y-1 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-neutral-600 font-medium">Score d'éloignement :</span>
-                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-bold text-[11px] ${
-                  activeCommune.scoreContrainte === 'au dessus de 4'
-                    ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                    : activeCommune.scoreContrainte === 'de 3,5 à 4'
-                    ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                    : 'bg-petrole-100 text-petrole-800 border border-petrole-200'
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${
-                    activeCommune.scoreContrainte === 'au dessus de 4'
-                      ? 'bg-rose-600'
-                      : activeCommune.scoreContrainte === 'de 3,5 à 4'
-                      ? 'bg-amber-600'
-                      : 'bg-petrole-600'
-                  }`} />
-                  {activeCommune.scoreContrainte}
-                </span>
-              </div>
-              <p className="text-[11px] text-neutral-500 leading-snug">
-                Éligibilité confirmée à l'ensemble des bonifications du Fonds Salvezza (Délibération N° 21/177 AC).
+            <div className="pt-2 border-t border-neutral-100 space-y-1.5 text-neutral-700">
+              <p>
+                <strong className="font-semibold text-neutral-900">Volet Économique :</strong> majoration de subvention et priorisation territoriale ADEC.
               </p>
+              <p>
+                <strong className="font-semibold text-neutral-900">Volet Emploi (RIESCE) :</strong> aide bonifiée par emploi pérenne créé ou maintenu.
+              </p>
+              <p className="text-[11px] text-neutral-500">Éligible à l’ensemble des bonifications du Fonds Salvezza (délibération n° 21/177 AC).</p>
             </div>
 
-            {/* Bonifications applicables */}
-            <div className="space-y-2 text-xs">
-              <div className="flex items-start gap-2 bg-prune-50/70 p-2 rounded-lg border border-prune-100 text-prune-900">
-                <TrendingUp className="w-3.5 h-3.5 text-prune-700 shrink-0 mt-0.5" />
-                <div className="text-[11px] leading-tight">
-                  <span className="font-semibold block">Volet Économique</span>
-                  Majoration de subvention & priorisation territoriale ADEC.
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2 bg-emerald-50/70 p-2 rounded-lg border border-emerald-100 text-emerald-900">
-                <Users className="w-3.5 h-3.5 text-emerald-700 shrink-0 mt-0.5" />
-                <div className="text-[11px] leading-tight">
-                  <span className="font-semibold block">Volet Emploi (RIESCE)</span>
-                  Aide bonifiée par emploi pérenne créé/maintenu.
-                </div>
-              </div>
-            </div>
-
-            {/* Bouton d'action de sélection */}
             {onSelectCommune && (
-              <button
-                type="button"
-                onClick={() => onSelectCommune(activeCommune)}
-                className={`w-full py-2 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-2xs ${
-                  selectedCommuneCode && selectedCommuneCode.toUpperCase() === activeCommune.codeCommune.toUpperCase()
-                    ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                    : 'bg-prune-600 text-white hover:bg-prune-700'
-                }`}
-              >
-                {selectedCommuneCode && selectedCommuneCode.toUpperCase() === activeCommune.codeCommune.toUpperCase() ? (
-                  <>
-                    <Check className="w-4 h-4" /> Commune sélectionnée dans le dossier
-                  </>
-                ) : (
-                  <>
-                    <Building className="w-4 h-4" /> Sélectionner cette commune
-                  </>
-                )}
-              </button>
+              isSelectedActive ? (
+                <p className="inline-flex items-center gap-1.5 text-xs font-medium text-prune-800">
+                  <Check className="w-4 h-4" />
+                  Commune retenue pour le dossier
+                </p>
+              ) : (
+                <button type="button" onClick={() => onSelectCommune(activeCommune)} className={`${btn('primary')} w-full`}>
+                  Retenir cette commune pour le dossier
+                </button>
+              )
             )}
           </div>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center p-4 text-neutral-500">
-            <div className="w-12 h-12 rounded-2xl bg-prune-50 text-prune-600 flex items-center justify-center mb-3">
-              <MapPin className="w-6 h-6" />
-            </div>
-            <h4 className="text-sm font-semibold text-neutral-800 mb-1">
-              Explorez la carte de Corse
-            </h4>
-            <p className="text-xs text-neutral-500 max-w-xs leading-relaxed">
-              Cliquez sur un point de la carte pour consulter les spécificités de la commune, ses bonifications Salvezza et l'assigner à votre dossier.
+          <div className="h-full flex flex-col justify-center text-xs text-neutral-500 gap-2">
+            <MapPin className="w-5 h-5 text-neutral-300" />
+            <p className="text-sm font-medium text-neutral-800">Aucune commune sélectionnée</p>
+            <p className="leading-relaxed">
+              Cliquer sur un point de la carte pour afficher la commune et ses bonifications Salvezza{onSelectCommune ? ', puis la retenir pour le dossier' : ''}.
             </p>
-            <div className="mt-4 pt-4 border-t border-neutral-100 w-full flex items-center justify-around text-xs text-neutral-600 font-semibold">
-              <span className="flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-prune-600" /> {communes.length} communes
-              </span>
-              <span>2A & 2B</span>
-            </div>
+            <p className="pt-2 border-t border-neutral-100">
+              {communes.length} commune{communes.length > 1 ? 's' : ''} affichée{communes.length > 1 ? 's' : ''}
+            </p>
           </div>
         )}
       </div>
-
     </div>
   );
 };
