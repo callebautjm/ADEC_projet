@@ -1,16 +1,19 @@
 /**
- * Wizard Questionnaire Multi-Étapes
- * Collectivité de Corse / ADEC
+ * Parcours du simulateur, calqué sur la fiche projet ADEC :
+ * 0. Synthèse (si fiche déposée) · 1. Entreprise · 2. Santé financière & conformité
+ * 3. Projet & dépenses · 4. Critères qualitatifs · 5. Proposition de mesures
  */
 
 import React, { useState } from 'react';
-import { FullQuestionnaireState, DossierProjectAnalysis } from '../../types';
+import { FullQuestionnaireState } from '../../types';
+import { AnalyseFicheProjetResponse } from '../../types/ficheProjet';
+import { StepSynthese } from './StepSynthese';
 import { StepCompany } from './StepCompany';
-import { StepRegulatory } from './StepRegulatory';
-import { StepProjectNeed } from './StepProjectNeed';
+import { StepFinances } from './StepFinances';
+import { StepProjet } from './StepProjet';
 import { StepQualitative } from './StepQualitative';
-import { StepBudgetSimulator } from './StepBudgetSimulator';
-import { ArrowLeft, ArrowRight, CheckCircle2, Building2, ShieldAlert, Target, Award, Calculator, Sparkles } from 'lucide-react';
+import { StepProposition } from './StepProposition';
+import { ArrowLeft, ArrowRight, CheckCircle2, FileText, Building2, Landmark, Target, Award, Scale } from 'lucide-react';
 import { determineCompanySize } from '../../services/engine';
 import { ProjectSheetPreloader } from '../Dossier/ProjectSheetPreloader';
 import { applyCompanyUpdate } from '../../utils/dossierSynchronizer';
@@ -18,48 +21,37 @@ import { applyCompanyUpdate } from '../../utils/dossierSynchronizer';
 interface QuestionnaireWizardProps {
   state: FullQuestionnaireState;
   setState: React.Dispatch<React.SetStateAction<FullQuestionnaireState>>;
-  onSubmitEvaluation: () => void;
-  activeDossier?: DossierProjectAnalysis | null;
-  onAnalysisComplete?: (analysis: DossierProjectAnalysis) => void;
-  onRemoveDossier?: () => void;
-  apiToken?: string;
-  recipientSiret?: string;
+  dossier: AnalyseFicheProjetResponse | null;
+  onFicheAnalysee: (analyse: AnalyseFicheProjetResponse) => void;
+  onRemoveDossier: () => void;
 }
 
-const STEPS = [
-  { id: 1, label: 'Entreprise & Statut', icon: Building2 },
-  { id: 2, label: 'Conformité & De Minimis', icon: ShieldAlert },
-  { id: 3, label: 'Typologie du Projet', icon: Target },
-  { id: 4, label: 'Évaluation Qualitative', icon: Award },
-  { id: 5, label: 'Budget & Simulation', icon: Calculator }
+const ALL_STEPS = [
+  { id: 0, label: 'Synthèse du projet', icon: FileText },
+  { id: 1, label: 'Entreprise', icon: Building2 },
+  { id: 2, label: 'Santé financière & conformité', icon: Landmark },
+  { id: 3, label: 'Projet & dépenses', icon: Target },
+  { id: 4, label: 'Critères qualitatifs', icon: Award },
+  { id: 5, label: 'Proposition de mesures', icon: Scale }
 ];
+
+const LAST_STEP = 5;
 
 export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
   state,
   setState,
-  onSubmitEvaluation,
-  activeDossier = null,
-  onAnalysisComplete = () => {},
-  onRemoveDossier = () => {},
-  apiToken,
-  recipientSiret
+  dossier,
+  onFicheAnalysee,
+  onRemoveDossier
 }) => {
-  const [currentStep, setCurrentStep] = useState<number>(1);
+  // La synthèse n'existe que si une fiche projet a été déposée
+  const steps = dossier ? ALL_STEPS : ALL_STEPS.filter((s) => s.id !== 0);
+  const firstStep = steps[0].id;
+  const [currentStep, setCurrentStep] = useState<number>(firstStep);
 
-  const handleNext = () => {
-    if (currentStep < 5) {
-      setCurrentStep(currentStep + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      onSubmitEvaluation();
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  const goTo = (step: number) => {
+    setCurrentStep(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const calculatedSize = determineCompanySize(
@@ -67,55 +59,41 @@ export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
     state.company.annualRevenue,
     state.company.balanceSheetTotal
   );
+  const stepIndex = steps.findIndex((s) => s.id === currentStep);
 
   return (
     <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6 space-y-6">
-      {/* Accélérateur Fiche Projet ADEC (Optionnel : préremplit le simulateur en 1 clic) */}
-      <ProjectSheetPreloader
-        questionnaireState={state}
-        activeDossier={activeDossier}
-        onAnalysisComplete={onAnalysisComplete}
-        onRemoveDossier={onRemoveDossier}
-        onRunImmediateEvaluation={onSubmitEvaluation}
-        apiToken={apiToken}
-        recipientSiret={recipientSiret}
-      />
+      <ProjectSheetPreloader dossier={dossier} onFicheAnalysee={onFicheAnalysee} onRemoveDossier={onRemoveDossier} />
 
-      {/* Stepper Header - Navigation moderne et colorée par étapes */}
-      <div className="mb-6 bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs">
-        <div className="flex items-center justify-between relative">
-          {STEPS.map((step) => {
+      {/* Étapes */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs">
+        <div className="flex items-center justify-between gap-2">
+          {steps.map((step) => {
             const Icon = step.icon;
             const isCompleted = currentStep > step.id;
             const isCurrent = currentStep === step.id;
             return (
               <button
                 key={step.id}
-                onClick={() => setCurrentStep(step.id)}
-                className="flex flex-col sm:flex-row items-center gap-2.5 group relative z-10 focus:outline-none"
+                onClick={() => goTo(step.id)}
+                className="flex flex-col sm:flex-row items-center gap-2 group focus:outline-none cursor-pointer"
               >
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold transition shadow-xs ${
                     isCurrent
-                      ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-sm'
+                      ? 'bg-blue-600 text-white ring-4 ring-blue-100'
                       : isCompleted
                       ? 'bg-emerald-600 text-white'
                       : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-700'
                   }`}
                 >
-                  {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <span>{step.id}</span>}
+                  {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                 </div>
-                <div className="text-left hidden sm:block">
-                  <span className={`text-[10px] block uppercase font-bold tracking-wider ${
-                    isCurrent ? 'text-blue-600' : isCompleted ? 'text-emerald-700' : 'text-slate-400'
-                  }`}>
+                <div className="text-left hidden md:block">
+                  <span className={`text-[10px] block uppercase font-bold tracking-wider ${isCurrent ? 'text-blue-600' : isCompleted ? 'text-emerald-700' : 'text-slate-400'}`}>
                     Étape {step.id}
                   </span>
-                  <span
-                    className={`text-xs font-semibold transition ${
-                      isCurrent ? 'text-blue-900 font-bold' : isCompleted ? 'text-slate-800' : 'text-slate-500'
-                    }`}
-                  >
+                  <span className={`text-xs font-semibold ${isCurrent ? 'text-blue-900 font-bold' : isCompleted ? 'text-slate-800' : 'text-slate-500'}`}>
                     {step.label}
                   </span>
                 </div>
@@ -123,18 +101,17 @@ export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
             );
           })}
         </div>
-
-        {/* Progress track */}
         <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-4">
           <div
             className="bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500 h-full transition-all duration-300"
-            style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
+            style={{ width: `${(stepIndex / (steps.length - 1)) * 100}%` }}
           />
         </div>
       </div>
 
-      {/* Main Form Content Card */}
       <div className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-xs">
+        {currentStep === 0 && dossier && <StepSynthese dossier={dossier} />}
+
         {currentStep === 1 && (
           <StepCompany
             data={state.company}
@@ -143,35 +120,26 @@ export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
         )}
 
         {currentStep === 2 && (
-          <StepRegulatory
-            data={state.regulatory}
-            complianceData={state.company.complianceData}
-            onChange={(updated) =>
+          <StepFinances
+            company={state.company}
+            sante={state.santeFinanciere || {}}
+            regulatory={state.regulatory}
+            onCompanyChange={(updated) => setState((prev) => applyCompanyUpdate(prev, updated))}
+            onSanteChange={(updated) => setState((prev) => ({ ...prev, santeFinanciere: { ...prev.santeFinanciere, ...updated } }))}
+            onRegulatoryChange={(updated) =>
               setState((prev) => {
                 const newRegulatory = { ...prev.regulatory, ...updated };
-                let newFinancials = { ...prev.financials };
-
-                // Synchronisation intelligente avec les besoins de la page 3 :
-                // 1. Entreprise en difficulté (Ribumbà) :
+                let newFinancials = prev.financials;
+                // Entreprise en difficulté au sens UE ⇔ besoin « Rebond / restructuration » (Ribumbà)
                 if (updated.isCompanyInDifficultyEU !== undefined) {
-                  const currentNeeds = newFinancials.selectedNeedCategories || [];
-                  if (updated.isCompanyInDifficultyEU) {
-                    // Si coché en page 2, sélectionner automatiquement le besoin RESTRUCTURATION_REBOND (Ribumbà)
-                    if (!currentNeeds.includes('RESTRUCTURATION_REBOND')) {
-                      newFinancials = {
-                        ...newFinancials,
-                        selectedNeedCategories: [...currentNeeds, 'RESTRUCTURATION_REBOND']
-                      };
-                    }
-                  } else {
-                    // Si décoché en page 2, retirer automatiquement RESTRUCTURATION_REBOND si présent
-                    newFinancials = {
-                      ...newFinancials,
-                      selectedNeedCategories: currentNeeds.filter((n) => n !== 'RESTRUCTURATION_REBOND')
-                    };
-                  }
+                  const needs = prev.financials.selectedNeedCategories || [];
+                  newFinancials = {
+                    ...prev.financials,
+                    selectedNeedCategories: updated.isCompanyInDifficultyEU
+                      ? Array.from(new Set([...needs, 'RESTRUCTURATION_REBOND']))
+                      : needs.filter((n) => n !== 'RESTRUCTURATION_REBOND')
+                  };
                 }
-
                 return { ...prev, regulatory: newRegulatory, financials: newFinancials };
               })
             }
@@ -179,13 +147,14 @@ export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
         )}
 
         {currentStep === 3 && (
-          <StepProjectNeed
-            data={state.financials}
+          <StepProjet
+            projet={state.projet || { depenses: [] }}
+            financials={state.financials}
             regulatory={state.regulatory}
             company={state.company}
-            onChange={(updated) =>
-              setState((prev) => ({ ...prev, financials: { ...prev.financials, ...updated } }))
-            }
+            companySize={calculatedSize}
+            onProjetChange={(updated) => setState((prev) => ({ ...prev, projet: { depenses: [], ...prev.projet, ...updated } }))}
+            onFinancialsChange={(updated) => setState((prev) => ({ ...prev, financials: { ...prev.financials, ...updated } }))}
           />
         )}
 
@@ -193,59 +162,43 @@ export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
           <StepQualitative
             data={state.qualitative}
             selectedNeeds={state.financials.selectedNeedCategories}
-            onChange={(updated) =>
-              setState((prev) => ({ ...prev, qualitative: { ...prev.qualitative, ...updated } }))
-            }
+            justifications={state.qualitativeJustifications}
+            onChange={(updated) => setState((prev) => ({ ...prev, qualitative: { ...prev.qualitative, ...updated } }))}
           />
         )}
 
         {currentStep === 5 && (
-          <StepBudgetSimulator
-            data={state.financials}
-            companySize={calculatedSize}
-            onChange={(updated) =>
-              setState((prev) => ({ ...prev, financials: { ...prev.financials, ...updated } }))
-            }
-          />
+          <StepProposition state={state} dossier={dossier} onModifyQuestionnaire={() => goTo(1)} />
         )}
 
-        {/* Action Controls Footer */}
+        {/* Navigation */}
         <div className="mt-8 pt-6 border-t border-slate-200 flex items-center justify-between">
           <button
             type="button"
-            onClick={handlePrev}
-            disabled={currentStep === 1}
+            onClick={() => goTo(steps[stepIndex - 1].id)}
+            disabled={stepIndex === 0}
             className={`px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition ${
-              currentStep === 1
-                ? 'opacity-40 cursor-not-allowed text-slate-400 bg-slate-100'
-                : 'text-slate-700 bg-slate-100 hover:bg-slate-200'
+              stepIndex === 0 ? 'opacity-40 cursor-not-allowed text-slate-400 bg-slate-100' : 'text-slate-700 bg-slate-100 hover:bg-slate-200 cursor-pointer'
             }`}
           >
             <ArrowLeft className="w-4 h-4" />
             Étape précédente
           </button>
 
-          <button
-            type="button"
-            onClick={handleNext}
-            className={`px-6 py-2.5 rounded-lg text-xs font-semibold text-white transition flex items-center gap-2 shadow-sm ${
-              currentStep === 5
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 ring-2 ring-emerald-500/20'
-                : 'bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-500/20'
-            }`}
-          >
-            {currentStep === 5 ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-white" />
-                <span>Calculer l'éligibilité et afficher le diagnostic</span>
-              </>
-            ) : (
-              <>
-                <span>Continuer vers l'étape {currentStep + 1}</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
+          {currentStep < LAST_STEP && (
+            <button
+              type="button"
+              onClick={() => goTo(steps[stepIndex + 1].id)}
+              className={`px-6 py-2.5 rounded-lg text-xs font-semibold text-white transition flex items-center gap-2 shadow-sm cursor-pointer ${
+                currentStep === LAST_STEP - 1
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              <span>{currentStep === LAST_STEP - 1 ? 'Calculer la proposition de mesures' : `Continuer : ${steps[stepIndex + 1].label}`}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>

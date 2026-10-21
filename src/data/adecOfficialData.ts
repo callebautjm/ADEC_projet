@@ -285,7 +285,31 @@ export const OFFICIAL_ADEC_SCHEMES: DispositifScheme[] = [
       controlDurationYears: 3
     },
     sourceDocumentPages: 'Pages 20 à 24',
-    isActive: true
+    isActive: true,
+    communication: {
+      accroche: 'La mesure « Impresi Paisani » a pour objet de soutenir et de développer les activités productives, artisanales, commerciales et de services implantées dans les territoires ruraux et de montagne de Corse, afin de renforcer leur attractivité économique et leur résilience.',
+      objectifs: [
+        'Favoriser le développement d’une économie locale de production de biens et de services plus durable.',
+        'Préserver et renforcer l’offre de proximité en milieu rural, notamment au travers des circuits courts et des outils numériques.',
+        'Soutenir le commerce et l’artisanat en tant que vecteurs de dynamisation économique, sociale et territoriale.',
+        'Accompagner la reprise d’entreprises par le financement de rachats de fonds de commerce, de fonds artisanaux, de parts sociales ou d’actions.',
+        'Encourager la création et le développement d’activités contribuant à l’innovation, à l’économie sociale et solidaire ainsi qu’aux transitions écologique, énergétique et numérique.'
+      ],
+      entreprisesEligibles: 'Les TPE, PE et PME basées en Corse dont les activités relèvent principalement des secteurs de l’industrie, de l’artisanat, du commerce, des services ou de l’économie sociale et solidaire (ESS).',
+      projetsEligibles: 'Création, modernisation, développement ou reprise d’activité de production de biens ou de services ou commerciale exclusivement sur un territoire rural et de montagne et dans des communes de moins de 1 000 habitants.',
+      depensesEligibles: [
+        'Achats et aménagement d’équipements professionnels, notamment productifs,',
+        'Véhicules de tournées de marchands ambulants alimentaires, ou d’activités artisanales de services dans le dit-véhicule, desservant exclusivement une zone rurale,',
+        'Dépenses d’investissement visant notamment à la modernisation des entreprises et des locaux d’activités (vitrines incluses) ; à la sécurisation des entreprises et des locaux d’activités contre les effractions ; à favoriser l’accessibilité physique et numérique des entreprises à tous les publics ; à favoriser la transition écologique, énergétique et numérique,',
+        'Fonds de commerce ou artisanal et parts sociales ou actions,',
+        'Frais d’études, de conseil et d’accompagnement liés aux investissements matériels et/ou au développement d’activités particulièrement performants ou novateurs en matière d’environnement, d’économie sociale et solidaire, de digitalisation et d’innovation servicielle.'
+      ],
+      formeAide: [
+        'L’aide prend la forme d’une **subvention** dont l’intensité maximale peut atteindre : jusqu’à 70 % des dépenses éligibles pour les TPE, jusqu’à 60 % des dépenses éligibles pour les PE et jusqu’à 50 % pour les PME.',
+        'Le montant minimal de l’aide est fixé à **5 000 €**.',
+        'Le montant total des aides accordées à une entreprise unique ne peut excéder le plafond prévu par le règlement (UE) 2023/2831 de la Commission du 13 décembre 2023 relatif **aux aides de minimis**, soit **300 000 euros** sur une période glissante de trois ans.'
+      ]
+    }
   },
 
   // =========================================================================

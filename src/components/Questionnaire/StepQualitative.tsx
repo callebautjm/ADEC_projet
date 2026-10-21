@@ -14,6 +14,8 @@ interface StepQualitativeProps {
   data: QualitativeAnswers;
   selectedNeeds?: (NeedCategory | string)[];
   onChange: (updated: Partial<QualitativeAnswers>) => void;
+  /** Extraits de la fiche projet justifiant les critères pré-cochés */
+  justifications?: Partial<Record<keyof QualitativeAnswers, string>>;
 }
 
 const RISILIENZA_NEEDS: NeedCategory[] = [
@@ -23,7 +25,7 @@ const RISILIENZA_NEEDS: NeedCategory[] = [
   'RURALITE_PROXIMITE'
 ];
 
-export const StepQualitative: React.FC<StepQualitativeProps> = ({ data, selectedNeeds = [], onChange }) => {
+export const StepQualitative: React.FC<StepQualitativeProps> = ({ data, selectedNeeds = [], onChange, justifications = {} }) => {
   const { allActiveSchemes } = useDatabases();
   const [showRegimeDetails, setShowRegimeDetails] = useState(false);
   const currentScore = computeQualitativeScore(data);
@@ -51,7 +53,7 @@ export const StepQualitative: React.FC<StepQualitativeProps> = ({ data, selected
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <Award className="w-5 h-5 text-slate-700" />
-            4. Évaluation Qualitative Préalable (Délibération N° 21/177 AC)
+            4. Critères qualitatifs ADEC (Délibération N° 21/177 AC)
           </h2>
           <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">
             Assemblée de Corse – 28 octobre 2021
@@ -286,6 +288,11 @@ export const StepQualitative: React.FC<StepQualitativeProps> = ({ data, selected
                   <p className="text-[11px] text-slate-500 mt-1 italic">
                     {q.clarification}
                   </p>
+                  {justifications[q.id as keyof QualitativeAnswers] && (
+                    <p className="text-[11px] text-indigo-900 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1.5 mt-2">
+                      <strong>D’après la fiche projet :</strong> « {justifications[q.id as keyof QualitativeAnswers]} »
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 pt-0.5">

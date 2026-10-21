@@ -416,11 +416,45 @@ export interface ProjectFinancials {
   hasBankPartnerCommitted?: boolean; // Pour Reprise / Ribumbà
 }
 
+/** Indicateurs financiers de l'entreprise (fiche projet ou saisie) */
+export interface SanteFinanciere {
+  resultatNet?: number;
+  fondsPropres?: number;
+  empruntsEnCours?: number;
+  caf?: number;
+  difficultesTresorerie?: boolean;
+}
+
+export type FormeAide = 'SUBVENTION' | 'AVANCE_REMBOURSABLE' | 'PRET' | 'AUTRE';
+
+export interface DepenseProjet {
+  nature: string;
+  description: string;
+  montantHT: number;
+}
+
+/** Projet de l'entreprise (fiche projet ou saisie) */
+export interface ProjetSaisi {
+  libelle?: string;
+  dateDebut?: string;
+  dateFin?: string;
+  depenses: DepenseProjet[];
+  formeAide?: FormeAide;
+  aideSollicitee?: number;
+  emploisCrees?: number;
+  emploisMaintenus?: number;
+  appelAProjet?: string;
+}
+
 export interface FullQuestionnaireState {
   company: CompanyProfile;
   regulatory: RegulatoryStatus;
   qualitative: QualitativeAnswers;
   financials: ProjectFinancials;
+  santeFinanciere?: SanteFinanciere;
+  projet?: ProjetSaisi;
+  /** Extraits de la fiche projet justifiant les critères qualitatifs pré-cochés */
+  qualitativeJustifications?: Partial<Record<keyof QualitativeAnswers, string>>;
   dossierSource?: {
     dossierNumber?: string;
     sourceDocumentName?: string;
@@ -490,6 +524,18 @@ export interface DispositifScheme {
   procedure: SchemeProcedure;
   sourceDocumentPages: string;
   isActive: boolean;
+  /**
+   * Textes de la fiche de communication (modèle ADEC « model_dispo »), prioritaires sur les textes
+   * dérivés des autres champs. `**texte**` est rendu en gras.
+   */
+  communication?: {
+    accroche?: string;
+    objectifs?: string[];
+    entreprisesEligibles?: string;
+    projetsEligibles?: string;
+    depensesEligibles?: string[];
+    formeAide?: string[];
+  };
 }
 
 export interface EvaluationResultItem {
@@ -544,88 +590,3 @@ export interface DocumentaryDatabaseMetadata {
   schemesCount: number;
   schemes: DispositifScheme[];
 }
-
-export interface DossierInterventionProposal {
-  id: string;
-  type: 'DISPOSITIF_FINANCIER_DIRECT' | 'ACCOMPAGNEMENT_TECHNIQUE' | 'TRANSITION_NUMERIQUE' | 'BONIFICATION_TERRITORIALE' | 'SOUTIEN_EMPLOI';
-  title: string;
-  dispositifId?: string;
-  dispositifName?: string;
-  isPrimaryFromAAP: boolean; // TRUE si provient directement de la section "Appel à projet"
-  reasoning: string;
-  rateEstimated?: number;
-  rateEstimatedLabel?: string;
-  estimatedAmountHT?: number;
-  eligibleExpensesSummary?: string;
-  recommendedActions: string[];
-  legalBasis?: string;
-}
-
-export interface DossierProjectAnalysis {
-  dossierNumber?: string;
-  sourceDocumentName?: string;
-  analysisDate: string;
-  analysisEngineNotice?: string;
-
-  // Volet 1 : Données d'identification de l'entreprise
-  company: {
-    siret?: string;
-    siren?: string;
-    name?: string;
-    legalForm?: string;
-    nafCode?: string;
-    nafLabel?: string;
-    creationDate?: string;
-    headcount?: number;
-    annualRevenue?: number;
-    balanceSheetTotal?: number;
-    address?: {
-      street?: string;
-      postalCode?: string;
-      city?: string;
-      communeInsee?: string;
-    };
-    contact?: {
-      fullName?: string;
-      role?: string;
-      email?: string;
-      phone?: string;
-    };
-    dirigeantsMandataires?: MandataireSocial[];
-  };
-
-  // Volet 2 : Section Appel à projet (règle obligatoire)
-  appelAProjet: {
-    isRenseigne: boolean;
-    titre?: string;
-    reference?: string;
-    dateLimite?: string;
-    dispositifCibleSuggere?: string;
-    dispositifNameSuggere?: string;
-    details?: string;
-  };
-
-  // Volet 3 : Projet & Besoins de l'entreprise
-  project: {
-    title?: string;
-    summary?: string;
-    contextAndGenesis?: string;
-    objectives?: string[];
-    location?: string;
-    startDate?: string;
-    endDate?: string;
-    needsCategories?: string[];
-    investmentProgram?: Array<{
-      category: string;
-      description: string;
-      estimatedAmountHT?: number;
-    }>;
-    totalBudgetHT?: number;
-    subventionRequestedHT?: number;
-  };
-
-  // Données enrichies de l'API Entreprise (si SIRET valide trouvé)
-  enrichedCompanyData?: any;
-  compliance?: ApiEntrepriseComplianceData;
-}
-

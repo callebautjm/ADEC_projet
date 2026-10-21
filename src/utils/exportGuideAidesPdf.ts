@@ -1,432 +1,193 @@
 /**
- * Générateur et Exportateur Officiel du Recueil & Fiches de Synthèse des Aides ADEC 2026
- * Destiné aux équipes de communication, aux conseillers entreprises et à la direction générale.
- * Cadre : Délibération N° 21/177 AC & U Pattu Risilienzia è Territorii (Annexe 1).
+ * Export « Fiches dispositifs » pour la communication : une page A4 par dispositif,
+ * selon le modèle de fiche ADEC (model_dispo.pdf).
+ * Les textes viennent de `scheme.communication` quand ils existent, sinon des champs du dispositif.
  */
 
 import { DispositifScheme } from '../types';
-import { QUALITATIVE_EVALUATION_QUESTIONS } from '../data/adecOfficialData';
 
-const A4_PRINT_CSS = `
-  @page {
-    size: A4 portrait;
-    margin: 14mm 14mm 14mm 14mm;
+export interface FicheDispositifContenu {
+  famille: string;
+  nom: string;
+  accroche: string;
+  objectifs: string[];
+  entreprisesEligibles: string;
+  projetsEligibles: string;
+  depensesEligibles: string[];
+  formeAide: string[];
+}
+
+const PIED_DE_PAGE = 'Le dispositif est ici présenté dans sa version simplifiée, pour en connaître les détails<br />consultez le guide complet des aides sur le site de l’ADEC www.adec.corsica';
+
+const euros = (n: number) => `${n.toLocaleString('fr-FR')} €`;
+const pct = (r: number) => `${Math.round(r * 100)} %`;
+const finPhrase = (s: string) => (/[.!?]$/.test(s.trim()) ? s.trim() : `${s.trim()}.`);
+const minusculeInitiale = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+/** « Soutenir… », « Permettre… » : l'objet peut suivre « a pour objet de » */
+const commenceParUnVerbe = (s: string) => /^(\p{L}+(?:er|ir)|permettre|promouvoir|produire|construire|reconstruire)\b/iu.test(s.trim());
+
+/** Phrase d'accroche construite à partir de l'objet du dispositif */
+const accrocheDerivee = (nomCourt: string, objet: string) => {
+  const o = minusculeInitiale(finPhrase(objet));
+  if (commenceParUnVerbe(objet)) return `La mesure « ${nomCourt} » a pour objet ${/^[aeiouyhéèêâîôû]/i.test(o) ? 'd’' : 'de '}${o}`;
+  if (/^(mesure|dispositif)\b/i.test(objet)) return `La mesure « ${nomCourt} » est une ${o}`; // « Mesure unique de soutien… »
+  return `La mesure « ${nomCourt} » a pour objet le ${o}`; // « Soutien aux projets… »
+};
+
+/** « Mesure d’aide « Risilienza » » → famille / nom affichés en en-tête de fiche */
+const famillesEtNom = (scheme: DispositifScheme): { famille: string; nom: string; nomCourt: string } => {
+  const guillemets = scheme.name.match(/«\s*([^»]+?)\s*»/);
+  const [avantTiret, apresTiret] = scheme.name.split(/\s+[–-]\s+/);
+  if (scheme.category === 'Pattu Risilienzia è Territorii') {
+    const nomCourt = guillemets ? guillemets[1] : scheme.name;
+    return { famille: 'PATTU RISILIENZA E TERRITORII', nom: nomCourt.toUpperCase(), nomCourt };
   }
-  * {
-    box-sizing: border-box;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+  if (apresTiret) {
+    return { famille: avantTiret.toUpperCase(), nom: apresTiret.toUpperCase(), nomCourt: scheme.name };
   }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 9pt;
-    line-height: 1.45;
-    color: #0f172a;
-    background: #ffffff;
-    margin: 0;
-    padding: 0;
+  const nomCourt = guillemets ? guillemets[1] : scheme.name;
+  return { famille: 'GUIDE DES AIDES ADEC', nom: nomCourt.toUpperCase(), nomCourt };
+};
+
+/** Phrases « Forme de l’aide » déduites des taux et plafonds du dispositif */
+const formeAideDerivee = (scheme: DispositifScheme): string[] => {
+  const r = scheme.rates;
+  const lignes: string[] = [];
+
+  if (r.flatAmount) {
+    const montant = r.flatAmount.min === r.flatAmount.max
+      ? `de **${euros(r.flatAmount.max)}**`
+      : `de **${euros(r.flatAmount.min)}** à **${euros(r.flatAmount.max)}**`;
+    lignes.push(`L’aide prend la forme d’une **subvention forfaitaire** ${montant}.`);
+    // Le libellé n'apporte une précision que s'il ne répète pas « subvention forfaitaire »
+    const precision = r.flatAmount.label.replace(/^subvention forfaitaire\s*/i, '');
+    if (precision) lignes.push(finPhrase(precision.charAt(0).toUpperCase() + precision.slice(1)));
+    if (r.flatAmount.specialBonus) lignes.push(finPhrase(r.flatAmount.specialBonus.label));
+  } else {
+    const taux = [
+      r.tpeMaxRate !== undefined ? `jusqu’à ${pct(r.tpeMaxRate)} des dépenses éligibles pour les TPE` : '',
+      r.peMaxRate !== undefined ? `jusqu’à ${pct(r.peMaxRate)} des dépenses éligibles pour les PE` : '',
+      r.pmeMaxRate !== undefined ? `jusqu’à ${pct(r.pmeMaxRate)} pour les PME` : ''
+    ].filter(Boolean);
+    if (taux.length > 0) {
+      const liste = taux.length > 1 ? `${taux.slice(0, -1).join(', ')} et ${taux[taux.length - 1]}` : taux[0];
+      lignes.push(`L’aide prend la forme d’une **subvention** dont l’intensité maximale peut atteindre : ${liste}.`);
+    } else {
+      lignes.push('L’aide prend la forme d’une **subvention**, dont l’intensité est fixée selon le projet.');
+    }
   }
-  .page-break {
-    page-break-before: always;
+
+  if (r.cleanVehiclesRates) {
+    const v = r.cleanVehiclesRates;
+    lignes.push(`Véhicules propres : **${pct(v.rate)}** du montant HT, plafonné à ${euros(v.utilitaireLightCap)} (moins de 2,5 t), ${euros(v.fourgonCap)} (de 2,5 à 3,5 t) et ${euros(v.poidsLourdCap)} (plus de 3,5 t).`);
   }
-  .cover-container {
-    padding: 40px 20px;
-    text-align: center;
-    border: 3px solid #000091;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  if (r.travelAllowances) {
+    const t = r.travelAllowances;
+    lignes.push(`Forfaits de déplacement par personne : ${euros(t.franceSalon)} (salon international en France), ${euros(t.euromed)} (Euromed) et ${euros(t.grandLarge)} (Grand Large).`);
   }
-  .marianne-band {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    margin-bottom: 16px;
+
+  const forfaitFixe = r.flatAmount && r.flatAmount.min === r.flatAmount.max;
+  if (r.floorAmount && !forfaitFixe) lignes.push(`Le montant minimal de l’aide est fixé à **${euros(r.floorAmount)}**.`);
+
+  const deMinimis = /2023\/2831/.test(scheme.legalBasis);
+  if (r.ceilingAmount && r.ceilingAmount < 300000 && !forfaitFixe) {
+    lignes.push(`Le montant de l’aide est plafonné à **${euros(r.ceilingAmount)}**.`);
   }
-  .marianne-color {
-    width: 14px;
-    height: 32px;
-    border-radius: 2px;
+  if (deMinimis) {
+    lignes.push('Le montant total des aides accordées à une entreprise unique ne peut excéder le plafond prévu par le règlement (UE) 2023/2831 de la Commission du 13 décembre 2023 relatif **aux aides de minimis**, soit **300 000 euros** sur une période glissante de trois ans.');
+  } else if (r.ceilingAmount && r.ceilingAmount >= 300000) {
+    lignes.push(`Le montant de l’aide est plafonné à **${euros(r.ceilingAmount)}** (${scheme.legalBasis}).`);
   }
-  .header-institution {
-    font-size: 11pt;
-    font-weight: 800;
-    color: #000091;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    line-height: 1.3;
+  return lignes;
+};
+
+export function buildFicheDispositif(scheme: DispositifScheme): FicheDispositifContenu {
+  const c = scheme.communication || {};
+  const { famille, nom, nomCourt } = famillesEtNom(scheme);
+  return {
+    famille,
+    nom,
+    accroche: c.accroche || accrocheDerivee(nomCourt, scheme.objective),
+    objectifs: c.objectifs || [],
+    entreprisesEligibles: c.entreprisesEligibles || finPhrase(scheme.targetBeneficiariesSummary),
+    projetsEligibles: c.projetsEligibles || finPhrase(scheme.subtitle),
+    depensesEligibles: c.depensesEligibles || scheme.eligibleExpenseCategories,
+    formeAide: c.formeAide || formeAideDerivee(scheme)
+  };
+}
+
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/** Échappe le texte puis rend `**gras**` */
+const texte = (s: string) => escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+const liste = (items: string[]) => `<ul>${items.map((i) => `<li>${texte(i)}</li>`).join('')}</ul>`;
+
+const FICHE_CSS = `
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e5e7eb; font-family: Arial, Helvetica, sans-serif; color: #000; }
+  .page {
+    width: 210mm; height: 297mm; margin: 0 auto 8mm; background: #fff;
+    padding: 16mm 19mm 12mm; display: flex; flex-direction: column;
+    font-size: 10pt; line-height: 1.32; page-break-after: always; break-after: page;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
   }
-  .header-sub {
-    font-size: 9.5pt;
-    font-weight: 600;
-    color: #e1000f;
-    margin-top: 2px;
-  }
-  .cover-title {
-    font-size: 22pt;
-    font-weight: 900;
-    color: #0f172a;
-    text-transform: uppercase;
-    letter-spacing: -0.5px;
-    margin: 25px 0 10px 0;
-    line-height: 1.15;
-  }
-  .cover-subtitle {
-    font-size: 13pt;
-    font-weight: 700;
-    color: #0369a1;
-    margin-bottom: 15px;
-  }
-  .cover-meta {
-    font-size: 9pt;
-    color: #64748b;
-    margin-top: 25px;
-    line-height: 1.6;
-  }
-  .badge-tag {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 8pt;
-    font-weight: 700;
-  }
-  .badge-blue { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-  .badge-emerald { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-  .badge-purple { background: #faf5ff; color: #6b21a8; border: 1px solid #e9d5ff; }
-  .section-heading {
-    font-size: 12pt;
-    font-weight: 900;
-    color: #000091;
-    text-transform: uppercase;
-    border-bottom: 2px solid #000091;
-    padding-bottom: 4px;
-    margin: 18px 0 10px 0;
-  }
-  .summary-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 8pt;
-    margin-bottom: 15px;
-  }
-  .summary-table th {
-    background: #0f172a;
-    color: #ffffff;
-    font-weight: 700;
-    text-align: left;
-    padding: 6px 8px;
-    border: 1px solid #334155;
-  }
-  .summary-table td {
-    padding: 5px 8px;
-    border: 1px solid #cbd5e1;
-    vertical-align: middle;
-  }
-  .summary-table tr:nth-child(even) td {
-    background: #f8fafc;
-  }
-  .fiche-card {
-    border: 1.5px solid #cbd5e1;
-    border-radius: 6px;
-    padding: 14px;
-    margin-bottom: 16px;
-    background: #ffffff;
-  }
-  .fiche-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    border-bottom: 1.5px solid #000091;
-    padding-bottom: 6px;
-    margin-bottom: 8px;
-  }
-  .fiche-code {
-    font-family: monospace;
-    font-weight: 900;
-    font-size: 10pt;
-    color: #000091;
-    background: #eff6ff;
-    padding: 2px 6px;
-    border-radius: 4px;
-    border: 1px solid #bfdbfe;
-  }
-  .fiche-title {
-    font-size: 12pt;
-    font-weight: 900;
-    color: #0f172a;
-    margin: 2px 0 1px 0;
-  }
-  .fiche-subtitle {
-    font-size: 8.5pt;
-    font-weight: 600;
-    color: #475569;
-  }
-  .grid-2 {
-    display: table;
-    width: 100%;
-    margin-bottom: 6px;
-  }
-  .col-1, .col-2 {
-    display: table-cell;
-    vertical-align: top;
-    width: 50%;
-  }
-  .col-1 { padding-right: 8px; }
-  .col-2 { padding-left: 8px; }
-  .info-box {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    padding: 6px 8px;
-    margin-bottom: 6px;
-    font-size: 8pt;
-  }
-  .info-box strong {
-    color: #0f172a;
-  }
-  .rates-strip {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 4px;
-    padding: 6px 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 8.5pt;
-    margin: 6px 0;
-  }
-  .rates-strip strong {
-    color: #166534;
-  }
-  .footer-stamp {
-    margin-top: 14px;
-    padding-top: 6px;
-    border-top: 1px solid #e2e8f0;
-    font-size: 7.5pt;
-    color: #94a3b8;
-    text-align: center;
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  .entete { display: flex; justify-content: space-between; gap: 12mm; font-size: 10pt; margin: 0 4mm 9mm; }
+  .entete span:last-child { text-align: right; }
+  .accroche { font-weight: bold; text-align: justify; margin: 0 2mm 7mm 4mm; }
+  .rubrique { margin: 0 0 5mm; text-align: justify; }
+  .rubrique strong.titre { font-weight: bold; }
+  ul { margin: 0.5mm 0 0; padding-left: 5mm; list-style: none; }
+  li { position: relative; padding-left: 2mm; margin-bottom: 0.3mm; text-align: justify; }
+  li::before { content: '•'; position: absolute; left: -4mm; }
+  .pied { margin-top: auto; text-align: center; font-size: 9pt; line-height: 1.3; }
+  @media print {
+    body { background: #fff; }
+    .page { margin: 0; box-shadow: none; }
   }
 `;
 
+const renderFiche = (scheme: DispositifScheme) => {
+  const f = buildFicheDispositif(scheme);
+  return `
+  <section class="page">
+    <div class="entete"><span>${escapeHtml(f.famille)}</span><span>${escapeHtml(f.nom)}</span></div>
+    <p class="accroche">${texte(f.accroche)}</p>
+    ${f.objectifs.length > 0 ? `<div class="rubrique"><strong class="titre">Objectifs :</strong>${liste(f.objectifs)}</div>` : ''}
+    <p class="rubrique"><strong class="titre">Entreprises éligibles :</strong> ${texte(f.entreprisesEligibles)}</p>
+    <p class="rubrique"><strong class="titre">Projets éligibles :</strong> ${texte(f.projetsEligibles)}</p>
+    <div class="rubrique"><strong class="titre">Dépenses éligibles :</strong>${liste(f.depensesEligibles)}</div>
+    <div class="rubrique"><strong class="titre">Forme de l’aide :</strong>${liste(f.formeAide)}</div>
+    <div class="pied">${PIED_DE_PAGE}</div>
+  </section>`;
+};
+
 /**
- * Génère le code HTML complet et imprimable du recueil des fiches d'aides ADEC
+ * Document HTML imprimable : une fiche (page A4) par dispositif
  */
 export function generateGuideAidesHtml(schemes: DispositifScheme[]): string {
-  const dateFormatted = new Date().toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  });
-
-  const annexe1Schemes = schemes.filter(s => s.category === 'Pattu Risilienzia è Territorii');
-  const guideSchemes = schemes.filter(s => s.category !== 'Pattu Risilienzia è Territorii');
-
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <title>Recueil_Fiches_Aides_ADEC_2026_Synthese_Communication.pdf</title>
-  <style>${A4_PRINT_CSS}</style>
+  <title>Fiches_Dispositifs_ADEC</title>
+  <style>${FICHE_CSS}</style>
 </head>
 <body>
-
-  <!-- ================= PAGE 1 : PAGE DE GARDE INSTITUTIONNELLE ================= -->
-  <div class="cover-container">
-    <div class="marianne-band">
-      <div class="marianne-color" style="background: #000091;"></div>
-      <div class="marianne-color" style="background: #ffffff; border: 1px solid #cbd5e1;"></div>
-      <div class="marianne-color" style="background: #e1000f;"></div>
-    </div>
-    
-    <div class="header-institution">
-      Collectivité de Corse · Cullettività di Corsica<br />
-      Agence de Développement Économique de la Corse (ADEC)
-    </div>
-    <div class="header-sub">
-      Direction du Développement Économique & Service de la Communication
-    </div>
-
-    <div class="cover-title">
-      Recueil & Fiches de Synthèse des Dispositifs d'Aides 2026
-    </div>
-    <div class="cover-subtitle">
-      Guide Pratique des Interventions Régionales pour la Communication & l'Information des Entreprises
-    </div>
-
-    <div style="margin: 20px auto; max-width: 650px; font-size: 9.5pt; line-height: 1.5; color: #334155; text-align: justify; padding: 12px 16px; background: #ffffff; border-radius: 6px; border: 1px solid #cbd5e1;">
-      <strong>Note de cadrage pour la communication :</strong> Ce recueil synthétise l'intégralité des mesures d'aide directe aux entreprises corses adoptées par l'Assemblée de Corse. Il regroupe les <strong>4 mesures du dispositif U PATTU RISILIENZA È TERRITORII</strong> (Annexe 1) ainsi que les <strong>12 mesures sectorielles du Guide des Aides 2026</strong> soumises à la grille qualitative des 8 critères (Délibération N° 21/177 AC). Il est destiné à la rédaction des fiches de communication, des dossiers de presse et des supports d'information des acteurs économiques.
-    </div>
-
-    <div style="display: flex; justify-content: center; gap: 15px; margin-top: 15px;">
-      <span class="badge-tag badge-blue">16 Dispositifs d'Aides Actifs</span>
-      <span class="badge-tag badge-emerald">Bonification SALVEZZA jusqu'à 70 %</span>
-      <span class="badge-tag badge-purple">Délibération N° 21/177 AC</span>
-    </div>
-
-    <div class="cover-meta">
-      Édité le <strong>${dateFormatted}</strong> · Document de Référence ADEC 2026<br />
-      Source officielle : Assemblée de Corse · Agence de Développement Économique de la Corse (adec.corsica)
-    </div>
-  </div>
-
-  <!-- ================= PAGE 2 : SOMMAIRE & TABLEAU RÉCAPITULATIF ================= -->
-  <div class="page-break"></div>
-
-  <div class="section-heading">
-    1. Tableau Récapitulatif des 16 Dispositifs d'Aides (Vue Synthétique)
-  </div>
-
-  <table class="summary-table">
-    <thead>
-      <tr>
-        <th style="width: 10%;">Code</th>
-        <th style="width: 28%;">Dispositif & Intitulé</th>
-        <th style="width: 22%;">Volet Réglementaire</th>
-        <th style="width: 15%;">Taux Max TPE</th>
-        <th style="width: 13%;">Plafond Subvention</th>
-        <th style="width: 12%;">Grille Qualit.</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${schemes.map(s => `
-        <tr>
-          <td><strong style="font-family: monospace; color: #000091;">${s.code}</strong></td>
-          <td>
-            <strong>${s.name}</strong><br />
-            <span style="font-size: 7.5pt; color: #64748b;">${s.allowedSizes.join(', ')} · ${s.allowedSectors.slice(0, 3).join(', ')}</span>
-          </td>
-          <td>${s.category === 'Pattu Risilienzia è Territorii' ? 'Annexe 1 · U Pattu Risilienzia' : 'Guide 2026 (Délib. 21/177 AC)'}</td>
-          <td><strong style="color: #166534;">${s.rates.tpeMaxRate ? `${Math.round(s.rates.tpeMaxRate * 100)} %` : s.rates.flatAmount ? 'Forfait' : 'Variable'}</strong></td>
-          <td style="font-family: monospace; font-weight: bold;">${s.rates.ceilingAmount ? `${s.rates.ceilingAmount.toLocaleString('fr-FR')} €` : 'Selon assiette'}</td>
-          <td>${s.requiresQualitativeEvaluation ? '<span style="color: #b45309; font-weight: 700;">≥ 3 OUI</span>' : '<span style="color: #166534; font-weight: 700;">Directe</span>'}</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
-
-  <!-- GRILLE QUALITATIVE EN BREF -->
-  <div class="section-heading" style="margin-top: 25px;">
-    2. Cadre d'Évaluation Qualitative (Délibération N° 21/177 AC - Page 28)
-  </div>
-
-  <div style="background: #fefce8; border: 1.5px solid #fde047; border-radius: 6px; padding: 10px 14px; font-size: 8.5pt; color: #854d0e; margin-bottom: 12px; line-height: 1.45;">
-    <strong>Règle éliminatoire obligatoire :</strong> Pour les mesures relevant du Guide des Aides 2026, l'accès à l'instruction financière exige l'obtention d'au moins <strong>3 « OUI » sur les 8 critères</strong>. Les 4 mesures du Pattu Risilienzia en sont expressément dispensées.
-  </div>
-
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 8pt;">
-    ${QUALITATIVE_EVALUATION_QUESTIONS.map((q, idx) => `
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 10px;">
-        <strong style="color: #000091;">Critère ${idx + 1} : ${q.title}</strong><br />
-        <span style="color: #334155;">${q.label}</span>
-      </div>
-    `).join('')}
-  </div>
-
-  <!-- ================= PAGES SUIVANTES : FICHES DÉTAILLÉES ================= -->
-  ${schemes.map((scheme, index) => `
-    <div class="page-break"></div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000091; padding-bottom: 6px; margin-bottom: 12px;">
-      <div>
-        <div style="font-size: 7.5pt; font-weight: 700; color: #000091; text-transform: uppercase;">
-          Fiche Synthétique N° ${index + 1}/16 · Collectivité de Corse · ADEC
-        </div>
-        <div style="font-size: 14pt; font-weight: 900; color: #0f172a; margin-top: 1px;">
-          ${scheme.name}
-        </div>
-      </div>
-      <div style="text-align: right;">
-        <span class="fiche-code">${scheme.code}</span>
-        <div style="font-size: 7.5pt; color: #64748b; margin-top: 2px;">Réf. : ${scheme.sourceDocumentPages}</div>
-      </div>
-    </div>
-
-    <!-- BANDEAU DES TAUX ET PLAFONDS -->
-    <div class="rates-strip">
-      <div>
-        <span style="font-size: 8pt; color: #166534; text-transform: uppercase; font-weight: 700;">Taux d'intervention maximal :</span>
-        <strong style="font-size: 10pt; margin-left: 6px;">
-          TPE : ${scheme.rates.tpeMaxRate ? `${Math.round(scheme.rates.tpeMaxRate * 100)} %` : 'Forfait'}
-          ${scheme.rates.peMaxRate ? ` · PE : ${Math.round(scheme.rates.peMaxRate * 100)} %` : ''}
-          ${scheme.rates.pmeMaxRate ? ` · PME : ${Math.round(scheme.rates.pmeMaxRate * 100)} %` : ''}
-        </strong>
-      </div>
-      <div>
-        <span style="font-size: 8pt; color: #166534; text-transform: uppercase; font-weight: 700;">Plafond d'aide :</span>
-        <strong style="font-size: 10pt; margin-left: 6px;">${scheme.rates.ceilingAmount ? `${scheme.rates.ceilingAmount.toLocaleString('fr-FR')} €` : 'Selon barème'}</strong>
-      </div>
-    </div>
-
-    <!-- OBJECTIFS & CADRE -->
-    <div class="info-box" style="border-left: 4px solid #000091;">
-      <strong>Objectif du dispositif : </strong>${scheme.objective}
-      <div style="margin-top: 4px; font-size: 7.5pt; color: #64748b;">
-        <strong>Cadre juridique & Délibération : </strong>${scheme.governingDeliberation || scheme.legalBasis}
-      </div>
-    </div>
-
-    <!-- 2 COLONNES : BÉNÉFICIAIRES & DÉPENSES -->
-    <div class="grid-2">
-      <div class="col-1">
-        <div class="info-box">
-          <strong style="color: #000091; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 3px;">
-            1. Bénéficiaires & Publics Visés
-          </strong>
-          <p style="margin: 0 0 4px 0;">${scheme.targetBeneficiariesSummary}</p>
-          <div><strong>Tailles admises :</strong> ${scheme.allowedSizes.join(', ')}</div>
-          <div><strong>Secteurs éligibles :</strong> ${scheme.allowedSectors.join(', ')}</div>
-          <div style="color: #991b1b; margin-top: 2px;"><strong>Exclusions formelles :</strong> ${scheme.excludedLegalForms.join(', ')} · ${scheme.excludedSectors.join(', ')}</div>
-        </div>
-      </div>
-
-      <div class="col-2">
-        <div class="info-box">
-          <strong style="color: #000091; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 3px;">
-            2. Dépenses & Investissements Éligibles
-          </strong>
-          <ul style="margin: 0; padding-left: 14px;">
-            ${scheme.eligibleExpenseCategories.slice(0, 5).map(e => `<li>${e}</li>`).join('')}
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- CONDITIONS SPÉCIFIQUES & CRITÈRES -->
-    <div class="info-box">
-      <strong style="color: #000091; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 3px;">
-        3. Conditions Particulières d'Instruction & Engagements
-      </strong>
-      <ul style="margin: 0; padding-left: 14px;">
-        ${scheme.specificRequirements.map(r => `<li>${r}</li>`).join('')}
-      </ul>
-    </div>
-
-    <!-- DÉPÔT ET PROCÉDURE -->
-    <div class="info-box" style="background: #f1f5f9; border-color: #cbd5e1;">
-      <strong style="color: #0f172a; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 2px;">
-        4. Modalités de Dépôt & Pièces Justificatives (Communication aux Usagers)
-      </strong>
-      <div style="font-size: 8pt; color: #334155;">
-        <strong>Plateforme de dépôt :</strong> ${scheme.procedure.portalUrl} (${scheme.procedure.submissionMethod})<br />
-        <strong>Instance de décision :</strong> ${scheme.procedure.decisionBody}<br />
-        <strong>Pièces principales :</strong> ${scheme.procedure.requiredDocuments.join(' · ')}
-      </div>
-    </div>
-
-    <div class="footer-stamp">
-      Recueil Officiel des Aides ADEC 2026 · Document de communication interne et externe · adec.corsica
-    </div>
-  `).join('')}
-
+${schemes.map(renderFiche).join('\n')}
 </body>
 </html>`;
 }
 
 /**
- * Télécharge directement le document HTML autonome du guide des aides
+ * Télécharge le document HTML autonome des fiches (à ouvrir puis imprimer en PDF)
  */
 export function downloadGuideAidesHtmlFile(schemes: DispositifScheme[]): { fileName: string } {
   const htmlContent = generateGuideAidesHtml(schemes);
-  const fileName = `Recueil_Fiches_Aides_ADEC_2026_Synthese_Communication.html`;
+  const fileName = 'Fiches_Dispositifs_ADEC.html';
   const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

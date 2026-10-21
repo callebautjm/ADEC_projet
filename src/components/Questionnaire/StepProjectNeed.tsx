@@ -15,6 +15,8 @@ interface StepProjectNeedProps {
   regulatory?: RegulatoryStatus;
   company?: CompanyProfile;
   onChange: (updated: Partial<ProjectFinancials>) => void;
+  /** Section intégrée dans une étape plus large : masque le titre d’étape */
+  embedded?: boolean;
 }
 
 interface NeedOption {
@@ -165,7 +167,7 @@ const NEED_OPTIONS: NeedOption[] = [
   }
 ];
 
-export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulatory, company, onChange }) => {
+export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulatory, company, onChange, embedded = false }) => {
   const { allActiveSchemes } = useDatabases();
   const [selectedSchemeDetail, setSelectedSchemeDetail] = useState<DispositifScheme | null>(null);
 
@@ -185,15 +187,17 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-slate-200 pb-4">
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-          <Target className="w-5 h-5 text-slate-700" />
-          3. Identification des Besoins Spécifiques & Typologie du Projet
-        </h2>
-        <p className="text-sm text-slate-500 mt-1">
-          Sélectionnez les axes correspondant précisément à votre projet d’entreprise pour activer les dispositifs réglementaires adéquats.
-        </p>
-      </div>
+      {!embedded && (
+        <div className="border-b border-slate-200 pb-4">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <Target className="w-5 h-5 text-slate-700" />
+            3. Identification des Besoins Spécifiques & Typologie du Projet
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Sélectionnez les axes correspondant précisément à votre projet d’entreprise pour activer les dispositifs réglementaires adéquats.
+          </p>
+        </div>
+      )}
 
       {regulatory?.isCompanyInDifficultyEU && (
         <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-xl flex items-start gap-2.5 text-xs text-sky-950">

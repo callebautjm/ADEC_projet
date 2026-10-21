@@ -3,20 +3,25 @@
  * Collectivité de Corse / Agence de Développement Économique de la Corse
  *
  * Assure la cohérence stricte et intégrale entre les données extraites
- * de la fiche projet d'entreprise et l'ensemble des 5 étapes du simulateur.
+ * de la fiche projet d'entreprise et l'ensemble des étapes du simulateur.
  */
 
 import {
   CompanyProfile,
-  DossierProjectAnalysis,
+  DepenseProjet,
+  FormeAide,
   FullQuestionnaireState,
   LegalForm,
   ActivitySector,
   NeedCategory,
   CorsicaLocationType,
+  ProjectFinancials,
+  QualitativeAnswers,
   SalvezzaCommune
 } from '../types';
-import { determineCompanySize, SCHEME_TARGET_NEEDS } from '../services/engine';
+import { AnalyseFicheProjetResponse, NatureBesoin } from '../types/ficheProjet';
+import { determineCompanySize } from '../services/engine';
+import { OFFICIAL_ADEC_SCHEMES } from '../data/adecOfficialData';
 import { findSalvezzaCommuneByCode, findSalvezzaCommuneByName } from '../data/salvezzaCommunes';
 import { analyzeCompanyCreationDate } from './companyAge';
 
@@ -142,108 +147,6 @@ export function mapNafToSector(nafCode?: string, nafLabel?: string): ActivitySec
 }
 
 /**
- * Nettoie une adresse complète pour ne conserver que la voie (numéro et rue)
- * en supprimant le code postal et la commune en fin de chaîne.
- */
-export function cleanStreetFromFullAddress(full: string): string {
-  if (!full) return '';
-  let s = full.trim();
-  // Retire le code postal et la commune à la fin (ex: ", 20250 Corte", " - 20250 Corte", " 20250 CORTE")
-  s = s.replace(/[,-\s]+\b(20\d{3}|2A\d{3}|2B\d{3}|\d{5})\b.*$/i, '').trim();
-  return s || full.trim();
-}
-
-/**
- * Extrait rigoureusement la voie / adresse d'implantation à partir de tout format de JSON
- * (qu'il contienne un bloc 'implantation', 'adresse', 'address', 'localisation' ou des clés directes).
- */
-export function extractStreetAddressFromJson(analysis?: any, comp?: any): string {
-  const anyComp = comp || {};
-  const anyAnalysis = analysis || {};
-  const anyProj = anyAnalysis.project || {};
-
-  // 1. Recherche dans un bloc 'implantation' ou 'localisation' (format OpenSub / ADEC)
-  const impl = 
-    anyComp.implantation || 
-    anyAnalysis.implantation || 
-    anyProj.implantation || 
-    anyComp.localisation || 
-    anyAnalysis.localisation;
-
-  if (impl) {
-    if (typeof impl === 'string' && impl.trim()) {
-      return cleanStreetFromFullAddress(impl.trim());
-    }
-    if (typeof impl === 'object') {
-      const directVoie =
-        impl.adresse_voie ||
-        impl.voie ||
-        impl.adresse ||
-        impl.rue ||
-        impl.street ||
-        impl.adresse_complete ||
-        impl.libelle_voie ||
-        impl.nom_voie;
-
-      if (typeof directVoie === 'string' && directVoie.trim()) {
-        return cleanStreetFromFullAddress(directVoie.trim());
-      }
-
-      const num = (impl.numero_voie || impl.num_voie || '').toString().trim();
-      const rep = (impl.indice_repetition || '').toString().trim();
-      const type = (impl.type_voie || '').toString().trim();
-      const nom = (impl.nom_voie || impl.libelle_voie || impl.voie || '').toString().trim();
-      const compParts = [num, rep, type, nom].filter(Boolean).join(' ');
-      if (compParts) return compParts;
-    }
-  }
-
-  // 2. Recherche dans le bloc 'address' ou 'adresse' de company
-  const addr = anyComp.address || anyComp.adresse;
-  if (typeof addr === 'string' && addr.trim()) {
-    return cleanStreetFromFullAddress(addr.trim());
-  }
-
-  if (addr && typeof addr === 'object') {
-    const directVoie =
-      addr.voie ||
-      addr.adresse_voie ||
-      addr.street ||
-      addr.rue ||
-      addr.adresse ||
-      addr.adresse_ligne_1 ||
-      addr.ligne_1 ||
-      addr.adresse_complete ||
-      addr.acheminement_postal?.l4;
-
-    if (typeof directVoie === 'string' && directVoie.trim()) {
-      return cleanStreetFromFullAddress(directVoie.trim());
-    }
-
-    const num = (addr.numero_voie || addr.num_voie || '').toString().trim();
-    const rep = (addr.indice_repetition || '').toString().trim();
-    const type = (addr.type_voie || '').toString().trim();
-    const nom = (addr.libelle_voie || addr.nom_voie || '').toString().trim();
-    const compParts = [num, rep, type, nom].filter(Boolean).join(' ');
-    if (compParts) return compParts;
-  }
-
-  // 3. Clés directes sur company
-  const directOnComp =
-    anyComp.adresse_voie ||
-    anyComp.voie ||
-    anyComp.street ||
-    anyComp.rue ||
-    (typeof anyComp.adresse === 'string' ? anyComp.adresse : '');
-
-  if (typeof directOnComp === 'string' && directOnComp.trim()) {
-    return cleanStreetFromFullAddress(directOnComp.trim());
-  }
-
-  return '';
-}
-
-/**
  * Détermine la localisation corse et vérifie le zonage SALVEZZA
  */
 export function detectLocationAndSalvezza(
@@ -289,241 +192,230 @@ export function detectLocationAndSalvezza(
   };
 }
 
+const NEED_PAR_NATURE: Record<NatureBesoin, NeedCategory | undefined> = {
+  INVESTISSEMENT: 'INVESTISSEMENT_DEVELOPPEMENT',
+  TRESORERIE: 'RESILIENCE_CHOC',
+  CREATION: 'CREATION_ENTREPRISE',
+  REPRISE: 'REPRISE_TRANSMISSION',
+  INNOVATION: 'INNOVATION_DEVELOPPEMENT',
+  EXPORT: 'INTERNATIONAL_EXPORT',
+  EMPLOI: 'EMPLOI_RSE',
+  AUTRE: undefined
+};
+
+/** Mots-clés d'un intitulé d'appel à projets → dispositif du simulateur */
+const AAP_DISPOSITIFS: Array<{ motif: RegExp; schemeId: (nature: NatureBesoin) => string }> = [
+  { motif: /risilienza/, schemeId: () => 'risilienza' },
+  { motif: /impresi\s+paisani/, schemeId: () => 'impresi_paisani' },
+  { motif: /rinascita/, schemeId: () => 'rinascita' },
+  { motif: /ribumba/, schemeId: () => 'ribumba' },
+  { motif: /riesce/, schemeId: () => 'riesce' },
+  { motif: /innuvazione/, schemeId: () => 'pattu_innuvazione_developpement' },
+  {
+    motif: /impresa\s+si/,
+    schemeId: (nature) => nature === 'CREATION' ? 'impresa_si_creation' : nature === 'REPRISE' ? 'impresa_si_reprise_transmission' : 'impresa_si_developpement_invest'
+  },
+  { motif: /sviluppu/, schemeId: () => 'sviluppu_suciale' },
+  { motif: /impresamondu/, schemeId: () => 'impresamondu_individuel' }
+];
+
+const sansAccents = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+const toIsoDate = (fr?: string) => {
+  const m = fr?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : undefined;
+};
+
+const mapFormeAide = (s?: string): FormeAide | undefined => {
+  if (!s) return undefined;
+  const t = sansAccents(s);
+  if (t.includes('avance')) return 'AVANCE_REMBOURSABLE';
+  if (t.includes('pret')) return 'PRET';
+  if (t.includes('subvention')) return 'SUBVENTION';
+  return 'AUTRE';
+};
+
+/** Réponse renseignée et non négative (« Non », « aucune », « ne développe pas »…) */
+const reponsePositive = (t?: string) => {
+  const s = (t || '').trim();
+  return s.length > 15 && !/^(non|aucun|néant|ras)\b/i.test(s) && !/\bne\s+\S+\s+pas\b/i.test(s.slice(0, 120));
+};
+
+const extrait = (t: string) => {
+  const s = t.replace(/\s+/g, ' ').trim();
+  return s.length > 220 ? `${s.slice(0, 217)}…` : s;
+};
+
+const phraseAvec = (t: string | undefined, motif: RegExp) => {
+  const phrase = (t || '').replace(/\s+/g, ' ').split(/(?<=[.!?])\s+/).find((p) => motif.test(p));
+  return phrase ? extrait(phrase) : undefined;
+};
+
+/** Répartit les lignes de dépenses de la fiche dans les catégories du simulateur budgétaire */
+const ventilerDepenses = (depenses: DepenseProjet[]): ProjectFinancials['eligibleExpensesBreakdown'] => {
+  const b: Record<string, number> = {};
+  const add = (key: string, montant: number) => { b[key] = (b[key] || 0) + montant; };
+  for (const d of depenses) {
+    const t = sansAccents(`${d.nature} ${d.description}`);
+    if (/formation/.test(t)) add('trainingCosts', d.montantHT);
+    else if (/logiciel|tablette|informatique|site (internet|web)|numerique|digital|drone/.test(t)) add('digitalInvestments', d.montantHT);
+    else if (/travaux|\bsol\b|salle|amenagement|local|immobilier|construction|plomberie|electricite|norme/.test(t)) add('premisesLayout', d.montantHT);
+    else if (/prestation|conseil|etude|communication/.test(t)) add('externalConsultingAndStudies', d.montantHT);
+    else if (/fonctionnement|abonnement/.test(t)) add('generalOperatingCostsDirect', d.montantHT);
+    else add('materialModernization', d.montantHT);
+  }
+  return b;
+};
+
 /**
- * Construit la liste stricte et cohérente des NeedCategory en fonction
- * de l'Appel à projet (AAP) et des investissements déclarés
+ * Pré-remplit l'ensemble du simulateur à partir d'une fiche projet lue de façon exacte.
+ * Les données des registres (recherche SIRET) sont appliquées ensuite et priment sur l'identité.
  */
-export function buildSynchronizedNeedCategories(
-  analysis: DossierProjectAnalysis
-): NeedCategory[] {
-  const categoriesSet = new Set<NeedCategory>();
+export function synchronizeQuestionnaireFromFiche(
+  analyse: AnalyseFicheProjetResponse,
+  previousState: FullQuestionnaireState
+): FullQuestionnaireState {
+  const { fiche, synthese } = analyse;
+  const ent = fiche.entreprise;
+  const fin = fiche.finances;
 
-  const targetSchemeId = analysis.appelAProjet?.dispositifCibleSuggere;
-  if (targetSchemeId && SCHEME_TARGET_NEEDS[targetSchemeId]) {
-    SCHEME_TARGET_NEEDS[targetSchemeId].primaryNeeds.forEach((n) => categoriesSet.add(n));
-  }
+  const loc = detectLocationAndSalvezza(undefined, ent.commune, ent.codePostal);
+  const legalForm = mapLegalFormString(ent.formeJuridique);
+  const sector = mapNafToSector(ent.codeApe, ent.activite);
+  const creationIso = toIsoDate(ent.dateCreation);
+  const age = analyzeCompanyCreationDate(creationIso);
+  const headcount = fin.effectifEtp ?? 0;
+  const annualRevenue = fin.chiffreAffaires ?? 0;
+  const enCorse = (ent.codePostal || '').startsWith('20');
 
-  // Analyser les besoins déclarés dans le projet
-  const prog = analysis.project?.investmentProgram || [];
-  const progText = JSON.stringify(prog).toLowerCase();
-  const summaryText = `${analysis.project?.title || ''} ${analysis.project?.summary || ''}`.toLowerCase();
-  const allText = `${progText} ${summaryText}`;
+  const depenses: DepenseProjet[] = [...fiche.depenses.investissements, ...fiche.depenses.autres]
+    .map((d) => ({ nature: d.nature, description: d.description, montantHT: d.cout }));
 
-  if (allText.includes('résilience') || allText.includes('choc') || allText.includes('énergie') || allText.includes('fournil') || allText.includes('matériel')) {
-    categoriesSet.add('RESILIENCE_CHOC');
-    categoriesSet.add('INVESTISSEMENT_DEVELOPPEMENT');
-  }
+  // Besoins
+  const needs = new Set<NeedCategory>();
+  const needPrincipal = NEED_PAR_NATURE[synthese.natureBesoin];
+  if (needPrincipal) needs.add(needPrincipal);
+  if (loc.salvezzaCommune) needs.add('RURALITE_PROXIMITE');
+  if (fiche.projet.difficultesTresorerie) needs.add('RESILIENCE_CHOC');
 
-  if (allText.includes('rural') || allText.includes('tournée') || allText.includes('montagne') || allText.includes('proximité') || allText.includes('salvezza')) {
-    categoriesSet.add('RURALITE_PROXIMITE');
-  }
+  // Critères qualitatifs pré-cochés, chacun justifié par la fiche
+  const justifications: Partial<Record<keyof QualitativeAnswers, string>> = {};
+  const q1 = ['ARTISANAT', 'INDUSTRIE'].includes(sector)
+    || /artisan|plomb|[ée]lectric|ma[çc]onn|menuis|fabrication|production|atelier|laboratoire|confiser|boulang/i.test(`${ent.activite || ''} ${ent.presentation || ''}`);
+  if (q1) justifications.q1_nonDelocalisableValueAdded = `Activité : ${ent.activite || ent.codeApe || 'production / artisanat'}.`;
+  const transition = [fiche.projet.transitionEcologique, fiche.ecosysteme.transitionNumerique].find(reponsePositive);
+  if (transition) justifications.q2_ecologicalEnergyDigitalTransition = extrait(transition);
+  const innovation = phraseAvec(`${fiche.projet.description || ''} ${fiche.ecosysteme.transitionNumerique || ''}`, /innov/i);
+  if (innovation) justifications.q3_innovativeTechnologicalOrSocial = innovation;
+  if (loc.salvezzaCommune) justifications.q4_ruralOrQpvZone = `Commune ${loc.salvezzaCommune.nom} classée Fonds Salvezza.`;
+  const grappe = phraseAvec(fiche.ecosysteme.collaborations, /coop[ée]rati|fili[èe]re|grappe|groupement|cluster/i);
+  if (grappe) justifications.q6_clusterThreeCompanies = grappe;
+  if (reponsePositive(fiche.ecosysteme.international)) justifications.q7_internationalizationCorsicaRadiance = extrait(fiche.ecosysteme.international!);
+  if (reponsePositive(fiche.ecosysteme.langueCulture)) justifications.q8_corsicanLanguageAndCulture = extrait(fiche.ecosysteme.langueCulture!);
 
-  if (allText.includes('véhicule') || allText.includes('utilitaire') || allText.includes('camion') || allText.includes('mobilité')) {
-    categoriesSet.add('INVESTISSEMENT_DEVELOPPEMENT');
-    categoriesSet.add('RURALITE_PROXIMITE');
-  }
+  // Appel à projets → dispositif à proposer en priorité
+  const aap = fiche.appelAProjet.repond ? fiche.appelAProjet.intitule : undefined;
+  const aapMatch = aap ? AAP_DISPOSITIFS.find((d) => d.motif.test(sansAccents(aap))) : undefined;
+  const primarySchemeId = aapMatch?.schemeId(synthese.natureBesoin);
+  const primaryScheme = primarySchemeId ? OFFICIAL_ADEC_SCHEMES.find((s) => s.id === primarySchemeId) : undefined;
 
-  if (allText.includes('numérique') || allText.includes('site') || allText.includes('e-commerce') || allText.includes('click') || allText.includes('digital')) {
-    categoriesSet.add('INVESTISSEMENT_DEVELOPPEMENT');
-  }
-
-  if (allText.includes('emploi') || allText.includes('recrutement') || allText.includes('embauche') || allText.includes('rse')) {
-    categoriesSet.add('EMPLOI_RSE');
-  }
-
-  if (allText.includes('innov') || allText.includes('r&d') || allText.includes('brevet')) {
-    categoriesSet.add('INNOVATION_AMORCAGE');
-  }
-
-  if (allText.includes('sinistre') || allText.includes('incendie') || allText.includes('inondation') || allText.includes('tempête')) {
-    categoriesSet.add('SINISTRE_CATASTROPHE');
-  }
-
-  if (allText.includes('reprise') || allText.includes('transmission') || allText.includes('rachat')) {
-    categoriesSet.add('REPRISE_TRANSMISSION');
-  }
-
-  if (allText.includes('difficulté') || allText.includes('restructuration') || allText.includes('redressement')) {
-    categoriesSet.add('RESTRUCTURATION_REBOND');
-  }
-
-  // Si l'ensemble est vide, par défaut pour un projet ADEC standard
-  if (categoriesSet.size === 0) {
-    categoriesSet.add('RESILIENCE_CHOC');
-    categoriesSet.add('INVESTISSEMENT_DEVELOPPEMENT');
-  }
-
-  return Array.from(categoriesSet);
-}
-
-/**
- * Extrait le découpage des dépenses éligibles à partir du programme d'investissement
- */
-export function extractEligibleExpensesBreakdown(
-  analysis: DossierProjectAnalysis
-): FullQuestionnaireState['financials']['eligibleExpensesBreakdown'] {
-  const prog = analysis.project?.investmentProgram || [];
-  let cleanVehCost = 0;
-  let cleanVehType: 'UTILITAIRE_LIGHT' | 'FOURGON' | 'POIDS_LOURD' = 'UTILITAIRE_LIGHT';
-  let matModernization = 0;
-  let ecoEnergy = 0;
-  let digital = 0;
-
-  for (const item of prog) {
-    const desc = `${item.category} ${item.description}`.toLowerCase();
-    const amount = item.estimatedAmountHT || 0;
-
-    if (desc.includes('véhicule') || desc.includes('utilitaire') || desc.includes('fourgon') || desc.includes('camion')) {
-      cleanVehCost += amount;
-      if (desc.includes('fourgon') || desc.includes('3.5') || desc.includes('2.5')) {
-        cleanVehType = 'FOURGON';
-      } else if (desc.includes('lourd') || desc.includes('poids')) {
-        cleanVehType = 'POIDS_LOURD';
-      }
-    } else if (desc.includes('numérique') || desc.includes('web') || desc.includes('site') || desc.includes('click') || desc.includes('commerce') || desc.includes('logiciel')) {
-      digital += amount;
-    } else if (desc.includes('énergie') || desc.includes('écologique') || desc.includes('thermique') || desc.includes('chambre') || desc.includes('froid')) {
-      ecoEnergy += amount;
-    } else {
-      matModernization += amount;
-    }
-  }
+  const rl = ent.responsableLegal;
 
   return {
-    materialModernization: matModernization > 0 ? matModernization : undefined,
-    equipmentEcoEnergy: ecoEnergy > 0 ? ecoEnergy : undefined,
-    digitalInvestments: digital > 0 ? digital : undefined,
-    cleanVehicles: cleanVehCost > 0 ? {
-      type: cleanVehType,
-      costHT: cleanVehCost,
-      scrappageOldVehicleProof: true
-    } : undefined
-  };
-}
-
-/**
- * Fonction maîtresse : Alimente intégralement le questionnaire à partir de la fiche projet
- */
-export function synchronizeQuestionnaireFromDossier(
-  analysis: DossierProjectAnalysis,
-  previousState?: FullQuestionnaireState
-): FullQuestionnaireState {
-  const comp = (analysis.company || {}) as any;
-  const proj = (analysis.project || {}) as any;
-  const addr = (comp.address || comp.adresse || {}) as any;
-  const impl = ((analysis as any).implantation || comp.implantation || proj.implantation || {}) as any;
-
-  // Récupération intelligente des données d'implantation géographique
-  const resolvedInsee = addr.communeInsee || addr.codeCommune || addr.code_insee || impl.codeCommune || impl.code_insee || impl.communeInsee;
-  const resolvedCity = addr.city || addr.commune || addr.nom_commune || addr.libelle_commune || impl.commune || impl.city || impl.libelle_commune || comp.city;
-  const resolvedPostalCode = addr.postalCode || addr.code_postal || impl.postalCode || impl.code_postal || comp.postalCode;
-
-  const { locationType, salvezzaCommune, communeName, postalCode, communeCode } =
-    detectLocationAndSalvezza(resolvedInsee, resolvedCity, resolvedPostalCode);
-
-  // Extraction rigoureuse du champ "Adresse (Voie)" dans l'implantation depuis le JSON
-  const resolvedStreetAddress = extractStreetAddressFromJson(analysis, comp) || previousState?.company.address || '';
-
-  const headcount = comp.headcount !== undefined && comp.headcount > 0 ? comp.headcount : (previousState?.company.headcount || 1);
-  const annualRevenue = comp.annualRevenue !== undefined && comp.annualRevenue > 0 ? comp.annualRevenue : (previousState?.company.annualRevenue || 0);
-  const balanceSheetTotal = comp.balanceSheetTotal !== undefined && comp.balanceSheetTotal > 0 ? comp.balanceSheetTotal : (previousState?.company.balanceSheetTotal || 0);
-  const computedSize = determineCompanySize(headcount, annualRevenue, balanceSheetTotal);
-
-  const legalForm = mapLegalFormString(comp.legalForm || previousState?.company.legalForm);
-  const sector = mapNafToSector(comp.nafCode, comp.nafLabel || previousState?.company.nafLabel);
-
-  const ageAnalysis = analyzeCompanyCreationDate(comp.creationDate);
-
-  const selectedNeeds = buildSynchronizedNeedCategories(analysis);
-  const eligibleBreakdown = extractEligibleExpensesBreakdown(analysis);
-
-  // Vérification de la conformité sociale et fiscale
-  const dgfipOk = analysis.compliance?.dgfip?.attestationFiscale?.status === 'ok';
-  const urssafOk = analysis.compliance?.urssaf?.attestationVigilance?.status === 'ok';
-  const isUpToDate = (dgfipOk && urssafOk) || Boolean(previousState?.regulatory.isUpToDateTaxSocial);
-
-  // Synchronisation du score qualitatif : valider les critères objectifs vérifiés
-  const isRural = Boolean(salvezzaCommune) || locationType === 'RURAL_SALVEZZA_UNDER_1000' || locationType === 'POLE_RURAL_STRUCTURANT';
-  const hasEcoOrDigital = selectedNeeds.includes('INVESTISSEMENT_DEVELOPPEMENT') || selectedNeeds.includes('RESILIENCE_CHOC');
-  const isArtisanOrProduction = sector === 'ARTISANAT' || sector === 'INDUSTRIE' || sector === 'SERVICES';
-
-  const updatedState: FullQuestionnaireState = {
     company: {
-      name: comp.name || previousState?.company.name || 'Entreprise candidate',
-      siret: comp.siret || previousState?.company.siret || '',
-      siren: comp.siren || (comp.siret ? comp.siret.slice(0, 9) : previousState?.company.siren),
+      name: ent.raisonSociale || '',
+      siret: ent.siret,
+      siren: ent.siret?.slice(0, 9),
       legalForm,
-      size: computedSize,
+      size: determineCompanySize(headcount, annualRevenue, 0),
       headcount,
       annualRevenue,
-      balanceSheetTotal,
-      locationType,
-      communeName,
-      communeCode,
-      postalCode,
-      city: communeName,
-      address: resolvedStreetAddress,
-      nafCode: comp.nafCode || previousState?.company.nafCode || '',
-      nafLabel: comp.nafLabel || previousState?.company.nafLabel || '',
-      creationDate: comp.creationDate || previousState?.company.creationDate,
-      creationDateSource: comp.creationDate ? 'api_insee' : previousState?.company.creationDateSource || 'unknown',
-      creationYear: ageAnalysis.creationYear,
-      companyAgeLabel: ageAnalysis.ageLabel,
-      companyAgeMonths: ageAnalysis.ageInMonths,
-      isUnderFiveYears: ageAnalysis.isUnderFiveYears ?? true,
-      registeredSinceAtLeast12Months: ageAnalysis.registeredSinceAtLeast12Months ?? true,
-      salvezzaCommune,
+      balanceSheetTotal: 0,
+      capitalSocial: fin.capitalSocial || undefined,
+      capitalSocialSource: fin.capitalSocial ? 'Fiche projet' : undefined,
+      locationType: enCorse ? loc.locationType : 'HORS_CORSE',
+      communeName: loc.communeName,
+      communeCode: loc.salvezzaCommune?.codeCommune,
+      salvezzaCommune: loc.salvezzaCommune,
+      postalCode: ent.codePostal,
+      city: ent.commune,
+      address: ent.adresse,
+      nafCode: ent.codeApe,
+      nafLabel: ent.activite,
+      creationDate: creationIso,
+      creationDateSource: creationIso ? 'manual' : 'unknown',
+      creationYear: age.creationYear,
+      companyAgeLabel: age.ageLabel,
+      companyAgeMonths: age.ageInMonths,
+      isUnderFiveYears: age.isUnderFiveYears ?? false,
+      registeredSinceAtLeast12Months: age.registeredSinceAtLeast12Months ?? true,
       sector,
-      isEstablishedInCorsica: true,
-      hasMainExploitationInCorsica: true,
+      isEstablishedInCorsica: enCorse,
+      hasMainExploitationInCorsica: enCorse,
       isSeasonalActivity: false,
       isFranchiseOrAffiliate: false,
       hasDistributedProfits: false,
       isFromMergerOrConcentration: false,
-      mandataires: (comp.dirigeantsMandataires && comp.dirigeantsMandataires.length > 0)
-        ? comp.dirigeantsMandataires
-        : previousState?.company.mandataires || [],
-      complianceData: analysis.compliance || previousState?.company.complianceData
+      mandataires: rl?.nom
+        ? [{ type: 'personne_physique', nom: rl.nom, prenom: rl.prenom, fonction: rl.fonction }]
+        : []
     },
     regulatory: {
-      isUpToDateTaxSocial: isUpToDate,
+      isUpToDateTaxSocial: fin.aJourCotisations ?? false,
       hasValidDebtRepaymentPlan: false,
       isInInsolvencyOrBankruptcy: false,
-      isCompanyInDifficultyEU: analysis.appelAProjet?.dispositifCibleSuggere === 'ribumba',
+      isCompanyInDifficultyEU: fin.fondsPropres !== undefined && fin.fondsPropres < 0,
       hasPriorAdecUnfulfilledObligations: false,
       hasAdecPriorBreachOfContract: false,
       hasPendingPublicRecoveryOrder: false,
       hasBenefitedRescueAidPast10Years: false,
       hasExecutiveFraudHistory: false,
       hasOutgoingDividendsDuringDistress: false,
-      deMinimisPast3Years: previousState?.regulatory.deMinimisPast3Years || 0
+      deMinimisPast3Years: previousState.regulatory.deMinimisPast3Years || 0
     },
     qualitative: {
-      q1_nonDelocalisableValueAdded: isArtisanOrProduction,
-      q2_ecologicalEnergyDigitalTransition: hasEcoOrDigital,
-      q3_innovativeTechnologicalOrSocial: selectedNeeds.includes('INNOVATION_AMORCAGE') || selectedNeeds.includes('INNOVATION_DEVELOPPEMENT'),
-      q4_ruralOrQpvZone: isRural,
-      q5_strategicFiliereOrAdecAccompanied: Boolean(analysis.appelAProjet?.isRenseigne),
-      q6_clusterThreeCompanies: false,
-      q7_internationalizationCorsicaRadiance: selectedNeeds.includes('INTERNATIONAL_EXPORT'),
-      q8_corsicanLanguageAndCulture: true // Ancrage territorial corse
+      q1_nonDelocalisableValueAdded: q1,
+      q2_ecologicalEnergyDigitalTransition: Boolean(justifications.q2_ecologicalEnergyDigitalTransition),
+      q3_innovativeTechnologicalOrSocial: Boolean(justifications.q3_innovativeTechnologicalOrSocial),
+      q4_ruralOrQpvZone: Boolean(justifications.q4_ruralOrQpvZone),
+      q5_strategicFiliereOrAdecAccompanied: false,
+      q6_clusterThreeCompanies: Boolean(justifications.q6_clusterThreeCompanies),
+      q7_internationalizationCorsicaRadiance: Boolean(justifications.q7_internationalizationCorsicaRadiance),
+      q8_corsicanLanguageAndCulture: Boolean(justifications.q8_corsicanLanguageAndCulture)
     },
+    qualitativeJustifications: justifications,
     financials: {
-      totalEstimatedBudgetHT: proj.totalBudgetHT || previousState?.financials.totalEstimatedBudgetHT || 50000,
-      projectDescription: proj.summary || proj.title || previousState?.financials.projectDescription || '',
-      selectedNeedCategories: selectedNeeds,
-      eligibleExpensesBreakdown: eligibleBreakdown,
-      insuranceCompensationAmount: previousState?.financials.insuranceCompensationAmount || 0,
-      hasBankPartnerCommitted: true
+      selectedNeedCategories: Array.from(needs),
+      projectDescription: fiche.projet.description || '',
+      totalEstimatedBudgetHT: synthese.financement.baseCout || 0,
+      eligibleExpensesBreakdown: ventilerDepenses(depenses),
+      insuranceCompensationAmount: 0,
+      hasBankPartnerCommitted: false
+    },
+    santeFinanciere: {
+      resultatNet: fin.resultatNet,
+      fondsPropres: fin.fondsPropres,
+      empruntsEnCours: fin.empruntsEnCours,
+      caf: fin.caf,
+      difficultesTresorerie: fiche.projet.difficultesTresorerie
+    },
+    projet: {
+      libelle: fiche.projet.libelle,
+      dateDebut: fiche.projet.dateDebut,
+      dateFin: fiche.projet.dateFin,
+      depenses,
+      formeAide: mapFormeAide(fiche.financement.formesAide),
+      aideSollicitee: fiche.financement.aideSollicitee,
+      emploisCrees: fiche.financement.emploisCrees,
+      emploisMaintenus: fiche.financement.emploisMaintenus,
+      appelAProjet: aap
     },
     dossierSource: {
-      dossierNumber: analysis.dossierNumber,
-      sourceDocumentName: analysis.sourceDocumentName,
-      aapTitre: analysis.appelAProjet?.titre,
-      primarySchemeId: analysis.appelAProjet?.dispositifCibleSuggere,
-      primarySchemeName: analysis.appelAProjet?.dispositifNameSuggere
+      dossierNumber: fiche.dossierNumero,
+      sourceDocumentName: analyse.sourceDocumentName,
+      aapTitre: aap,
+      primarySchemeId,
+      primarySchemeName: primaryScheme?.name
     }
   };
-
-  return updatedState;
 }

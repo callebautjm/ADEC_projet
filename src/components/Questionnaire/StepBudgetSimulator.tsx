@@ -11,12 +11,15 @@ interface StepBudgetSimulatorProps {
   data: ProjectFinancials;
   companySize: CompanySize;
   onChange: (updated: Partial<ProjectFinancials>) => void;
+  /** Section intégrée dans une étape plus large : masque le titre d’étape */
+  embedded?: boolean;
 }
 
 export const StepBudgetSimulator: React.FC<StepBudgetSimulatorProps> = ({
   data,
   companySize,
-  onChange
+  onChange,
+  embedded = false
 }) => {
   const breakdown = data.eligibleExpensesBreakdown || {};
 
@@ -35,49 +38,53 @@ export const StepBudgetSimulator: React.FC<StepBudgetSimulatorProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-slate-200 pb-4">
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-          <Calculator className="w-5 h-5 text-slate-700" />
-          5. Budget Prévisionnel du Projet & Simulateur de Dépenses
-        </h2>
-        <p className="text-sm text-slate-500 mt-1">
-          Renseignez le montant prévisionnel hors taxes des investissements envisagés pour calculer l’assiette éligible et les taux d’intervention.
-        </p>
-      </div>
-
-      {/* Budget Global HT */}
-      <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white rounded-xl p-5 shadow-sm space-y-4 border border-blue-900/60">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <label className="text-xs font-bold tracking-wider text-blue-200 uppercase">
-            Montant total prévisionnel du projet d’investissement
-          </label>
-          <span className="text-xs font-mono text-emerald-400 font-semibold bg-emerald-950/70 border border-emerald-800/80 px-2.5 py-0.5 rounded-full">
-            Taux indicatif : {companySize === 'TPE' ? 'jusqu’à 70 % (TPE)' : companySize === 'PE' ? 'jusqu’à 60 % (PE)' : 'jusqu’à 50 % (PME)'}
-          </span>
+      {!embedded && (
+        <div className="border-b border-slate-200 pb-4">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <Calculator className="w-5 h-5 text-slate-700" />
+            5. Budget Prévisionnel du Projet & Simulateur de Dépenses
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Renseignez le montant prévisionnel hors taxes des investissements envisagés pour calculer l’assiette éligible et les taux d’intervention.
+          </p>
         </div>
+      )}
 
-        <div className="relative">
-          <input
-            type="number"
-            min="0"
-            step="1000"
-            value={data.totalEstimatedBudgetHT || ''}
-            onChange={(e) => onChange({ totalEstimatedBudgetHT: Math.max(0, parseFloat(e.target.value) || 0) })}
-            placeholder="0"
-            className="w-full bg-slate-800/90 border border-blue-800/70 text-white text-2xl font-bold font-mono px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-          />
-          <span className="absolute right-4 top-3.5 text-lg font-mono text-blue-300 font-bold">
-            € HT
-          </span>
+      {/* Budget Global HT (intégré à l’étape Projet : le total vient du tableau des dépenses) */}
+      {!embedded && (
+        <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white rounded-xl p-5 shadow-sm space-y-4 border border-blue-900/60">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <label className="text-xs font-bold tracking-wider text-blue-200 uppercase">
+              Montant total prévisionnel du projet d’investissement
+            </label>
+            <span className="text-xs font-mono text-emerald-400 font-semibold bg-emerald-950/70 border border-emerald-800/80 px-2.5 py-0.5 rounded-full">
+              Taux indicatif : {companySize === 'TPE' ? 'jusqu’à 70 % (TPE)' : companySize === 'PE' ? 'jusqu’à 60 % (PE)' : 'jusqu’à 50 % (PME)'}
+            </span>
+          </div>
+  
+          <div className="relative">
+            <input
+              type="number"
+              min="0"
+              step="1000"
+              value={data.totalEstimatedBudgetHT || ''}
+              onChange={(e) => onChange({ totalEstimatedBudgetHT: Math.max(0, parseFloat(e.target.value) || 0) })}
+              placeholder="0"
+              className="w-full bg-slate-800/90 border border-blue-800/70 text-white text-2xl font-bold font-mono px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+            />
+            <span className="absolute right-4 top-3.5 text-lg font-mono text-blue-300 font-bold">
+              € HT
+            </span>
+          </div>
+  
+          <div className="text-xs text-blue-200/80 flex items-center gap-2">
+            <Euro className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>
+              Règle générale ADEC : Les dépenses doivent être présentées hors taxes (HT) pour les assujettis à la TVA. Les dépenses engagées avant la date de dépôt sont formellement inéligibles.
+            </span>
+          </div>
         </div>
-
-        <div className="text-xs text-blue-200/80 flex items-center gap-2">
-          <Euro className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>
-            Règle générale ADEC : Les dépenses doivent être présentées hors taxes (HT) pour les assujettis à la TVA. Les dépenses engagées avant la date de dépôt sont formellement inéligibles.
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* Prise en compte des assurances pour Sinistre (Rinascita) */}
       {hasSinistre && (

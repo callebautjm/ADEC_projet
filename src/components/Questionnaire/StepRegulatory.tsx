@@ -11,9 +11,11 @@ interface StepRegulatoryProps {
   data: RegulatoryStatus;
   complianceData?: ApiEntrepriseComplianceData;
   onChange: (updated: Partial<RegulatoryStatus>) => void;
+  /** Section intégrée dans une étape plus large : masque le titre d’étape */
+  embedded?: boolean;
 }
 
-export const StepRegulatory: React.FC<StepRegulatoryProps> = ({ data, complianceData, onChange }) => {
+export const StepRegulatory: React.FC<StepRegulatoryProps> = ({ data, complianceData, onChange, embedded = false }) => {
   const deMinimisLimit = 300000;
   const remainingDeMinimis = Math.max(0, deMinimisLimit - (data.deMinimisPast3Years || 0));
 
@@ -23,15 +25,17 @@ export const StepRegulatory: React.FC<StepRegulatoryProps> = ({ data, compliance
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-slate-200 pb-4">
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-slate-700" />
-          2. Situation Réglementaire, Fiscale & Règle de Minimis
-        </h2>
-        <p className="text-sm text-slate-500 mt-1">
-          L’ADEC applique des critères stricts de conformité fiscale, sociale et de gestion des aides publiques antérieures.
-        </p>
-      </div>
+      {!embedded && (
+        <div className="border-b border-slate-200 pb-4">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5 text-slate-700" />
+            2. Situation Réglementaire, Fiscale & Règle de Minimis
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
+            L’ADEC applique des critères stricts de conformité fiscale, sociale et de gestion des aides publiques antérieures.
+          </p>
+        </div>
+      )}
 
       {/* Cartouche de certification directe par API Entreprise */}
       {hasCertifiedProof && (
