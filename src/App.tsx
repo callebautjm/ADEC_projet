@@ -3,155 +3,48 @@
  * Collectivité de Corse / Agence de Développement Économique de la Corse
  */
 
-import React, { useState } from 'react';
-import { DatabaseProvider, useDatabases } from './context/DatabaseContext';
+import React, { useEffect, useState } from 'react';
+import { DatabaseProvider } from './context/DatabaseContext';
 import { Header } from './components/Header';
 import { QuestionnaireWizard } from './components/Questionnaire/QuestionnaireWizard';
-import { ResultsView } from './components/Results/ResultsView';
 import { DocumentaryExplorerView } from './components/DocumentaryExplorer/DocumentaryExplorerView';
 import { DatabaseManagerView } from './components/DatabaseManager/DatabaseManagerView';
-import { FullQuestionnaireState, ComprehensiveEvaluationReport, DossierProjectAnalysis } from './types';
-import { evaluateCompanyEligibility } from './services/engine';
-import { synchronizeQuestionnaireFromDossier, applyCompanyUpdate } from './utils/dossierSynchronizer';
+import { HomePage } from './components/Home/HomePage';
+import { AttestationsPage } from './components/Attestations/AttestationsPage';
+import { ProjectSheetPreloader } from './components/Dossier/ProjectSheetPreloader';
+import { CompanyProfile, FullQuestionnaireState } from './types';
+import { AnalyseFicheProjetResponse } from './types/ficheProjet';
+import { AppPage, APP_PAGES } from './types/navigation';
+import { synchronizeQuestionnaireFromFiche, applyCompanyUpdate } from './utils/dossierSynchronizer';
 import { fetchEntrepriseBySiret } from './services/apiEntreprise';
-import { ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { ApiEntrepriseModal } from './components/ApiEntrepriseModal';
 import { SalvezzaCommunesModal } from './components/Salvezza/SalvezzaCommunesModal';
 
-const INITIAL_QUESTIONNAIRE_STATE: FullQuestionnaireState = {
+/** Simulateur vierge : rempli par la recherche SIRET (étape 1) ou par le dépôt d'une fiche projet */
+const EMPTY_QUESTIONNAIRE_STATE: FullQuestionnaireState = {
   company: {
-    name: 'Atelier Insulaire de Transformation',
-    siret: '84920194800018',
-    creationDate: undefined,
-    creationDateSource: 'unknown',
-    creationYear: undefined,
-    companyAgeLabel: 'Ancienneté indéterminée (date non renseignée)',
-    companyAgeMonths: undefined,
+    name: '',
+    siret: '',
     legalForm: 'SARL_EURL',
-    natureJuridiqueCode: '5499',
-    natureJuridiqueLibelle: 'Société à responsabilité limitée (SARL)',
-    capitalSocial: 50000,
-    capitalSocialFormatted: '50 000 €',
-    tvaIntracommunautaire: 'FR42849201948',
-    enterpriseCategory: 'PME',
-    enterpriseCategoryYear: '2024',
-    headcount: 6,
-    headcountTranche: '3 à 5 salariés',
-    caractereEmployeur: 'Employeur actif (6 salariés)',
-    annualRevenue: 480000,
-    balanceSheetTotal: 320000,
     size: 'TPE',
+    headcount: 0,
+    annualRevenue: 0,
+    balanceSheetTotal: 0,
+    locationType: 'POLE_RURAL_STRUCTURANT',
+    sector: 'SERVICES',
+    creationDateSource: 'unknown',
     isEstablishedInCorsica: true,
     hasMainExploitationInCorsica: true,
-    locationType: 'POLE_RURAL_STRUCTURANT',
-    postalCode: '20250',
-    city: 'Corte',
-    communeName: 'Corte',
-    communeCode: '2B096',
-    address: '12 Cours Paoli',
-    salvezzaCommune: undefined,
-    sector: 'ARTISANAT',
-    nafCode: '10.71C',
-    nafLabel: 'Boulangerie et boulangerie-pâtisserie',
-    sectionActivite: 'C - Industrie manufacturière',
-    departementCode: '2B',
-    regionCode: '94',
-    epciCode: '200073153',
-    nombreEtablissements: 1,
-    nombreEtablissementsOuverts: 1,
-    coordonneesGps: { latitude: '42.3056', longitude: '9.1517' },
-    dateDerniereMiseAJourInsee: '2026-01-15',
-    dateDerniereMiseAJourRne: '2026-02-15',
-    statutDiffusion: 'O',
-    conventionCollective: {
-      idcc: 'IDCC 1500',
-      hasConvention: true,
-      listeIdcc: ['1500']
-    },
-    labelsAndCertifications: {
-      isBio: true,
-      idBio: [98412],
-      isEss: false,
-      isSocieteMission: false,
-      isRge: false,
-      isQualiopi: false,
-      hasAideAdeme: false,
-      hasAideMinimis: false,
-      isEgaproRenseignee: false
-    },
     isSeasonalActivity: false,
     isFranchiseOrAffiliate: false,
-    isUnderFiveYears: true,
+    isUnderFiveYears: false,
     hasDistributedProfits: false,
     isFromMergerOrConcentration: false,
     registeredSinceAtLeast12Months: true,
-    mandataires: [
-      { type: 'personne_physique', nom: 'PAOLI', prenom: 'Antone', fonction: 'Gérant', dateNaissance: '12/06/1984', nationalite: 'Française' },
-      { type: 'personne_physique', nom: 'ALBERTI', prenom: 'Maria', fonction: 'Associée co-gérante', dateNaissance: '20/11/1988', nationalite: 'Française' }
-    ],
-    complianceData: {
-      dgfip: {
-        attestationFiscale: {
-          status: 'ok',
-          libelle: 'Attestation fiscale délivrée : entreprise à jour de ses obligations fiscales (TVA et IS)',
-          documentUrl: 'https://entreprise.api.gouv.fr/files/attestation-fiscale-dgfip-exemple.pdf',
-          dateDelivrance: '15/02/2026'
-        },
-        chiffresAffaires: [
-          { chiffreAffaires: 480000, dateFinExercice: '2025-12-31', annee: '2025' },
-          { chiffreAffaires: 420000, dateFinExercice: '2024-12-31', annee: '2024' },
-          { chiffreAffaires: 350000, dateFinExercice: '2023-12-31', annee: '2023' }
-        ],
-        liassesFiscales: {
-          year: '2024',
-          totalBilan: 320000,
-          resultatNet: 38500,
-          regimeImposition: 'Régime réel normal d’imposition (IS)'
-        }
-      },
-      urssaf: {
-        attestationVigilance: {
-          status: 'ok',
-          libelle: 'Attestation de vigilance délivrée par l’URSSAF : à jour des cotisations sociales',
-          documentUrl: 'https://entreprise.api.gouv.fr/files/attestation-vigilance-urssaf-exemple.pdf',
-          dateDelivrance: '01/03/2026'
-        }
-      },
-      infogreffe: {
-        mandatairesSociaux: [
-          { type: 'personne_physique', nom: 'PAOLI', prenom: 'Antone', fonction: 'Gérant', dateNaissance: '12/06/1984', nationalite: 'Française' },
-          { type: 'personne_physique', nom: 'ALBERTI', prenom: 'Maria', fonction: 'Associée co-gérante', dateNaissance: '20/11/1988', nationalite: 'Française' }
-        ]
-      },
-      insee: {
-        nonDiffusible: false,
-        accessLevel: 'Accès complet habilité (unités légales et établissements dont non diffusibles)'
-      },
-      bodacc: {
-        status: 'ok',
-        hasProcedureCollective: false,
-        annoncesCount: 1,
-        dernierAvisDate: '15/02/2026',
-        dernierAvisType: 'Immatriculation principale au RNE & In bonis',
-        synthese: 'Entreprise in bonis. Aucune mention de sauvegarde, redressement ou liquidation judiciaire au BODACC.',
-        annonces: [
-          {
-            id: 'BODACC-A-20260032-104',
-            dateParution: '2026-02-15',
-            numeroAnnonce: 104,
-            numeroParution: '20260032',
-            typeAvis: 'Immatriculation principale au RNE',
-            familleAvis: 'Créations',
-            tribunal: 'Greffe du Tribunal de Commerce de Bastia',
-            description: 'Immatriculation principale au RNE. Exploitation artisanale.',
-            publicationUrl: 'https://annuaire-entreprises.data.gouv.fr/justificatif/849201948'
-          }
-        ]
-      }
-    }
+    mandataires: []
   },
   regulatory: {
-    isUpToDateTaxSocial: true,
+    isUpToDateTaxSocial: false,
     hasValidDebtRepaymentPlan: false,
     isInInsolvencyOrBankruptcy: false,
     isCompanyInDifficultyEU: false,
@@ -161,53 +54,68 @@ const INITIAL_QUESTIONNAIRE_STATE: FullQuestionnaireState = {
     hasBenefitedRescueAidPast10Years: false,
     hasExecutiveFraudHistory: false,
     hasOutgoingDividendsDuringDistress: false,
-    deMinimisPast3Years: 25000
+    deMinimisPast3Years: 0
   },
   qualitative: {
-    q1_nonDelocalisableValueAdded: true,
-    q2_ecologicalEnergyDigitalTransition: true,
+    q1_nonDelocalisableValueAdded: false,
+    q2_ecologicalEnergyDigitalTransition: false,
     q3_innovativeTechnologicalOrSocial: false,
-    q4_ruralOrQpvZone: true,
+    q4_ruralOrQpvZone: false,
     q5_strategicFiliereOrAdecAccompanied: false,
     q6_clusterThreeCompanies: false,
     q7_internationalizationCorsicaRadiance: false,
-    q8_corsicanLanguageAndCulture: true
+    q8_corsicanLanguageAndCulture: false
   },
   financials: {
-    totalEstimatedBudgetHT: 75000,
-    selectedNeedCategories: ['RESILIENCE_CHOC', 'INVESTISSEMENT_DEVELOPPEMENT', 'RURALITE_PROXIMITE'],
-    projectDescription: 'Modernisation des outils de production, transition numérique et acquisition d’un utilitaire propre pour la tournée en territoire rural.',
-    eligibleExpensesBreakdown: {
-      cleanVehicles: {
-        type: 'UTILITAIRE_LIGHT',
-        costHT: 24000,
-        scrappageOldVehicleProof: true
-      }
-    }
-  }
+    totalEstimatedBudgetHT: 0,
+    selectedNeedCategories: [],
+    projectDescription: ''
+  },
+  projet: { depenses: [] }
 };
 
+/** Page courante lue dans l'URL (#/attestations…), accueil par défaut */
+function readPageFromHash(): AppPage {
+  const page = window.location.hash.replace(/^#\/?/, '') as AppPage;
+  return APP_PAGES.includes(page) ? page : 'accueil';
+}
+
 const MainAppContent: React.FC = () => {
-  const { allActiveSchemes } = useDatabases();
-  const [activeTab, setActiveTab] = useState<'questionnaire' | 'results' | 'explorer' | 'database'>('questionnaire');
-  const [dossierAnalysis, setDossierAnalysis] = useState<DossierProjectAnalysis | null>(null);
-  const [questionnaireState, setQuestionnaireState] = useState<FullQuestionnaireState>(INITIAL_QUESTIONNAIRE_STATE);
-  const [report, setReport] = useState<ComprehensiveEvaluationReport | null>(null);
+  const [activePage, setActivePage] = useState<AppPage>(readPageFromHash);
+  const [dossier, setDossier] = useState<AnalyseFicheProjetResponse | null>(null);
+  const [questionnaireState, setQuestionnaireState] = useState<FullQuestionnaireState>(EMPTY_QUESTIONNAIRE_STATE);
+  const [isManualSimulation, setIsManualSimulation] = useState(false);
+  const [attestationsCompany, setAttestationsCompany] = useState<CompanyProfile | null>(null);
+  const [wizardKey, setWizardKey] = useState(0);
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
   const [isSalvezzaModalOpen, setIsSalvezzaModalOpen] = useState(false);
 
-  const handleDossierAnalysisComplete = async (analysis: DossierProjectAnalysis) => {
-    setDossierAnalysis(analysis);
-    const syncedState = synchronizeQuestionnaireFromDossier(analysis, questionnaireState);
-    setQuestionnaireState(syncedState);
-    setActiveTab('questionnaire');
+  useEffect(() => {
+    const onHashChange = () => {
+      setActivePage(readPageFromHash());
+      window.scrollTo({ top: 0 });
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
-    // Les données des registres officiels (recherche SIRET) priment sur celles extraites du document
+  const navigate = (page: AppPage) => {
+    window.location.hash = page === 'accueil' ? '' : `/${page}`;
+  };
+
+  const handleFicheAnalysee = async (analyse: AnalyseFicheProjetResponse) => {
+    setDossier(analyse);
+    const syncedState = synchronizeQuestionnaireFromFiche(analyse, questionnaireState);
+    setQuestionnaireState(syncedState);
+    setWizardKey((k) => k + 1); // repart de l'étape 0 (synthèse)
+    navigate('simulation');
+
+    // Les données des registres officiels (recherche SIRET) priment sur celles de la fiche pour l'identité
     const siret = (syncedState.company.siret || '').replace(/\D/g, '');
     if (siret.length !== 14) return;
     const result = await fetchEntrepriseBySiret(siret);
     if (result.success && result.mappedProfile) {
-      // Un champ absent des registres ne doit pas effacer la valeur lue dans le document
+      // Un champ absent des registres ne doit pas effacer la valeur lue dans la fiche
       const registryProfile = Object.fromEntries(
         Object.entries(result.mappedProfile).filter(([, value]) => value !== undefined && value !== null && value !== '')
       );
@@ -217,60 +125,21 @@ const MainAppContent: React.FC = () => {
     }
   };
 
-  const handleRunEvaluation = () => {
-    const calculatedReport = evaluateCompanyEligibility(questionnaireState, allActiveSchemes);
-    setReport(calculatedReport);
-    setActiveTab('results');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const handleResetQuestionnaire = () => {
-    setDossierAnalysis(null);
-    setQuestionnaireState({
-      ...INITIAL_QUESTIONNAIRE_STATE,
-      dossierSource: undefined,
-      company: {
-        ...INITIAL_QUESTIONNAIRE_STATE.company,
-        name: '',
-        siret: '',
-        annualRevenue: 0,
-        headcount: 1,
-        balanceSheetTotal: 0
-      },
-      regulatory: {
-        ...INITIAL_QUESTIONNAIRE_STATE.regulatory,
-        deMinimisPast3Years: 0
-      },
-      qualitative: {
-        q1_nonDelocalisableValueAdded: false,
-        q2_ecologicalEnergyDigitalTransition: false,
-        q3_innovativeTechnologicalOrSocial: false,
-        q4_ruralOrQpvZone: false,
-        q5_strategicFiliereOrAdecAccompanied: false,
-        q6_clusterThreeCompanies: false,
-        q7_internationalizationCorsicaRadiance: false,
-        q8_corsicanLanguageAndCulture: false
-      },
-      financials: {
-        totalEstimatedBudgetHT: 0,
-        selectedNeedCategories: [],
-        projectDescription: ''
-      }
-    });
-    setReport(null);
-    setActiveTab('questionnaire');
+    setDossier(null);
+    setIsManualSimulation(false);
+    setQuestionnaireState(EMPTY_QUESTIONNAIRE_STATE);
+    setWizardKey((k) => k + 1);
+    navigate('simulation');
   };
 
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col font-sans">
       <Header
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onResetQuestionnaire={handleResetQuestionnaire}
+        activePage={activePage}
+        onNavigate={navigate}
+        onResetQuestionnaire={activePage === 'simulation' ? handleResetQuestionnaire : undefined}
         onOpenTokenModal={() => setIsTokenModalOpen(true)}
-        onOpenSalvezzaModal={() => setIsSalvezzaModalOpen(true)}
-        hasResults={report !== null}
-        hasDossier={dossierAnalysis !== null}
       />
 
       <ApiEntrepriseModal
@@ -305,69 +174,59 @@ const MainAppContent: React.FC = () => {
       />
 
       <main className="flex-1">
-        {/* PARCOURS UNIQUE DE SIMULATION ET DIAGNOSTIC */}
-        {activeTab === 'questionnaire' && (
+        {activePage === 'accueil' && <HomePage onNavigate={navigate} />}
+
+        {activePage === 'attestations' && (
+          <AttestationsPage
+            company={attestationsCompany}
+            onCompanyFound={(profile) => setAttestationsCompany({ ...EMPTY_QUESTIONNAIRE_STATE.company, ...profile })}
+          />
+        )}
+
+        {activePage === 'guide' && <DocumentaryExplorerView />}
+
+        {activePage === 'simulation' && (
           <div className="space-y-6">
             {/* Context Banner : sobre, institutionnel et aéré */}
             <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 text-white border-b border-blue-900/60 shadow-xs">
               <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
-                <div className="flex items-center gap-2 text-xs font-semibold text-blue-300 mb-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>Collectivité de Corse · Agence de Développement Économique de la Corse</span>
-                  <span className="text-blue-500">·</span>
-                  <span className="text-emerald-400 font-medium">Guide officiel 2026</span>
-                </div>
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                  Simulateur & Diagnostic d’Éligibilité aux Aides Régionales
+                  Simulation à partir de la fiche projet
                 </h1>
                 <p className="text-xs sm:text-sm text-blue-100/80 mt-1 max-w-3xl leading-relaxed">
-                  Identifiez les dispositifs d'aide de l'ADEC applicables à votre entreprise (Impresa Sì, Risilienza, Rinascita, Ribumbà, Impresi Paisani, RIESCE, Innuvazione, Impresamondu), calculez vos subventions et vérifiez vos critères d'accès.
+                  Déposez le PDF de la fiche projet ADEC : le simulateur est pré-rempli, vérifie les critères d'accès et calcule la proposition de mesures.
                 </p>
-
-                <div className="mt-3 flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-blue-200/80">
-                  <span className="flex items-center gap-1.5 text-white font-medium bg-blue-900/40 border border-blue-700/50 px-2.5 py-0.5 rounded-full text-[11px]">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    Délibération 21/177 AC & Règl. UE 2023/2831
-                  </span>
-                  <span className="hidden sm:inline text-blue-500">·</span>
-                  <span className="text-blue-200 text-[11px]">Plafond de minimis : <strong className="text-white">300 000 €</strong> / 3 ans</span>
-                  <span className="hidden sm:inline text-blue-500">·</span>
-                  <span className="text-blue-200 text-[11px]">Instruction confidentielle sans engagement</span>
-                </div>
               </div>
             </div>
 
-            <QuestionnaireWizard
-              state={questionnaireState}
-              setState={setQuestionnaireState}
-              onSubmitEvaluation={handleRunEvaluation}
-              activeDossier={dossierAnalysis}
-              onAnalysisComplete={handleDossierAnalysisComplete}
-              onRemoveDossier={() => {
-                setDossierAnalysis(null);
-                setQuestionnaireState((prev) => ({
-                  ...prev,
-                  dossierSource: undefined
-                }));
-              }}
-            />
+            {dossier || isManualSimulation ? (
+              <QuestionnaireWizard
+                key={wizardKey}
+                state={questionnaireState}
+                setState={setQuestionnaireState}
+                dossier={dossier}
+                onFicheAnalysee={handleFicheAnalysee}
+                onRemoveDossier={handleResetQuestionnaire}
+              />
+            ) : (
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-3">
+                <ProjectSheetPreloader dossier={null} onFicheAnalysee={handleFicheAnalysee} onRemoveDossier={handleResetQuestionnaire} />
+                <p className="text-xs text-slate-500 text-center">
+                  Pas de fiche projet ?{' '}
+                  <button
+                    type="button"
+                    onClick={() => setIsManualSimulation(true)}
+                    className="font-semibold text-blue-700 underline hover:text-blue-900 cursor-pointer"
+                  >
+                    Saisir la simulation manuellement
+                  </button>
+                </p>
+              </div>
+            )}
           </div>
         )}
 
-        {activeTab === 'results' && report && (
-          <ResultsView
-            report={report}
-            company={questionnaireState.company}
-            onModifyQuestionnaire={() => {
-              setActiveTab('questionnaire');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          />
-        )}
-
-        {activeTab === 'explorer' && <DocumentaryExplorerView />}
-
-        {activeTab === 'database' && <DatabaseManagerView />}
+        {activePage === 'textes' && <DatabaseManagerView />}
       </main>
 
       {/* Footer */}
