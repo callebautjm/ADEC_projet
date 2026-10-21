@@ -282,13 +282,13 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
       />
 
       {/* 1. EN-TÊTE PRINCIPAL & ACCÈS JETON API */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-200">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-slate-700" />
+          <h2 className="text-xl font-bold text-neutral-900 tracking-tight flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-neutral-700" />
             1. Entreprise
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-neutral-500 mt-1">
             Identité, registres officiels (INSEE, RNE, DGFiP, URSSAF, BODACC), implantation et gouvernance.
           </p>
         </div>
@@ -299,13 +299,13 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
           className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shrink-0 cursor-pointer ${
             hasToken
               ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+              : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-neutral-300'
           }`}
           title="Configuration du jeton API Entreprise v4"
         >
-          <Key className="w-3.5 h-3.5 text-slate-600" />
+          <Key className="w-3.5 h-3.5 text-neutral-600" />
           <span>Token API</span>
-          <Lock className="w-3 h-3 text-slate-400" />
+          <Lock className="w-3 h-3 text-neutral-400" />
           <span
             className={`w-2 h-2 rounded-full ${hasToken ? 'bg-emerald-500' : 'bg-amber-400'}`}
             title={hasToken ? 'Jeton actif' : 'Jeton absent'}
@@ -314,13 +314,13 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
       </div>
 
       {/* 2. RECHERCHE ET SYNCHRONISATION PAR SIRET */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <label className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-            <Search className="w-4 h-4 text-blue-600" />
+          <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
+            <Search className="w-4 h-4 text-prune-600" />
             Recherche par numéro SIRET (Répertoire national INSEE Sirene)
           </label>
-          <span className="text-[11px] font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+          <span className="text-[11px] font-mono font-bold text-prune-700 bg-prune-50 px-2 py-0.5 rounded border border-prune-200">
             14 chiffres
           </span>
         </div>
@@ -354,14 +354,14 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                 }
               }}
               placeholder="Ex: 40001662200013"
-              className="w-full pl-3 pr-20 py-2 text-sm bg-white text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 font-mono font-semibold"
+              className="w-full pl-3 pr-20 py-2 text-sm bg-white text-neutral-900 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 font-mono font-semibold"
             />
             <div className="absolute right-2 top-2 flex items-center gap-1.5">
               {siretQuery.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setSiretQuery('')}
-                  className="text-xs text-slate-400 hover:text-slate-600 px-1 cursor-pointer"
+                  className="text-xs text-neutral-400 hover:text-neutral-600 px-1 cursor-pointer"
                   title="Effacer"
                 >
                   ✕
@@ -370,7 +370,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
               <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
                 siretQuery.length === 14
                   ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-slate-100 text-slate-500'
+                  : 'bg-neutral-100 text-neutral-500'
               }`}>
                 {siretQuery.length}/14
               </span>
@@ -381,7 +381,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
             type="button"
             onClick={() => handleFetchSiret()}
             disabled={isLoadingApi || !siretQuery.trim()}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 shadow-2xs cursor-pointer"
+            className="px-4 py-2 bg-prune-600 hover:bg-aubergine-600 text-white font-semibold text-xs rounded-full transition disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 shadow-2xs cursor-pointer"
           >
             {isLoadingApi ? (
               <>
@@ -415,7 +415,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
               <span>{apiFeedback.message}</span>
             </div>
             {apiFeedback.details && (
-              <p className="text-[11px] text-slate-600 pl-5 leading-relaxed">
+              <p className="text-[11px] text-neutral-600 pl-5 leading-relaxed">
                 {apiFeedback.details}
               </p>
             )}
@@ -425,19 +425,19 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
 
       {/* 3. FICHE ÉTABLISSEMENT : IDENTITÉ, CONFORMITÉ & DONNÉES DES REGISTRES */}
       {data.siret && (
-        <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
           {/* Identité de l'établissement */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-neutral-100">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-bold text-neutral-900">
                   {data.name || 'Établissement'}
                 </h3>
                 {data.isHeadOffice !== undefined && (
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                     data.isHeadOffice
-                      ? 'bg-sky-50 text-sky-800 border border-sky-200'
-                      : 'bg-slate-100 text-slate-700 border border-slate-200'
+                      ? 'bg-petrole-50 text-petrole-800 border border-petrole-200'
+                      : 'bg-neutral-100 text-neutral-700 border border-neutral-200'
                   }`}>
                     {data.isHeadOffice ? 'Siège Principal' : 'Établissement Secondaire'}
                   </span>
@@ -448,15 +448,15 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 font-mono flex-wrap">
-                <span>SIRET : <strong className="text-slate-800">{data.siret}</strong></span>
+              <div className="flex items-center gap-2 mt-1 text-xs text-neutral-500 font-mono flex-wrap">
+                <span>SIRET : <strong className="text-neutral-800">{data.siret}</strong></span>
                 {isCurrentSiretValidLuhn && (
                   <span title="Clé de Luhn valide" className="inline-flex items-center text-emerald-600">
                     <Check className="w-3.5 h-3.5" />
                   </span>
                 )}
                 {activeSiren && (
-                  <span>· SIREN : <strong className="text-slate-800">{activeSiren}</strong></span>
+                  <span>· SIREN : <strong className="text-neutral-800">{activeSiren}</strong></span>
                 )}
               </div>
             </div>
@@ -467,10 +467,10 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                   href={`https://annuaire-entreprises.data.gouv.fr/entreprise/${activeSiren}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-medium border border-slate-200 transition"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-neutral-50 text-neutral-600 rounded-lg text-xs font-medium border border-neutral-200 transition"
                   title="Consulter la fiche officielle sur l'Annuaire des Entreprises (data.gouv.fr)"
                 >
-                  <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                  <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Annuaire des Entreprises</span>
                 </a>
               )}
@@ -478,9 +478,9 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                 <button
                   type="button"
                   onClick={() => setShowRawData(!showRawData)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-medium border border-slate-200 transition cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-neutral-50 text-neutral-600 rounded-lg text-xs font-medium border border-neutral-200 transition cursor-pointer"
                 >
-                  <FileText className="w-3.5 h-3.5 text-slate-400" />
+                  <FileText className="w-3.5 h-3.5 text-neutral-400" />
                   <span>{showRawData ? 'Masquer JSON' : 'JSON brut'}</span>
                 </button>
               )}
@@ -488,7 +488,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
           </div>
 
           {showRawData && data.rawApiData && (
-            <div className="bg-slate-900 text-slate-200 p-3 rounded-lg text-xs font-mono max-h-56 overflow-y-auto">
+            <div className="bg-neutral-900 text-neutral-200 p-3 rounded-lg text-xs font-mono max-h-56 overflow-y-auto">
               <pre className="text-[10px] leading-relaxed whitespace-pre-wrap">
                 {JSON.stringify(data.rawApiData, null, 2)}
               </pre>
@@ -520,7 +520,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                   className={secondaryActionClass}
                   title="Actualiser les avis BODACC"
                 >
-                  <RefreshCw className={`w-3 h-3 ${isBodaccLoading ? 'animate-spin text-blue-600' : ''}`} />
+                  <RefreshCw className={`w-3 h-3 ${isBodaccLoading ? 'animate-spin text-prune-600' : ''}`} />
                   <span>Actualiser</span>
                 </button>
               ) : undefined
@@ -565,14 +565,14 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
               <ul className="space-y-1.5 md:pl-[15.75rem]">
                 {currentObservations.map((obs, idx) => (
                   <li key={obs.id || idx} className="text-[11px] bg-amber-50/50 border border-amber-100 rounded-lg p-2.5 space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap text-[10px] text-slate-500 font-medium">
-                      <span className="font-bold text-slate-700">
+                    <div className="flex items-center gap-2 flex-wrap text-[10px] text-neutral-500 font-medium">
+                      <span className="font-bold text-neutral-700">
                         {(obs.numero || obs.numObservation) ? `N° ${obs.numero || obs.numObservation}` : `#${idx + 1}`}
                       </span>
                       {(obs.date || obs.dateAjout) && <span className="font-mono">{obs.date || obs.dateAjout}</span>}
                       {(obs.fournisseur || obs.source) && <span>{obs.fournisseur || obs.source}</span>}
                     </div>
-                    <p className="text-slate-800 leading-relaxed">{obs.texte || obs.description}</p>
+                    <p className="text-neutral-800 leading-relaxed">{obs.texte || obs.description}</p>
                   </li>
                 ))}
               </ul>
@@ -581,69 +581,69 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
           </AttestationsList>
 
           {/* Données complémentaires des registres (non saisissables) */}
-          <div className="border border-slate-200 rounded-lg bg-slate-50/50 overflow-hidden">
+          <div className="border border-neutral-200 rounded-lg bg-neutral-50/50 overflow-hidden">
             <button
               type="button"
               onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
-              className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-semibold text-slate-700 hover:bg-slate-100/70 transition cursor-pointer"
+              className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-semibold text-neutral-700 hover:bg-neutral-100/70 transition cursor-pointer"
             >
               <span className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                <Sparkles className="w-3.5 h-3.5 text-prune-600" />
                 <span>Données complémentaires des registres (TVA, social, établissements)</span>
               </span>
-              <div className="flex items-center gap-1 text-slate-400">
+              <div className="flex items-center gap-1 text-neutral-400">
                 <span className="text-[11px] font-normal">{showTechnicalDetails ? 'Masquer' : 'Afficher'}</span>
                 {showTechnicalDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </div>
             </button>
 
             {showTechnicalDetails && (
-              <div className="p-3.5 border-t border-slate-200 bg-white grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 space-y-1">
-                  <span className="block text-[10px] font-bold uppercase text-slate-500">Fiscalité</span>
+              <div className="p-3.5 border-t border-neutral-200 bg-white grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
+                <div className="p-2.5 bg-neutral-50 rounded-lg border border-neutral-100 space-y-1">
+                  <span className="block text-[10px] font-bold uppercase text-neutral-500">Fiscalité</span>
                   <div className="flex justify-between gap-2">
-                    <span className="text-slate-500">TVA intracom. :</span>
-                    <strong className="font-mono text-slate-800">{data.tvaIntracommunautaire || `FR${String((12 + 3 * (parseInt(activeSiren || '0', 10) % 97)) % 97).padStart(2, '0')}${activeSiren}`}</strong>
+                    <span className="text-neutral-500">TVA intracom. :</span>
+                    <strong className="font-mono text-neutral-800">{data.tvaIntracommunautaire || `FR${String((12 + 3 * (parseInt(activeSiren || '0', 10) % 97)) % 97).padStart(2, '0')}${activeSiren}`}</strong>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-slate-500">Régime fiscal :</span>
-                    <strong className="text-slate-800 text-right">{data.complianceData?.dgfip?.liassesFiscales?.regimeImposition || 'Non communiqué'}</strong>
+                    <span className="text-neutral-500">Régime fiscal :</span>
+                    <strong className="text-neutral-800 text-right">{data.complianceData?.dgfip?.liassesFiscales?.regimeImposition || 'Non communiqué'}</strong>
                   </div>
                 </div>
 
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 space-y-1">
-                  <span className="block text-[10px] font-bold uppercase text-slate-500">Social & emploi</span>
+                <div className="p-2.5 bg-neutral-50 rounded-lg border border-neutral-100 space-y-1">
+                  <span className="block text-[10px] font-bold uppercase text-neutral-500">Social & emploi</span>
                   <div className="flex justify-between gap-2">
-                    <span className="text-slate-500">Tranche INSEE :</span>
-                    <strong className="text-slate-800 text-right">{data.headcountTranche || 'Non communiquée'}</strong>
+                    <span className="text-neutral-500">Tranche INSEE :</span>
+                    <strong className="text-neutral-800 text-right">{data.headcountTranche || 'Non communiquée'}</strong>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-slate-500">Convention (IDCC) :</span>
-                    <strong className="text-slate-800 truncate max-w-[140px]" title={data.conventionCollective?.idcc}>
+                    <span className="text-neutral-500">Convention (IDCC) :</span>
+                    <strong className="text-neutral-800 truncate max-w-[140px]" title={data.conventionCollective?.idcc}>
                       {data.conventionCollective?.idcc || 'Non communiquée'}
                     </strong>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-slate-500">Employeur :</span>
-                    <strong className="text-slate-800">
+                    <span className="text-neutral-500">Employeur :</span>
+                    <strong className="text-neutral-800">
                       {data.caractereEmployeur === 'O' ? 'Oui' : data.caractereEmployeur === 'N' ? 'Non' : 'Non communiqué'}
                     </strong>
                   </div>
                 </div>
 
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 space-y-1">
-                  <span className="block text-[10px] font-bold uppercase text-slate-500">Établissements & labels</span>
+                <div className="p-2.5 bg-neutral-50 rounded-lg border border-neutral-100 space-y-1">
+                  <span className="block text-[10px] font-bold uppercase text-neutral-500">Établissements & labels</span>
                   <div className="flex justify-between gap-2">
-                    <span className="text-slate-500">Établissements :</span>
-                    <strong className="text-slate-800">{data.nombreEtablissements ?? 1} ({data.nombreEtablissementsOuverts ?? 1} ouvert)</strong>
+                    <span className="text-neutral-500">Établissements :</span>
+                    <strong className="text-neutral-800">{data.nombreEtablissements ?? 1} ({data.nombreEtablissementsOuverts ?? 1} ouvert)</strong>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-slate-500">Diffusion INSEE :</span>
-                    <strong className="text-slate-800">{data.statutDiffusion === 'O' ? 'Publique' : 'Protégée'}</strong>
+                    <span className="text-neutral-500">Diffusion INSEE :</span>
+                    <strong className="text-neutral-800">{data.statutDiffusion === 'O' ? 'Publique' : 'Protégée'}</strong>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-slate-500">Agriculture bio :</span>
-                    <strong className={data.labelsAndCertifications?.isBio ? 'text-emerald-700' : 'text-slate-800'}>
+                    <span className="text-neutral-500">Agriculture bio :</span>
+                    <strong className={data.labelsAndCertifications?.isBio ? 'text-emerald-700' : 'text-neutral-800'}>
                       {data.labelsAndCertifications?.isBio ? 'Certifiée Agence Bio' : 'Non'}
                     </strong>
                   </div>
@@ -657,15 +657,15 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
       {/* 5. PARAMÈTRES DU DOSSIER ADEC : SAISIE & AJUSTEMENT UNIFIÉS */}
       <div className="space-y-4">
         {/* VOLET A : IDENTIFICATION, CAPITAL & ACTIVITÉ */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider border-b border-slate-100 pb-2.5">
-            <FileText className="w-4 h-4 text-slate-600" />
+        <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
+          <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5 uppercase tracking-wider border-b border-neutral-100 pb-2.5">
+            <FileText className="w-4 h-4 text-neutral-600" />
             Identification Juridique, Capital Social & Activité
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-neutral-700 mb-1">
                 Raison Sociale / Nom Commercial
               </label>
               <input
@@ -673,12 +673,12 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                 value={data.name}
                 onChange={(e) => onChange({ name: e.target.value })}
                 placeholder="Ex: Entreprise Corsica"
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 font-semibold"
+                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 font-semibold"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-neutral-700 mb-1">
                 Capital Social
               </label>
               <div className="relative">
@@ -696,11 +696,11 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                     });
                   }}
                   placeholder="Ex: 50000"
-                  className="w-full pl-3 pr-8 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 font-bold"
+                  className="w-full pl-3 pr-8 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 font-bold"
                 />
-                <span className="absolute right-3 top-2 text-xs font-bold text-slate-400">€</span>
+                <span className="absolute right-3 top-2 text-xs font-bold text-neutral-400">€</span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-1 truncate" title={data.capitalSocialSource}>
+              <p className="text-[11px] text-neutral-500 mt-1 truncate" title={data.capitalSocialSource}>
                 {data.capitalSocial
                   ? `Source : ${data.capitalSocialSource || 'non précisée'}`
                   : (data.legalForm === 'COMMERCIANT_ARTISAN_EI' || data.legalForm === 'MICRO_ENTREPRISE' ? 'Non applicable (EI)' : 'Non renseigné')}
@@ -708,7 +708,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-neutral-700 mb-1">
                 Code NAF / APE
               </label>
               <input
@@ -716,26 +716,26 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                 value={data.nafCode || ''}
                 onChange={(e) => onChange({ nafCode: e.target.value })}
                 placeholder="Ex: 10.71C"
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 font-mono font-bold"
+                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 font-mono font-bold"
               />
-              <p className="text-[11px] text-slate-500 mt-1 truncate" title={data.nafLabel}>
+              <p className="text-[11px] text-neutral-500 mt-1 truncate" title={data.nafLabel}>
                 {data.nafLabel || 'Libellé d’activité non renseigné'}
               </p>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-neutral-700 mb-1">
                 Date d'Immatriculation
               </label>
               <input
                 type="date"
                 value={ageAnalysis.dateIso || (data.creationDate && data.creationDate.length === 10 && data.creationDate.includes('-') ? data.creationDate : '')}
                 onChange={(e) => handleCreationDateChange(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 font-mono"
+                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 font-mono"
               />
               <p className="text-[11px] mt-1 truncate">
                 {ageAnalysis.isDateKnown ? (
-                  <span className={ageAnalysis.isUnderFiveYears ? 'font-semibold text-emerald-700' : 'text-slate-500'}>
+                  <span className={ageAnalysis.isUnderFiveYears ? 'font-semibold text-emerald-700' : 'text-neutral-500'}>
                     {ageAnalysis.ageLabel} · {ageAnalysis.isUnderFiveYears ? 'Éligible Impresa Sì (≤ 5 ans)' : '> 5 ans'}
                   </span>
                 ) : (
@@ -747,13 +747,13 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-neutral-700 mb-1">
                 Forme Juridique
               </label>
               <select
                 value={data.legalForm}
                 onChange={(e) => onChange({ legalForm: e.target.value as LegalForm })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500"
               >
                 <option value="SARL_EURL">SARL / EURL (Société à responsabilité limitée)</option>
                 <option value="SAS_SASU">SAS / SASU (Société par actions simplifiée)</option>
@@ -768,7 +768,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                 <option value="AUTRE">Autre forme juridique</option>
               </select>
               {(data.natureJuridiqueLibelle || data.enterpriseCategory) && (
-                <p className="text-[11px] text-slate-500 mt-1 truncate" title={data.natureJuridiqueLibelle}>
+                <p className="text-[11px] text-neutral-500 mt-1 truncate" title={data.natureJuridiqueLibelle}>
                   Registre : {data.natureJuridiqueLibelle || '—'}
                   {data.natureJuridiqueCode ? ` (code ${data.natureJuridiqueCode})` : ''}
                   {data.enterpriseCategory ? ` · Catégorie ${data.enterpriseCategory}` : ''}
@@ -777,13 +777,13 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-neutral-700 mb-1">
                 Secteur d’Activité Principal
               </label>
               <select
                 value={data.sector}
                 onChange={(e) => onChange({ sector: e.target.value as ActivitySector })}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500"
               >
                 <option value="INDUSTRIE">Industrie manufacturière, transformation, production</option>
                 <option value="COMMERCE">Commerce de détail et de proximité</option>
@@ -827,20 +827,20 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
         </div>
 
         {/* VOLET B : IMPLANTATION TERRITORIALE & DISPOSITIF SALVEZZA */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
-          <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 pb-2.5">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
-              <MapPin className="w-4 h-4 text-slate-600" />
+        <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
+          <div className="flex items-center justify-between flex-wrap gap-2 border-b border-neutral-100 pb-2.5">
+            <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5 uppercase tracking-wider">
+              <MapPin className="w-4 h-4 text-neutral-600" />
               Implantation & Ancrage Insulaire (Corse & Salvezza)
             </h3>
-            <span className="text-[11px] font-medium text-slate-500">
+            <span className="text-[11px] font-medium text-neutral-500">
               Délibération 21/177 AC & Plan Salvezza
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-neutral-700 mb-1">
                 Adresse (Voie)
               </label>
               <input
@@ -848,12 +848,12 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                 value={data.address || ''}
                 onChange={(e) => onChange({ address: e.target.value })}
                 placeholder="Ex: 12 Cours Paoli"
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-neutral-700 mb-1">
                 Code Postal
               </label>
               <input
@@ -872,12 +872,12 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                   });
                 }}
                 placeholder="Ex: 20250"
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 font-mono"
+                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 font-mono"
               />
             </div>
 
             <div className="relative">
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+              <label className="block text-xs font-semibold text-neutral-700 mb-1 flex items-center justify-between">
                 <span>Commune d'implantation</span>
                 {zoningAnalysis.isCorsica && (
                   <span className="text-[10px] text-emerald-700 font-bold">
@@ -912,18 +912,18 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                   }
                 }}
                 placeholder="Ex: Corte, Ajaccio, Bastia..."
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500"
               />
 
               {/* Suggestions de communes corses */}
               {showCommuneSuggestions && communeSuggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-30 max-h-52 overflow-y-auto divide-y divide-slate-100">
-                  <div className="p-2 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase flex items-center justify-between">
+                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg z-30 max-h-52 overflow-y-auto divide-y divide-neutral-100">
+                  <div className="p-2 bg-neutral-50 text-[10px] font-bold text-neutral-400 uppercase flex items-center justify-between">
                     <span>Communes corses</span>
                     <button
                       type="button"
                       onClick={() => setShowCommuneSuggestions(false)}
-                      className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                      className="text-neutral-400 hover:text-neutral-600 cursor-pointer"
                     >
                       ✕
                     </button>
@@ -951,8 +951,8 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                       className="w-full text-left px-3 py-2 hover:bg-emerald-50 transition flex items-center justify-between text-xs cursor-pointer"
                     >
                       <div>
-                        <strong className="text-slate-900">{c.name}</strong>
-                        <span className="text-slate-500 text-[11px] ml-1.5 font-mono">({c.postalCode})</span>
+                        <strong className="text-neutral-900">{c.name}</strong>
+                        <span className="text-neutral-500 text-[11px] ml-1.5 font-mono">({c.postalCode})</span>
                       </div>
                       <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
                         {c.microregion}
@@ -965,18 +965,18 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
           </div>
 
           {/* Encadré d'ancrage et éligibilité Salvezza */}
-          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="p-3.5 bg-neutral-50 border border-neutral-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
               <div className={`p-2 rounded-lg shrink-0 ${
                 zoningAnalysis.isSalvezza || data.salvezzaCommune
                   ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-200 text-slate-600'
+                  : 'bg-neutral-200 text-neutral-600'
               }`}>
                 <Mountain className="w-4 h-4" />
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-slate-900">
+                  <span className="text-xs font-bold text-neutral-900">
                     {zoningAnalysis.isSalvezza || data.salvezzaCommune
                       ? `Commune éligible Fonds SALVEZZA (${zoningAnalysis.salvezzaCommune?.nomCorse || data.salvezzaCommune?.nomCorse || data.city})`
                       : `Zonage d'implantation : ${zoningAnalysis.badgeLabel}`}
@@ -987,7 +987,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-600 mt-0.5">
+                <p className="text-[11px] text-neutral-600 mt-0.5">
                   {zoningAnalysis.isSalvezza || data.salvezzaCommune
                     ? 'Taux d’intervention majorés (+10 % à +20 %) et bonifications sur les investissements et aides à l’emploi.'
                     : 'Régime territorial de droit commun. Les 230 communes sous contrainte bénéficient du Fonds SALVEZZA.'}
@@ -998,7 +998,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
             <button
               type="button"
               onClick={() => setIsSalvezzaModalOpen(true)}
-              className="shrink-0 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-lg border border-slate-300 transition flex items-center justify-center gap-1.5 cursor-pointer"
+              className="shrink-0 px-3 py-1.5 bg-white hover:bg-neutral-100 text-neutral-700 font-semibold text-xs rounded-lg border border-neutral-300 transition flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Compass className="w-3.5 h-3.5 text-emerald-700" />
               <span>230 Communes Salvezza</span>
@@ -1007,55 +1007,55 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
 
           {/* Déclarations sur l'honneur insulaires */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-            <label className="flex items-center gap-2.5 p-2.5 bg-white border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition text-xs">
+            <label className="flex items-center gap-2.5 p-2.5 bg-white border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50 transition text-xs">
               <input
                 type="checkbox"
                 checked={data.isEstablishedInCorsica}
                 onChange={(e) => onChange({ isEstablishedInCorsica: e.target.checked })}
-                className="w-4 h-4 text-slate-900 rounded focus:ring-slate-900"
+                className="w-4 h-4 text-neutral-900 rounded focus:ring-prune-500"
               />
               <div>
-                <span className="font-semibold text-slate-900 block">Établie en Corse</span>
-                <span className="text-slate-500 text-[11px]">Siège social ou établissement secondaire réel immatriculé en Corse</span>
+                <span className="font-semibold text-neutral-900 block">Établie en Corse</span>
+                <span className="text-neutral-500 text-[11px]">Siège social ou établissement secondaire réel immatriculé en Corse</span>
               </div>
             </label>
 
-            <label className="flex items-center gap-2.5 p-2.5 bg-white border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition text-xs">
+            <label className="flex items-center gap-2.5 p-2.5 bg-white border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50 transition text-xs">
               <input
                 type="checkbox"
                 checked={data.hasMainExploitationInCorsica}
                 onChange={(e) => onChange({ hasMainExploitationInCorsica: e.target.checked })}
-                className="w-4 h-4 text-slate-900 rounded focus:ring-slate-900"
+                className="w-4 h-4 text-neutral-900 rounded focus:ring-prune-500"
               />
               <div>
-                <span className="font-semibold text-slate-900 block">Exploitation Principale en Corse</span>
-                <span className="text-slate-500 text-[11px]">Activité opérationnelle effective exercée sur l’île</span>
+                <span className="font-semibold text-neutral-900 block">Exploitation Principale en Corse</span>
+                <span className="text-neutral-500 text-[11px]">Activité opérationnelle effective exercée sur l’île</span>
               </div>
             </label>
           </div>
         </div>
 
         {/* VOLET D : GOUVERNANCE & MANDATAIRES SOCIAUX HABILITÉS */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
-          <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 pb-2.5">
+        <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
+          <div className="flex items-center justify-between flex-wrap gap-2 border-b border-neutral-100 pb-2.5">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
-                <UserCheck className="w-4 h-4 text-purple-600" />
+              <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5 uppercase tracking-wider">
+                <UserCheck className="w-4 h-4 text-aubergine-600" />
                 <span>Gouvernance & Mandataires Sociaux Déclarés (RNE · INPI)</span>
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-neutral-500 mt-0.5">
                 Identification des dirigeants habilités à signer les demandes de subventions ADEC.
               </p>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-50 text-purple-800 border border-purple-200">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-aubergine-50 text-aubergine-800 border border-aubergine-200">
                 {currentMandataires.length} {currentMandataires.length > 1 ? 'dirigeants déclarés' : 'dirigeant déclaré'}
               </span>
               <button
                 type="button"
                 onClick={handleOpenAddMandataire}
-                className="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                className="px-2.5 py-1.5 bg-aubergine-600 hover:bg-aubergine-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1 shadow-2xs cursor-pointer"
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>Ajouter un dirigeant</span>
@@ -1075,23 +1075,23 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                 return (
                   <div
                     key={idx}
-                    className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-200 shadow-2xs hover:border-purple-300 transition space-y-2.5"
+                    className="p-3.5 bg-neutral-50/70 rounded-xl border border-neutral-200 shadow-2xs hover:border-aubergine-300 transition space-y-2.5"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 border border-purple-200">
+                        <div className="w-8 h-8 rounded-lg bg-aubergine-100 text-aubergine-700 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 border border-aubergine-200">
                           {isMoral ? <Building2 className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                         </div>
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <strong className="text-sm font-bold text-slate-900 block leading-tight">
+                            <strong className="text-sm font-bold text-neutral-900 block leading-tight">
                               {displayName}
                             </strong>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-prune-50 text-prune-800 border border-prune-200">
                               {m.fonction || 'Gérant'}
                             </span>
                           </div>
-                          <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
+                          <span className="text-[11px] text-neutral-500 font-medium block mt-0.5">
                             {isMoral ? 'Personne Morale' : 'Personne Physique'}
                             {m.nationalite ? ` · Nationalité : ${m.nationalite}` : ''}
                           </span>
@@ -1103,7 +1103,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                           type="button"
                           onClick={() => handleOpenEditMandataire(idx)}
                           title="Modifier ce dirigeant"
-                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                          className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
@@ -1111,24 +1111,24 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                           type="button"
                           onClick={() => handleDeleteMandataire(idx)}
                           title="Supprimer ce dirigeant"
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                          className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2.5 rounded-lg border border-slate-100">
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2.5 rounded-lg border border-neutral-100">
                       <div>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">
+                        <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-semibold">
                           Date de naissance
                         </span>
-                        <span className="text-xs font-mono font-medium text-slate-800">
+                        <span className="text-xs font-mono font-medium text-neutral-800">
                           {m.dateNaissance || 'Non renseignée'}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">
+                        <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-semibold">
                           Qualité à agir
                         </span>
                         <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
@@ -1142,15 +1142,15 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
               })}
             </div>
           ) : (
-            <div className="p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center space-y-3">
-              <p className="text-xs text-slate-600">
+            <div className="p-4 bg-neutral-50 border border-dashed border-neutral-300 rounded-xl text-center space-y-3">
+              <p className="text-xs text-neutral-600">
                 Aucun gérant ou mandataire social n'est actuellement renseigné pour cet établissement.
               </p>
               <div className="flex items-center justify-center gap-3">
                 <button
                   type="button"
                   onClick={handleOpenAddMandataire}
-                  className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  className="px-3 py-1.5 bg-aubergine-600 hover:bg-aubergine-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Ajouter un dirigeant</span>
@@ -1158,7 +1158,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                 <button
                   type="button"
                   onClick={handleRestoreDefaultMandataires}
-                  className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition cursor-pointer"
+                  className="px-3 py-1.5 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-300 rounded-lg text-xs font-semibold transition cursor-pointer"
                 >
                   Restaurer dirigeants par défaut (Antone PAOLI & Maria ALBERTI)
                 </button>
@@ -1172,18 +1172,18 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
 
       {/* MODALE D'ÉDITION / AJOUT DE MANDATAIRE SOCIAL */}
       {isMandataireModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-neutral-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-aubergine-100 text-aubergine-700 flex items-center justify-center">
                   <UserCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-bold text-neutral-900">
                     {editingMandataireIndex !== null ? 'Modifier le dirigeant / mandataire' : 'Ajouter un dirigeant / gérant'}
                   </h3>
-                  <span className="text-[11px] text-slate-500">
+                  <span className="text-[11px] text-neutral-500">
                     Identification officielle pour les dossiers ADEC et RNE
                   </span>
                 </div>
@@ -1191,7 +1191,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
               <button
                 type="button"
                 onClick={() => setIsMandataireModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                className="text-neutral-400 hover:text-neutral-600 p-1 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1200,7 +1200,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
             <form onSubmit={handleSaveMandataire} className="space-y-4 text-xs">
               {/* Type de personne */}
               <div>
-                <label className="block font-semibold text-slate-700 mb-1.5">
+                <label className="block font-semibold text-neutral-700 mb-1.5">
                   Type de personne
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1209,8 +1209,8 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                     onClick={() => setMandataireForm({ ...mandataireForm, type: 'personne_physique' })}
                     className={`py-2 px-3 rounded-lg border text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                       mandataireForm.type !== 'personne_morale'
-                        ? 'bg-purple-50 border-purple-400 text-purple-900 shadow-2xs'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        ? 'bg-aubergine-50 border-aubergine-400 text-aubergine-900 shadow-2xs'
+                        : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
                     }`}
                   >
                     <UserCheck className="w-3.5 h-3.5" />
@@ -1221,8 +1221,8 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                     onClick={() => setMandataireForm({ ...mandataireForm, type: 'personne_morale' })}
                     className={`py-2 px-3 rounded-lg border text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                       mandataireForm.type === 'personne_morale'
-                        ? 'bg-purple-50 border-purple-400 text-purple-900 shadow-2xs'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        ? 'bg-aubergine-50 border-aubergine-400 text-aubergine-900 shadow-2xs'
+                        : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
                     }`}
                   >
                     <Building2 className="w-3.5 h-3.5" />
@@ -1233,7 +1233,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
 
               {mandataireForm.type === 'personne_morale' ? (
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block font-semibold text-neutral-700 mb-1">
                     Dénomination Sociale de la personne morale *
                   </label>
                   <input
@@ -1242,13 +1242,13 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                     value={mandataireForm.denomination || mandataireForm.nom || ''}
                     onChange={(e) => setMandataireForm({ ...mandataireForm, denomination: e.target.value, nom: e.target.value })}
                     placeholder="Ex: Holding Corsica Investissements SAS"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-purple-600 focus:outline-none font-semibold"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs focus:ring-2 focus:ring-aubergine-600 focus:outline-none font-semibold"
                   />
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
+                    <label className="block font-semibold text-neutral-700 mb-1">
                       Nom (Nom de famille / d'usage) *
                     </label>
                     <input
@@ -1257,11 +1257,11 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                       value={mandataireForm.nom || ''}
                       onChange={(e) => setMandataireForm({ ...mandataireForm, nom: e.target.value.toUpperCase() })}
                       placeholder="Ex: PAOLI"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs uppercase focus:ring-2 focus:ring-purple-600 focus:outline-none font-semibold"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs uppercase focus:ring-2 focus:ring-aubergine-600 focus:outline-none font-semibold"
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
+                    <label className="block font-semibold text-neutral-700 mb-1">
                       Prénom *
                     </label>
                     <input
@@ -1270,7 +1270,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                       value={mandataireForm.prenom || ''}
                       onChange={(e) => setMandataireForm({ ...mandataireForm, prenom: e.target.value })}
                       placeholder="Ex: Antone"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-purple-600 focus:outline-none font-semibold"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs focus:ring-2 focus:ring-aubergine-600 focus:outline-none font-semibold"
                     />
                   </div>
                 </div>
@@ -1278,7 +1278,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
 
               {/* Fonction & Rôle */}
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
+                <label className="block font-semibold text-neutral-700 mb-1">
                   Fonction / Mandat légal *
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1289,7 +1289,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                         setMandataireForm({ ...mandataireForm, fonction: e.target.value });
                       }
                     }}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs focus:ring-2 focus:ring-aubergine-600 focus:outline-none"
                   >
                     <option value="Gérant">Gérant</option>
                     <option value="Associée co-gérante">Associé(e) co-gérant(e)</option>
@@ -1306,7 +1306,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                     value={mandataireForm.fonction || ''}
                     onChange={(e) => setMandataireForm({ ...mandataireForm, fonction: e.target.value })}
                     placeholder="Intitulé exact du mandat"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs focus:ring-2 focus:ring-aubergine-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -1315,7 +1315,7 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
               {mandataireForm.type !== 'personne_morale' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
+                    <label className="block font-semibold text-neutral-700 mb-1">
                       Date de naissance
                     </label>
                     <input
@@ -1323,11 +1323,11 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                       value={mandataireForm.dateNaissance || ''}
                       onChange={(e) => setMandataireForm({ ...mandataireForm, dateNaissance: e.target.value })}
                       placeholder="Ex: 12/06/1984"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-aubergine-600 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
+                    <label className="block font-semibold text-neutral-700 mb-1">
                       Nationalité
                     </label>
                     <input
@@ -1335,23 +1335,23 @@ export const StepCompany: React.FC<StepCompanyProps> = ({ data, onChange }) => {
                       value={mandataireForm.nationalite || ''}
                       onChange={(e) => setMandataireForm({ ...mandataireForm, nationalite: e.target.value })}
                       placeholder="Ex: Française"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-xs focus:ring-2 focus:ring-aubergine-600 focus:outline-none"
                     />
                   </div>
                 </div>
               )}
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+              <div className="pt-3 border-t border-neutral-100 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsMandataireModalOpen(false)}
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-xs transition cursor-pointer"
+                  className="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg font-semibold text-xs transition cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold text-xs transition shadow-xs cursor-pointer"
+                  className="px-4 py-2 bg-aubergine-600 hover:bg-aubergine-700 text-white rounded-lg font-semibold text-xs transition shadow-xs cursor-pointer"
                 >
                   {editingMandataireIndex !== null ? 'Mettre à jour' : 'Ajouter le dirigeant'}
                 </button>

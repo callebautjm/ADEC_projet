@@ -188,20 +188,20 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
   return (
     <div className="space-y-6">
       {!embedded && (
-        <div className="border-b border-slate-200 pb-4">
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Target className="w-5 h-5 text-slate-700" />
+        <div className="border-b border-neutral-200 pb-4">
+          <h2 className="text-xl font-bold text-neutral-900 tracking-tight flex items-center gap-2">
+            <Target className="w-5 h-5 text-neutral-700" />
             3. Identification des Besoins Spécifiques & Typologie du Projet
           </h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-neutral-500 mt-1">
             Sélectionnez les axes correspondant précisément à votre projet d’entreprise pour activer les dispositifs réglementaires adéquats.
           </p>
         </div>
       )}
 
       {regulatory?.isCompanyInDifficultyEU && (
-        <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-xl flex items-start gap-2.5 text-xs text-sky-950">
-          <Info className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+        <div className="p-3.5 bg-petrole-50 border border-petrole-200 rounded-xl flex items-start gap-2.5 text-xs text-petrole-950">
+          <Info className="w-4 h-4 text-petrole-600 shrink-0 mt-0.5" />
           <div>
             <strong className="block">Orientation automatique prise en compte (Étape 2) :</strong>
             <span>
@@ -212,7 +212,7 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
       )}
 
       <div>
-        <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+        <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
           Description synthétique du projet (optionnelle mais recommandée)
         </label>
         <textarea
@@ -220,26 +220,26 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
           value={data.projectDescription || ''}
           onChange={(e) => onChange({ projectDescription: e.target.value })}
           placeholder="Ex: Acquisition d’une nouvelle ligne de conditionnement moderne et développement d’un site de vente en ligne multilingue..."
-          className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 transition"
+          className="w-full px-3.5 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500 transition"
         />
       </div>
 
       {/* SECTION NOUVEAUX DISPOSITIFS / BASES DOCUMENTAIRES AJOUTÉES */}
       {customSchemes.length > 0 && (
-        <div className="p-4 bg-gradient-to-br from-indigo-50/90 via-sky-50/60 to-white border-2 border-indigo-300/80 rounded-2xl shadow-xs space-y-3">
+        <div className="p-4 bg-aubergine-50/70 border-2 border-aubergine-300/80 rounded-2xl shadow-xs space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2.5">
-              <span className="p-1.5 rounded-lg bg-indigo-600 text-white shadow-2xs">
+              <span className="p-1.5 rounded-lg bg-aubergine-600 text-white shadow-2xs">
                 <Database className="w-4 h-4" />
               </span>
               <div>
-                <h3 className="text-sm font-bold text-indigo-950 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-aubergine-950 flex items-center gap-2">
                   Nouveaux Dispositifs & Bases Documentaires Ajoutées ({customSchemes.length})
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-200/80 text-indigo-900 border border-indigo-300">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-aubergine-200/80 text-aubergine-900 border border-aubergine-300">
                     Actifs
                   </span>
                 </h3>
-                <p className="text-[11px] text-indigo-800">
+                <p className="text-[11px] text-aubergine-800">
                   Dispositifs récemment importés ou analysés dans votre base documentaire. Cochez-les pour les cibler en priorité dans votre diagnostic.
                 </p>
               </div>
@@ -255,47 +255,47 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
                   onClick={() => toggleNeed(scheme.id)}
                   className={`p-3.5 border rounded-xl cursor-pointer transition text-left relative flex flex-col justify-between ${
                     isSelected
-                      ? 'border-indigo-600 bg-white shadow-xs ring-2 ring-indigo-500/20'
-                      : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50/80'
+                      ? 'border-aubergine-600 bg-white shadow-xs ring-2 ring-aubergine-500/20'
+                      : 'border-neutral-200 bg-white hover:border-aubergine-300 hover:bg-neutral-50/80'
                   }`}
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <div>
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="text-[10px] font-mono font-bold text-indigo-800 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
+                          <span className="text-[10px] font-mono font-bold text-aubergine-800 bg-aubergine-50 px-1.5 py-0.5 rounded border border-aubergine-200">
                             {scheme.code}
                           </span>
-                          <span className="text-[10px] text-slate-500 font-medium">
+                          <span className="text-[10px] text-neutral-500 font-medium">
                             {scheme.category}
                           </span>
-                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 border border-sky-200">
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-petrole-100 text-petrole-800 border border-petrole-200">
                             Nouveau
                           </span>
                         </div>
-                        <h4 className={`text-sm font-bold leading-snug ${isSelected ? 'text-indigo-950' : 'text-slate-900'}`}>
+                        <h4 className={`text-sm font-bold leading-snug ${isSelected ? 'text-aubergine-950' : 'text-neutral-900'}`}>
                           {scheme.name}
                         </h4>
                       </div>
                       <div
                         className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition ${
                           isSelected
-                            ? 'bg-indigo-600 text-white shadow-xs'
-                            : 'border border-slate-300 bg-white'
+                            ? 'bg-aubergine-600 text-white shadow-xs'
+                            : 'border border-neutral-300 bg-white'
                         }`}
                       >
                         {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                       </div>
                     </div>
-                    <p className="text-xs text-slate-600 leading-relaxed mb-2.5 line-clamp-2">
+                    <p className="text-xs text-neutral-600 leading-relaxed mb-2.5 line-clamp-2">
                       {scheme.objective || scheme.subtitle}
                     </p>
                   </div>
 
-                  <div className="pt-2.5 border-t border-slate-100 flex flex-col gap-1.5 text-[11px]">
+                  <div className="pt-2.5 border-t border-neutral-100 flex flex-col gap-1.5 text-[11px]">
                     <div className="flex items-center justify-between gap-1.5">
-                      <span className="text-slate-400 font-medium">Taux d'aide indicatif :</span>
-                      <span className="font-bold text-indigo-700">
+                      <span className="text-neutral-400 font-medium">Taux d'aide indicatif :</span>
+                      <span className="font-bold text-aubergine-700">
                         {scheme.rates?.tpeMaxRate ? `${(scheme.rates.tpeMaxRate * 100).toFixed(0)} %` : 'Selon barème'}
                         {scheme.rates?.ceilingAmount ? ` (Plafond : ${scheme.rates.ceilingAmount.toLocaleString('fr-FR')} €)` : ''}
                       </span>
@@ -308,8 +308,8 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
                           Non soumis à l'évaluation qualitative
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-normal text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200/80">
-                          <Award className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span className="inline-flex items-center gap-1 text-[10px] font-normal text-neutral-500 bg-neutral-50 px-2 py-0.5 rounded border border-neutral-200/80">
+                          <Award className="w-3 h-3 text-neutral-400 shrink-0" />
                           Soumis à l'évaluation qualitative (≥ 3 OUI)
                         </span>
                       )}
@@ -320,7 +320,7 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
                           e.stopPropagation();
                           setSelectedSchemeDetail(scheme);
                         }}
-                        className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 hover:underline ml-auto"
+                        className="text-[11px] text-aubergine-600 hover:text-aubergine-800 font-semibold flex items-center gap-1 hover:underline ml-auto"
                       >
                         <Eye className="w-3 h-3" />
                         Fiche
@@ -336,10 +336,10 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
 
       <div className="space-y-2.5">
         <div className="flex items-center justify-between">
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+          <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
             Sélectionnez les besoins concernés ({data.selectedNeedCategories.length} sélectionné(s))
           </label>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-neutral-500">
             Sélection multiple autorisée · Cliquez pour activer ou désactiver
           </span>
         </div>
@@ -355,18 +355,18 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
                 onClick={() => toggleNeed(opt.id)}
                 className={`p-3.5 border rounded-xl cursor-pointer transition text-left relative flex flex-col justify-between ${
                   isSelected
-                    ? 'border-blue-600 bg-gradient-to-br from-blue-50/80 to-indigo-50/40 shadow-xs ring-2 ring-blue-500/20'
-                    : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50/80'
+                    ? 'border-prune-600 bg-prune-50/80 shadow-xs ring-2 ring-prune-500/20'
+                    : 'border-neutral-200 bg-white hover:border-prune-300 hover:bg-neutral-50/80'
                 }`}
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <div>
-                      <h3 className={`text-sm font-bold leading-snug ${isSelected ? 'text-blue-950' : 'text-slate-900'}`}>
+                      <h3 className={`text-sm font-bold leading-snug ${isSelected ? 'text-prune-950' : 'text-neutral-900'}`}>
                         {opt.title}
                       </h3>
                       {recommendation && (
-                        <span className="inline-block mt-1 text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded border border-blue-200">
+                        <span className="inline-block mt-1 text-[10px] font-bold text-prune-800 bg-prune-100 px-2 py-0.5 rounded border border-prune-200">
                           {recommendation}
                         </span>
                       )}
@@ -374,25 +374,25 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
                     <div
                       className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition ${
                         isSelected
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'border border-slate-300 bg-white'
+                          ? 'bg-prune-600 text-white shadow-xs'
+                          : 'border border-neutral-300 bg-white'
                       }`}
                     >
                       {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                     </div>
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed mb-2.5">
+                  <p className="text-xs text-neutral-600 leading-relaxed mb-2.5">
                     {opt.tagline}
                   </p>
                 </div>
 
-                <div className="pt-2.5 border-t border-slate-100 flex flex-col gap-1.5 text-[11px]">
+                <div className="pt-2.5 border-t border-neutral-100 flex flex-col gap-1.5 text-[11px]">
                   <div className="flex items-center gap-1.5 font-medium">
-                    <span className="text-slate-400">Mesure cible :</span>
+                    <span className="text-neutral-400">Mesure cible :</span>
                     <span className={`px-2 py-0.5 rounded text-[11px] font-semibold truncate ${
                       isSelected
-                        ? 'bg-blue-100/80 text-blue-900 border border-blue-200'
-                        : 'bg-slate-100 text-slate-700'
+                        ? 'bg-prune-100/80 text-prune-900 border border-prune-200'
+                        : 'bg-neutral-100 text-neutral-700'
                     }`}>
                       {opt.dispositifsAssocies}
                     </span>
@@ -404,8 +404,8 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
                       Non soumis à l'évaluation qualitative (Annexe 1)
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-normal text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200/80 w-fit">
-                      <Award className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span className="inline-flex items-center gap-1 text-[10px] font-normal text-neutral-500 bg-neutral-50 px-2 py-0.5 rounded border border-neutral-200/80 w-fit">
+                      <Award className="w-3 h-3 text-neutral-400 shrink-0" />
                       Soumis à l'évaluation qualitative (≥ 3 OUI)
                     </span>
                   )}
@@ -417,9 +417,9 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
 
         {/* Information Base Documentaire Personnalisée si aucun dispositif personnalisé actif */}
         {customSchemes.length === 0 && (
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-500 flex items-center justify-between flex-wrap gap-2">
+          <div className="p-3 bg-neutral-50 border border-neutral-200/80 rounded-xl text-xs text-neutral-500 flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
+              <Sparkles className="w-4 h-4 text-aubergine-500 shrink-0" />
               <span>
                 Vous souhaitez intégrer un autre arrêté ou dispositif d’aide spécifique ? Vous pouvez enrichir la base à tout moment via l’onglet <strong>Base Documentaire</strong>.
               </span>
@@ -428,14 +428,14 @@ export const StepProjectNeed: React.FC<StepProjectNeedProps> = ({ data, regulato
         )}
 
         {/* Note officielle sur les 2 régimes d'instruction */}
-        <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex items-start gap-2.5">
-          <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+        <div className="p-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-600 flex items-start gap-2.5">
+          <Info className="w-4 h-4 text-neutral-500 shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <span className="font-bold text-slate-800 block">
+            <span className="font-bold text-neutral-800 block">
               Information sur l'étape suivante (Évaluation Qualitative) :
             </span>
-            <p className="text-[11px] leading-relaxed text-slate-600">
-              Les mesures de l'Annexe 1 (<strong className="text-slate-800">U PATTU RISILIENZA È TERRITORII</strong> : Risilienza, Impresi Paisani, Rinascita, Ribumbà) ne relèvent pas de la grille d'évaluation qualitative de la Délibération N° 21/177 AC et font l'objet d'une instruction directe sans exigence de score minimal.
+            <p className="text-[11px] leading-relaxed text-neutral-600">
+              Les mesures de l'Annexe 1 (<strong className="text-neutral-800">U PATTU RISILIENZA È TERRITORII</strong> : Risilienza, Impresi Paisani, Rinascita, Ribumbà) ne relèvent pas de la grille d'évaluation qualitative de la Délibération N° 21/177 AC et font l'objet d'une instruction directe sans exigence de score minimal.
             </p>
           </div>
         </div>

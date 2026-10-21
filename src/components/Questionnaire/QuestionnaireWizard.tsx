@@ -66,7 +66,7 @@ export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
       <ProjectSheetPreloader dossier={dossier} onFicheAnalysee={onFicheAnalysee} onRemoveDossier={onRemoveDossier} />
 
       {/* Étapes */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs">
+      <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 shadow-xs">
         <div className="flex items-center justify-between gap-2">
           {steps.map((step) => {
             const Icon = step.icon;
@@ -79,21 +79,21 @@ export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
                 className="flex flex-col sm:flex-row items-center gap-2 group focus:outline-none cursor-pointer"
               >
                 <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold transition shadow-xs ${
+                  className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition ${
                     isCurrent
-                      ? 'bg-blue-600 text-white ring-4 ring-blue-100'
+                      ? 'bg-prune-600 text-white ring-4 ring-prune-100'
                       : isCompleted
                       ? 'bg-emerald-600 text-white'
-                      : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-700'
+                      : 'bg-neutral-100 text-neutral-500 group-hover:bg-prune-50 group-hover:text-prune-700'
                   }`}
                 >
                   {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                 </div>
                 <div className="text-left hidden md:block">
-                  <span className={`text-[10px] block uppercase font-bold tracking-wider ${isCurrent ? 'text-blue-600' : isCompleted ? 'text-emerald-700' : 'text-slate-400'}`}>
+                  <span className={`text-[10px] block uppercase font-bold tracking-wider ${isCurrent ? 'text-prune-600' : isCompleted ? 'text-emerald-700' : 'text-neutral-400'}`}>
                     Étape {step.id}
                   </span>
-                  <span className={`text-xs font-semibold ${isCurrent ? 'text-blue-900 font-bold' : isCompleted ? 'text-slate-800' : 'text-slate-500'}`}>
+                  <span className={`text-xs font-semibold ${isCurrent ? 'text-prune-900 font-bold' : isCompleted ? 'text-neutral-800' : 'text-neutral-500'}`}>
                     {step.label}
                   </span>
                 </div>
@@ -101,15 +101,15 @@ export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
             );
           })}
         </div>
-        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-4">
+        <div className="w-full bg-neutral-100 h-1 overflow-hidden mt-4">
           <div
-            className="bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500 h-full transition-all duration-300"
+            className="bg-prune-600 h-full transition-all duration-300"
             style={{ width: `${(stepIndex / (steps.length - 1)) * 100}%` }}
           />
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-xs">
+      <div className="bg-white border border-neutral-200 rounded-xl p-6 sm:p-8 shadow-xs">
         {currentStep === 0 && dossier && <StepSynthese dossier={dossier} />}
 
         {currentStep === 1 && (
@@ -172,13 +172,15 @@ export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
         )}
 
         {/* Navigation */}
-        <div className="mt-8 pt-6 border-t border-slate-200 flex items-center justify-between">
+        <div className="mt-8 pt-6 border-t border-neutral-200 flex items-center justify-between">
           <button
             type="button"
             onClick={() => goTo(steps[stepIndex - 1].id)}
             disabled={stepIndex === 0}
-            className={`px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition ${
-              stepIndex === 0 ? 'opacity-40 cursor-not-allowed text-slate-400 bg-slate-100' : 'text-slate-700 bg-slate-100 hover:bg-slate-200 cursor-pointer'
+            className={`px-5 py-2.5 rounded-full border-2 text-xs font-bold tracking-wide flex items-center gap-2 transition ${
+              stepIndex === 0
+                ? 'opacity-40 cursor-not-allowed text-neutral-400 border-neutral-200'
+                : 'text-neutral-700 border-neutral-300 hover:border-prune-600 hover:text-prune-700 cursor-pointer'
             }`}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -189,10 +191,10 @@ export const QuestionnaireWizard: React.FC<QuestionnaireWizardProps> = ({
             <button
               type="button"
               onClick={() => goTo(steps[stepIndex + 1].id)}
-              className={`px-6 py-2.5 rounded-lg text-xs font-semibold text-white transition flex items-center gap-2 shadow-sm cursor-pointer ${
+              className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wide transition flex items-center gap-2 shadow-sm cursor-pointer ${
                 currentStep === LAST_STEP - 1
-                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500'
-                  : 'bg-blue-600 hover:bg-blue-700'
+                  ? 'bg-safran-300 hover:bg-safran-200 text-neutral-900'
+                  : 'bg-prune-600 hover:bg-aubergine-600 text-white'
               }`}
             >
               <span>{currentStep === LAST_STEP - 1 ? 'Calculer la proposition de mesures' : `Continuer : ${steps[stepIndex + 1].label}`}</span>

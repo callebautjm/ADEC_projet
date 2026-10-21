@@ -83,18 +83,18 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-neutral-900/60 backdrop-blur-xs transition-opacity"
       role="dialog"
       aria-modal="true"
       aria-labelledby="salvezza-modal-title"
     >
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white rounded-2xl shadow-2xl border border-neutral-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         
         {/* En-tête Institutionnel */}
-        <div className="px-6 py-5 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white flex items-start justify-between relative border-b border-blue-800/50">
+        <div className="px-6 py-5 bg-prune-900 text-white flex items-start justify-between relative border-b border-prune-950">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase bg-blue-500/30 text-blue-200 border border-blue-400/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase bg-prune-500/30 text-prune-200 border border-prune-400/30">
                 Collectivité de Corse · Arrêté d'application
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
@@ -104,21 +104,21 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
             <h2 id="salvezza-modal-title" className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
               <span>FONDU DI SALVEZZA ECONOMICA TERRITURIALE</span>
             </h2>
-            <p className="text-sm text-blue-100/90 mt-1 font-normal">
+            <p className="text-sm text-prune-100/90 mt-1 font-normal">
               Fonds de Sauvegarde Économique Territoriale — Bonifications Volets « Économique » & « Emploi »
             </p>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Boutons bascule Tableau / Carte dans l'en-tête */}
-            <div className="flex items-center bg-blue-950/60 p-1 rounded-xl border border-blue-700/60 shadow-inner">
+            <div className="flex items-center bg-prune-950/60 p-1 rounded-xl border border-prune-700/60 shadow-inner">
               <button
                 type="button"
                 onClick={() => setViewMode('table')}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 ${
                   viewMode === 'table'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-blue-200 hover:text-white hover:bg-white/10'
+                    ? 'bg-prune-600 text-white shadow-xs'
+                    : 'text-prune-200 hover:text-white hover:bg-white/10'
                 }`}
                 title="Afficher la liste sous forme de tableau"
               >
@@ -131,7 +131,7 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 ${
                   viewMode === 'map'
                     ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-blue-200 hover:text-white hover:bg-white/10'
+                    : 'text-prune-200 hover:text-white hover:bg-white/10'
                 }`}
                 title="Afficher la carte interactive de Corse"
               >
@@ -145,7 +145,7 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-2 text-blue-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+              className="p-2 text-prune-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
               title="Fermer la fenêtre"
               aria-label="Fermer"
             >
@@ -155,15 +155,15 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
         </div>
 
         {/* Bannière explicative des bonifications réglementaires */}
-        <div className="bg-slate-50 border-b border-slate-200 px-6 py-3.5">
+        <div className="bg-neutral-50 border-b border-neutral-200 px-6 py-3.5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="bg-white p-2.5 rounded-xl border border-blue-100 shadow-2xs flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="bg-white p-2.5 rounded-xl border border-prune-100 shadow-2xs flex items-start gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-prune-100 text-prune-700 flex items-center justify-center shrink-0 mt-0.5">
                 <TrendingUp className="w-4 h-4" />
               </div>
               <div className="text-xs">
-                <span className="font-bold text-slate-900 block">Volet Économique</span>
-                <span className="text-slate-600 leading-relaxed">
+                <span className="font-bold text-neutral-900 block">Volet Économique</span>
+                <span className="text-neutral-600 leading-relaxed">
                   Bonification du taux de subvention & priorité d'octroi (*Impresi paisani*, modernisation, investissements productifs).
                 </span>
               </div>
@@ -174,8 +174,8 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
                 <Users className="w-4 h-4" />
               </div>
               <div className="text-xs">
-                <span className="font-bold text-slate-900 block">Volet Emploi (RIESCE)</span>
-                <span className="text-slate-600 leading-relaxed">
+                <span className="font-bold text-neutral-900 block">Volet Emploi (RIESCE)</span>
+                <span className="text-neutral-600 leading-relaxed">
                   Majoration financière pour chaque emploi pérenne créé et maintenu sur le territoire sous contrainte.
                 </span>
               </div>
@@ -186,8 +186,8 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
                 <Mountain className="w-4 h-4" />
               </div>
               <div className="text-xs">
-                <span className="font-bold text-slate-900 block">Critère Territorial Q4</span>
-                <span className="text-slate-600 leading-relaxed">
+                <span className="font-bold text-neutral-900 block">Critère Territorial Q4</span>
+                <span className="text-neutral-600 leading-relaxed">
                   Validation de plein droit du critère territorial d'aménagement de la montagne et ruralité (Délibération N° 21/177 AC).
                 </span>
               </div>
@@ -196,22 +196,22 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
         </div>
 
         {/* Barre d'outils, Filtres et Recherche */}
-        <div className="p-4 sm:p-5 border-b border-slate-200 bg-white space-y-3">
+        <div className="p-4 sm:p-5 border-b border-neutral-200 bg-white space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Barre de recherche */}
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Rechercher par nom de commune, nom corse (ex: Ghjuncaghju) ou code INSEE (ex: 2B047)..."
-                className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="w-full pl-10 pr-4 py-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-prune-500 focus:border-transparent transition"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400 hover:text-neutral-700"
                 >
                   Effacer
                 </button>
@@ -219,14 +219,14 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
             </div>
 
             {/* Filtre département */}
-            <div className="flex items-center gap-1.5 shrink-0 bg-slate-100 p-1 rounded-xl">
+            <div className="flex items-center gap-1.5 shrink-0 bg-neutral-100 p-1 rounded-xl">
               <button
                 type="button"
                 onClick={() => setSelectedDept('ALL')}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
                   selectedDept === 'ALL'
-                    ? 'bg-white text-blue-700 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-prune-700 shadow-2xs'
+                    : 'text-neutral-600 hover:text-neutral-900'
                 }`}
               >
                 Toute la Corse ({SALVEZZA_STATS.totalCommunes})
@@ -236,8 +236,8 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
                 onClick={() => setSelectedDept('2A')}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
                   selectedDept === '2A'
-                    ? 'bg-white text-blue-700 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-prune-700 shadow-2xs'
+                    : 'text-neutral-600 hover:text-neutral-900'
                 }`}
               >
                 2A Corse-du-Sud ({SALVEZZA_STATS.communes2A})
@@ -247,8 +247,8 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
                 onClick={() => setSelectedDept('2B')}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
                   selectedDept === '2B'
-                    ? 'bg-white text-blue-700 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-prune-700 shadow-2xs'
+                    : 'text-neutral-600 hover:text-neutral-900'
                 }`}
               >
                 2B Haute-Corse ({SALVEZZA_STATS.communes2B})
@@ -258,7 +258,7 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
 
           {/* Filtres secondaires : score de contrainte et altitude */}
           <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-            <span className="text-slate-500 font-medium flex items-center gap-1">
+            <span className="text-neutral-500 font-medium flex items-center gap-1">
               <Info className="w-3.5 h-3.5" /> Filtrer par contrainte :
             </span>
 
@@ -266,8 +266,8 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
               onClick={() => setSelectedScore('ALL')}
               className={`px-2.5 py-1 rounded-lg border font-medium transition ${
                 selectedScore === 'ALL'
-                  ? 'bg-blue-50 border-blue-300 text-blue-800'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                  ? 'bg-prune-50 border-prune-300 text-prune-800'
+                  : 'bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300'
               }`}
             >
               Tous scores
@@ -277,11 +277,11 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
               onClick={() => setSelectedScore('de 3 à 3,5')}
               className={`px-2.5 py-1 rounded-lg border font-medium transition flex items-center gap-1.5 ${
                 selectedScore === 'de 3 à 3,5'
-                  ? 'bg-sky-50 border-sky-300 text-sky-800 font-semibold'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                  ? 'bg-petrole-50 border-petrole-300 text-petrole-800 font-semibold'
+                  : 'bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300'
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-sky-500" />
+              <span className="w-2 h-2 rounded-full bg-petrole-500" />
               Score 3 à 3,5 ({SALVEZZA_STATS.contrainteBase3a35})
             </button>
 
@@ -290,7 +290,7 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
               className={`px-2.5 py-1 rounded-lg border font-medium transition flex items-center gap-1.5 ${
                 selectedScore === 'de 3,5 à 4'
                   ? 'bg-amber-50 border-amber-300 text-amber-800 font-semibold'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                  : 'bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300'
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-amber-500" />
@@ -302,21 +302,21 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
               className={`px-2.5 py-1 rounded-lg border font-medium transition flex items-center gap-1.5 ${
                 selectedScore === 'au dessus de 4'
                   ? 'bg-rose-50 border-rose-300 text-rose-800 font-semibold'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                  : 'bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300'
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-rose-500" />
               Score &gt; 4 ({SALVEZZA_STATS.contrainteSevereSup4})
             </button>
 
-            <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block" />
+            <div className="h-4 w-px bg-neutral-300 mx-1 hidden sm:block" />
 
             <button
               onClick={() => setAltitudeOnly(!altitudeOnly)}
               className={`px-2.5 py-1 rounded-lg border font-medium transition flex items-center gap-1.5 ${
                 altitudeOnly
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-semibold'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                  : 'bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300'
               }`}
             >
               <Mountain className="w-3.5 h-3.5 text-emerald-600" />
@@ -324,17 +324,17 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
             </button>
 
             <div className="ml-auto flex items-center gap-3">
-              <span className="text-slate-500 font-medium">
+              <span className="text-neutral-500 font-medium">
                 {filteredCommunes.length} commune{filteredCommunes.length > 1 ? 's' : ''} {viewMode === 'map' ? 'sur la carte' : 'affichée' + (filteredCommunes.length > 1 ? 's' : '')}
               </span>
-              <div className="flex items-center p-0.5 bg-slate-100 rounded-lg border border-slate-200">
+              <div className="flex items-center p-0.5 bg-neutral-100 rounded-lg border border-neutral-200">
                 <button
                   type="button"
                   onClick={() => setViewMode('table')}
                   className={`px-2.5 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 ${
                     viewMode === 'table'
-                      ? 'bg-white text-blue-700 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-prune-700 shadow-2xs font-bold'
+                      : 'text-neutral-600 hover:text-neutral-900'
                   }`}
                   title="Afficher la liste en tableau"
                 >
@@ -347,7 +347,7 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
                   className={`px-2.5 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 ${
                     viewMode === 'map'
                       ? 'bg-emerald-600 text-white shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
+                      : 'text-neutral-600 hover:text-neutral-900'
                   }`}
                   title="Afficher la carte de Corse"
                 >
@@ -361,7 +361,7 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
 
         {/* Vue Carte ou Vue Tableau */}
         {viewMode === 'map' ? (
-          <div className="flex-1 overflow-hidden p-0 bg-slate-100">
+          <div className="flex-1 overflow-hidden p-0 bg-neutral-100">
             <SalvezzaMap
               communes={filteredCommunes}
               selectedCommuneCode={selectedCommuneCode}
@@ -378,9 +378,9 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
           <div className="flex-1 overflow-y-auto px-6 py-4">
             {filteredCommunes.length === 0 ? (
               <div className="text-center py-12">
-                <MapPin className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-slate-700">Aucune commune ne correspond aux filtres appliqués</p>
-                <p className="text-xs text-slate-500 mt-1">Essayez de réinitialiser la recherche ou de changer les critères.</p>
+                <MapPin className="w-10 h-10 text-neutral-300 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-neutral-700">Aucune commune ne correspond aux filtres appliqués</p>
+                <p className="text-xs text-neutral-500 mt-1">Essayez de réinitialiser la recherche ou de changer les critères.</p>
                 <button
                   onClick={() => {
                     setSearchTerm('');
@@ -388,44 +388,44 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
                     setSelectedScore('ALL');
                     setAltitudeOnly(false);
                   }}
-                  className="mt-3 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold rounded-lg transition"
+                  className="mt-3 px-3 py-1.5 bg-prune-50 text-prune-700 hover:bg-prune-100 text-xs font-semibold rounded-lg transition"
                 >
                   Réinitialiser les filtres
                 </button>
               </div>
             ) : (
-              <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+              <div className="border border-neutral-200 rounded-xl overflow-hidden shadow-2xs">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider font-semibold border-b border-slate-200">
+                  <thead className="bg-neutral-50 text-neutral-700 uppercase tracking-wider font-semibold border-b border-neutral-200">
                     <tr>
                       <th 
                         scope="col" 
-                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition select-none"
+                        className="py-3 px-4 cursor-pointer hover:bg-neutral-100 transition select-none"
                         onClick={() => toggleSort('nom')}
                       >
                         <div className="flex items-center gap-1.5">
                           <span>Nom officiel & Nom Corse</span>
-                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                          <ArrowUpDown className="w-3 h-3 text-neutral-400" />
                         </div>
                       </th>
                       <th 
                         scope="col" 
-                        className="py-3 px-3 cursor-pointer hover:bg-slate-100 transition select-none"
+                        className="py-3 px-3 cursor-pointer hover:bg-neutral-100 transition select-none"
                         onClick={() => toggleSort('codeCommune')}
                       >
                         <div className="flex items-center gap-1.5">
                           <span>Code INSEE</span>
-                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                          <ArrowUpDown className="w-3 h-3 text-neutral-400" />
                         </div>
                       </th>
                       <th 
                         scope="col" 
-                        className="py-3 px-3 cursor-pointer hover:bg-slate-100 transition select-none"
+                        className="py-3 px-3 cursor-pointer hover:bg-neutral-100 transition select-none"
                         onClick={() => toggleSort('scoreContrainte')}
                       >
                         <div className="flex items-center gap-1.5">
                           <span>Score de contrainte</span>
-                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                          <ArrowUpDown className="w-3 h-3 text-neutral-400" />
                         </div>
                       </th>
                       <th scope="col" className="py-3 px-3">
@@ -436,30 +436,30 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 bg-white">
+                  <tbody className="divide-y divide-neutral-200 bg-white">
                     {filteredCommunes.map((c) => {
                       const isSelected = selectedCommuneCode && selectedCommuneCode.toUpperCase() === c.codeCommune.toUpperCase();
                       
                       return (
                         <tr 
                           key={c.codeCommune}
-                          className={`hover:bg-blue-50/40 transition-colors ${
-                            isSelected ? 'bg-blue-50/80 font-medium' : ''
+                          className={`hover:bg-prune-50/40 transition-colors ${
+                            isSelected ? 'bg-prune-50/80 font-medium' : ''
                           }`}
                         >
                           {/* Noms */}
                           <td className="py-2.5 px-4">
                             <div className="flex items-baseline gap-2">
-                              <span className="font-semibold text-slate-900 text-sm">{c.nom}</span>
-                              <span className="text-slate-500 italic text-xs font-serif">« {c.nomCorse} »</span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                              <span className="font-semibold text-neutral-900 text-sm">{c.nom}</span>
+                              <span className="text-neutral-500 italic text-xs font-serif">« {c.nomCorse} »</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600 border border-neutral-200">
                                 {c.departement}
                               </span>
                             </div>
                           </td>
 
                           {/* Code INSEE */}
-                          <td className="py-2.5 px-3 font-mono font-medium text-slate-700">
+                          <td className="py-2.5 px-3 font-mono font-medium text-neutral-700">
                             {c.codeCommune}
                           </td>
 
@@ -470,14 +470,14 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
                                 ? 'bg-rose-100 text-rose-800 border border-rose-200'
                                 : c.scoreContrainte === 'de 3,5 à 4'
                                 ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                : 'bg-sky-100 text-sky-800 border border-sky-200'
+                                : 'bg-petrole-100 text-petrole-800 border border-petrole-200'
                             }`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${
                                 c.scoreContrainte === 'au dessus de 4'
                                   ? 'bg-rose-600'
                                   : c.scoreContrainte === 'de 3,5 à 4'
                                   ? 'bg-amber-600'
-                                  : 'bg-sky-600'
+                                  : 'bg-petrole-600'
                               }`} />
                               {c.scoreContrainte}
                             </span>
@@ -491,7 +491,7 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
                                 OUI (&gt; 350 m)
                               </span>
                             ) : (
-                              <span className="text-slate-400 text-xs pl-2">—</span>
+                              <span className="text-neutral-400 text-xs pl-2">—</span>
                             )}
                           </td>
 
@@ -507,7 +507,7 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
                                 className={`px-3 py-1 text-xs font-semibold rounded-lg transition shadow-2xs inline-flex items-center gap-1.5 ${
                                   isSelected
                                     ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                                    : 'bg-prune-600 text-white hover:bg-prune-700'
                                 }`}
                               >
                                 {isSelected ? (
@@ -537,9 +537,9 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
         )}
 
         {/* Pied de page */}
-        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+        <div className="px-6 py-3.5 bg-neutral-50 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-500">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-700">Source officielle :</span>
+            <span className="font-semibold text-neutral-700">Source officielle :</span>
             <span>Collectivité de Corse / Délibération N° 21/177 AC · Fondu di Salvezza Economica Territuriale (230 communes)</span>
           </div>
 
@@ -547,11 +547,11 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
             <button
               type="button"
               onClick={() => setViewMode(viewMode === 'map' ? 'table' : 'map')}
-              className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold rounded-xl transition text-xs flex items-center gap-1.5"
+              className="px-3 py-2 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 font-semibold rounded-xl transition text-xs flex items-center gap-1.5"
             >
               {viewMode === 'map' ? (
                 <>
-                  <TableProperties className="w-3.5 h-3.5 text-blue-600" />
+                  <TableProperties className="w-3.5 h-3.5 text-prune-600" />
                   <span>Afficher en tableau</span>
                 </>
               ) : (
@@ -563,7 +563,7 @@ export const SalvezzaCommunesModal: React.FC<SalvezzaCommunesModalProps> = ({
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-xl transition text-xs"
+              className="px-4 py-2 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 font-semibold rounded-xl transition text-xs"
             >
               Fermer la fenêtre
             </button>

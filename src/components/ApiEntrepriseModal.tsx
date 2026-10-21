@@ -236,24 +236,24 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
   const displayTarget = `/v4/insee/sirene/etablissements/${cleanInput || '{siret}'}`;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-xl w-full flex flex-col shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-xl w-full flex flex-col shadow-2xl border border-neutral-200 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
         {/* Header commun */}
-        <div className="p-5 bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 text-white flex items-start justify-between gap-4 border-b border-blue-900/60">
+        <div className="p-5 bg-prune-900 text-white flex items-start justify-between gap-4 border-b border-prune-950">
           <div className="flex items-start gap-3">
             <div className={`p-2.5 rounded-xl shrink-0 mt-0.5 border ${
               isUnlocked
                 ? 'bg-emerald-950/80 text-emerald-400 border-emerald-700/60'
-                : 'bg-blue-900/60 text-sky-300 border-blue-700/60'
+                : 'bg-prune-900/60 text-petrole-300 border-prune-700/60'
             }`}>
               {isUnlocked ? <Unlock className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
             </div>
             <div>
               <div className="flex items-center gap-2 text-xs font-mono mb-0.5">
-                <span className={isUnlocked ? 'text-emerald-400 font-semibold' : 'text-sky-300'}>
+                <span className={isUnlocked ? 'text-emerald-400 font-semibold' : 'text-petrole-300'}>
                   entreprise.api.gouv.fr · API Entreprise v4
                 </span>
-                <span className="text-blue-500">|</span>
+                <span className="text-prune-500">|</span>
                 <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full border ${
                   isUnlocked
                     ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
@@ -265,7 +265,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
               <h2 className="text-lg font-bold tracking-tight text-white">
                 Configuration du Jeton API Entreprise
               </h2>
-              <p className="text-xs text-blue-200/80 mt-0.5 leading-relaxed">
+              <p className="text-xs text-prune-200/80 mt-0.5 leading-relaxed">
                 {isUnlocked
                   ? 'Gestion sécurisée du jeton Bearer et des habilitations officielles.'
                   : 'Accès restreint · Authentification requise pour toute consultation ou modification.'}
@@ -275,7 +275,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+            className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition"
             title="Fermer"
           >
             <X className="w-5 h-5" />
@@ -286,20 +286,20 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
         {!isUnlocked ? (
           <div className="p-6 sm:p-7 space-y-6">
             <div className="text-center space-y-2 max-w-md mx-auto">
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200 flex items-center justify-center text-blue-700 shadow-sm">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-prune-50 border border-prune-200 flex items-center justify-center text-prune-700 shadow-sm">
                 <Shield className="w-7 h-7" />
               </div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-neutral-900">
                 Accès Administrateur Restreint
               </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <p className="text-xs text-neutral-600 leading-relaxed">
                 Le jeton API Entreprise permet d’interroger directement les serveurs certifiés de la <strong>DGFIP</strong>, de l’<strong>URSSAF</strong>, d’<strong>Infogreffe</strong> et de l’<strong>INSEE</strong>. Sa modification est protégée par un mot de passe.
               </p>
             </div>
 
             <form onSubmit={handleUnlock} className="space-y-4 max-w-md mx-auto">
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
                   Mot de passe d'administration
                 </label>
                 <div className="relative">
@@ -312,12 +312,12 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                     }}
                     placeholder="Saisissez le mot de passe"
                     autoFocus
-                    className="w-full pl-3.5 pr-10 py-2.5 text-sm bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
+                    className="w-full pl-3.5 pr-10 py-2.5 text-sm bg-white border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-prune-600 font-medium"
                   />
                   <button
                     type="button"
                     onClick={() => setShowAdminPassword(!showAdminPassword)}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition"
+                    className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 transition"
                     title={showAdminPassword ? 'Masquer' : 'Afficher'}
                   >
                     {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -335,7 +335,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
               <div className="flex flex-col sm:flex-row gap-2 pt-1">
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 px-4 bg-prune-600 hover:bg-prune-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2"
                 >
                   <KeyRound className="w-4 h-4" />
                   <span>Déverrouiller l'accès au token</span>
@@ -343,31 +343,31 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
               </div>
 
               {/* Raccourci / Indication du mot de passe par défaut */}
-              <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl text-xs text-blue-950 space-y-1.5">
+              <div className="p-3 bg-prune-50/70 border border-prune-200/80 rounded-xl text-xs text-prune-950 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-[11px] text-blue-900">Mot de passe initial du simulateur :</span>
+                  <span className="font-semibold text-[11px] text-prune-900">Mot de passe initial du simulateur :</span>
                   <button
                     type="button"
                     onClick={() => {
                       setPasswordInput(DEFAULT_ADMIN_PASSWORD);
                       setPasswordError('');
                     }}
-                    className="text-[10px] font-bold text-blue-700 hover:text-blue-900 underline bg-white px-2 py-0.5 rounded border border-blue-200 transition"
+                    className="text-[10px] font-bold text-prune-700 hover:text-prune-900 underline bg-white px-2 py-0.5 rounded border border-prune-200 transition"
                   >
                     Insérer "{DEFAULT_ADMIN_PASSWORD}"
                   </button>
                 </div>
-                <p className="text-[11px] text-blue-800/90 leading-snug">
-                  Par défaut, le code est <code className="font-mono font-bold bg-white px-1.5 py-0.5 rounded text-blue-900 border border-blue-200">adec2026</code>. Vous pourrez le personnaliser une fois déverrouillé.
+                <p className="text-[11px] text-prune-800/90 leading-snug">
+                  Par défaut, le code est <code className="font-mono font-bold bg-white px-1.5 py-0.5 rounded text-prune-900 border border-prune-200">adec2026</code>. Vous pourrez le personnaliser une fois déverrouillé.
                 </p>
               </div>
             </form>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end -mx-6 -mb-6 sm:-mx-7 sm:-mb-7">
+            <div className="p-4 bg-neutral-50 border-t border-neutral-200 flex justify-end -mx-6 -mb-6 sm:-mx-7 sm:-mb-7">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition"
+                className="px-4 py-2 text-xs font-semibold text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-100 transition"
               >
                 Fermer
               </button>
@@ -376,9 +376,9 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
         ) : (
           /* ÉCRAN 2 : DÉVERROUILLÉ (MODIFICATION DU TOKEN & GESTION) */
           <>
-            <div className="p-6 space-y-5 text-xs text-slate-700 max-h-[75vh] overflow-y-auto">
+            <div className="p-6 space-y-5 text-xs text-neutral-700 max-h-[75vh] overflow-y-auto">
               {/* Barre de statut administrateur & Action de changement de mot de passe */}
-              <div className="p-3 bg-gradient-to-r from-emerald-50 via-teal-50/50 to-blue-50 border border-emerald-300 rounded-xl flex items-center justify-between flex-wrap gap-2">
+              <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   <div>
@@ -398,18 +398,18 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                       setIsChangingPassword(!isChangingPassword);
                       setPasswordChangeNotice(null);
                     }}
-                    className="text-[11px] font-semibold text-indigo-700 bg-white hover:bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-lg transition flex items-center gap-1 shadow-2xs"
+                    className="text-[11px] font-semibold text-aubergine-700 bg-white hover:bg-aubergine-50 border border-aubergine-200 px-2.5 py-1 rounded-lg transition flex items-center gap-1 shadow-2xs"
                   >
-                    <KeyRound className="w-3 h-3 text-indigo-600" />
+                    <KeyRound className="w-3 h-3 text-aubergine-600" />
                     <span>{isChangingPassword ? 'Masquer' : 'Changer le mot de passe'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={handleLock}
-                    className="text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg transition flex items-center gap-1 shadow-2xs"
+                    className="text-[11px] font-semibold text-neutral-700 bg-white hover:bg-neutral-100 border border-neutral-200 px-2.5 py-1 rounded-lg transition flex items-center gap-1 shadow-2xs"
                     title="Verrouiller à nouveau"
                   >
-                    <Lock className="w-3 h-3 text-slate-500" />
+                    <Lock className="w-3 h-3 text-neutral-500" />
                     <span>Verrouiller</span>
                   </button>
                 </div>
@@ -417,17 +417,17 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
 
               {/* Formulaire rétractable : Changement de mot de passe */}
               {isChangingPassword && (
-                <div className="p-4 bg-indigo-50/60 border border-indigo-200 rounded-xl space-y-3 animate-in fade-in duration-150">
+                <div className="p-4 bg-aubergine-50/60 border border-aubergine-200 rounded-xl space-y-3 animate-in fade-in duration-150">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-indigo-950 flex items-center gap-1.5">
-                      <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
+                    <span className="font-bold text-xs text-aubergine-950 flex items-center gap-1.5">
+                      <KeyRound className="w-3.5 h-3.5 text-aubergine-600" />
                       Modifier le mot de passe d'administration
                     </span>
                     {hasCustomAdminPassword() && (
                       <button
                         type="button"
                         onClick={handleResetPassword}
-                        className="text-[10px] font-semibold text-indigo-700 hover:text-indigo-900 underline flex items-center gap-1"
+                        className="text-[10px] font-semibold text-aubergine-700 hover:text-aubergine-900 underline flex items-center gap-1"
                         title="Rétablir 'adec2026'"
                       >
                         <RefreshCw className="w-3 h-3" />
@@ -438,7 +438,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div>
-                      <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">
+                      <label className="text-[10px] font-bold text-neutral-600 uppercase block mb-1">
                         Mot de passe actuel
                       </label>
                       <input
@@ -446,11 +446,11 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                         value={currentPasswordInput}
                         onChange={(e) => setCurrentPasswordInput(e.target.value)}
                         placeholder="Actuel"
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-indigo-600"
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-neutral-300 rounded-lg focus:ring-1 focus:ring-aubergine-600"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">
+                      <label className="text-[10px] font-bold text-neutral-600 uppercase block mb-1">
                         Nouveau mot de passe
                       </label>
                       <input
@@ -458,11 +458,11 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                         value={newPasswordInput}
                         onChange={(e) => setNewPasswordInput(e.target.value)}
                         placeholder="Nouveau (min. 4 car.)"
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-indigo-600"
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-neutral-300 rounded-lg focus:ring-1 focus:ring-aubergine-600"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">
+                      <label className="text-[10px] font-bold text-neutral-600 uppercase block mb-1">
                         Confirmer
                       </label>
                       <input
@@ -470,7 +470,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                         value={confirmPasswordInput}
                         onChange={(e) => setConfirmPasswordInput(e.target.value)}
                         placeholder="Confirmer"
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-indigo-600"
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-neutral-300 rounded-lg focus:ring-1 focus:ring-aubergine-600"
                       />
                     </div>
                   </div>
@@ -492,14 +492,14 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsChangingPassword(false)}
-                      className="px-3 py-1 bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-100"
+                      className="px-3 py-1 bg-white border border-neutral-300 text-neutral-700 text-xs font-medium rounded-lg hover:bg-neutral-100"
                     >
                       Annuler
                     </button>
                     <button
                       type="button"
                       onClick={handleChangePassword}
-                      className="px-3 py-1 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold rounded-lg shadow-2xs"
+                      className="px-3 py-1 bg-aubergine-700 hover:bg-aubergine-800 text-white text-xs font-bold rounded-lg shadow-2xs"
                     >
                       Valider le nouveau mot de passe
                     </button>
@@ -508,31 +508,31 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
               )}
 
               {/* Information box */}
-              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 leading-relaxed">
+              <div className="p-3.5 bg-neutral-50 border border-neutral-200 rounded-xl space-y-2 leading-relaxed">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
-                    <Lock className="w-3.5 h-3.5 text-slate-600" />
+                  <div className="flex items-center gap-1.5 font-bold text-neutral-900 text-xs">
+                    <Lock className="w-3.5 h-3.5 text-neutral-600" />
                     Habilitations & Traçabilité API Entreprise
                   </div>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded">
                     4 Administrations
                   </span>
                 </div>
-                <p className="text-slate-600 text-[11px]">
+                <p className="text-neutral-600 text-[11px]">
                   L’API Entreprise impose la transmission d’un jeton d’accès <code>Bearer</code> ainsi que du numéro <strong>SIRET (14 chiffres)</strong> de l'organisme demandeur (paramètre <code>recipient</code>). Les habilitations actives couvrent :
                 </p>
                 <div className="grid grid-cols-2 gap-1.5 text-[10px] pt-0.5">
-                  <div className="p-1.5 rounded bg-white border border-slate-200">
-                    <strong className="text-indigo-700 block">DGFIP :</strong> Attestation fiscale, CA (3 exercices) & Liasses
+                  <div className="p-1.5 rounded bg-white border border-neutral-200">
+                    <strong className="text-aubergine-700 block">DGFIP :</strong> Attestation fiscale, CA (3 exercices) & Liasses
                   </div>
-                  <div className="p-1.5 rounded bg-white border border-slate-200">
+                  <div className="p-1.5 rounded bg-white border border-neutral-200">
                     <strong className="text-emerald-700 block">URSSAF :</strong> Attestation de vigilance & cotisations
                   </div>
-                  <div className="p-1.5 rounded bg-white border border-slate-200">
-                    <strong className="text-violet-700 block">INPI · RNE :</strong> Mandataires sociaux & dirigeants d'entreprise
+                  <div className="p-1.5 rounded bg-white border border-neutral-200">
+                    <strong className="text-aubergine-700 block">INPI · RNE :</strong> Mandataires sociaux & dirigeants d'entreprise
                   </div>
-                  <div className="p-1.5 rounded bg-white border border-slate-200">
-                    <strong className="text-sky-700 block">INSEE Sirene :</strong> Établissements (dont non-diffusibles)
+                  <div className="p-1.5 rounded bg-white border border-neutral-200">
+                    <strong className="text-petrole-700 block">INSEE Sirene :</strong> Établissements (dont non-diffusibles)
                   </div>
                 </div>
                 <div className="pt-1">
@@ -540,7 +540,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                     href="https://entreprise.api.gouv.fr"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sky-600 hover:text-sky-800 font-semibold inline-flex items-center gap-1 text-[11px]"
+                    className="text-petrole-600 hover:text-petrole-800 font-semibold inline-flex items-center gap-1 text-[11px]"
                   >
                     Obtenir ou vérifier les scopes sur le portail entreprise.api.gouv.fr
                     <ExternalLink className="w-3 h-3" />
@@ -551,7 +551,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
               {/* Champ d'édition du Token */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700">
                     Jeton Bearer API Entreprise
                   </label>
                   {token.trim() && (
@@ -568,12 +568,12 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                     placeholder="Ex: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    className="w-full pl-3.5 pr-10 py-2.5 text-xs font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition"
+                    className="w-full pl-3.5 pr-10 py-2.5 text-xs font-mono bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-600 transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowToken(!showToken)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition"
+                    className="absolute right-3 top-2.5 text-neutral-400 hover:text-neutral-600 transition"
                     title={showToken ? 'Masquer le token' : 'Afficher le token'}
                   >
                     {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -590,12 +590,12 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
 
               {/* Recipient SIRET input */}
               <div className="space-y-1.5">
-                <label className="block font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center justify-between">
+                <label className="block font-bold text-neutral-900 uppercase tracking-wider text-[11px] flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
-                    <Building className="w-3.5 h-3.5 text-slate-500" />
+                    <Building className="w-3.5 h-3.5 text-neutral-500" />
                     SIRET Organisme Demandeur (paramètre `recipient`)
                   </span>
-                  <span className="text-[10px] text-slate-500 font-mono">14 chiffres</span>
+                  <span className="text-[10px] text-neutral-500 font-mono">14 chiffres</span>
                 </label>
                 <div className="relative">
                   <input
@@ -611,7 +611,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                       setRecipientSiret(cleanSiret(text));
                     }}
                     placeholder="Ex: 20007695800012 (Collectivité de Corse) ou 39217556800022 (ADEC)"
-                    className="w-full px-3.5 pr-20 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-xs font-mono"
+                    className="w-full px-3.5 pr-20 py-2 bg-white border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-prune-600 text-xs font-mono"
                   />
                   <div className="absolute right-2.5 top-2 flex items-center gap-1.5">
                     {recipientSiret && (
@@ -619,7 +619,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                         type="button"
                         onClick={() => setRecipientSiret('')}
                         title="Effacer"
-                        className="p-0.5 text-slate-400 hover:text-slate-600 rounded transition text-xs"
+                        className="p-0.5 text-neutral-400 hover:text-neutral-600 rounded transition text-xs"
                       >
                         ✕
                       </button>
@@ -627,21 +627,21 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                     <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
                       (recipientSiret || '').length === 14
                         ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-slate-100 text-slate-500'
+                        : 'bg-neutral-100 text-neutral-500'
                     }`}>
                       {(recipientSiret || '').length}/14
                     </span>
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-neutral-500">
                   Configuré par défaut sur le SIRET valide du siège de la Collectivité de Corse (<code>20007695800012</code>). Vous pouvez aussi renseigner le SIRET de l’ADEC (<code>39217556800022</code>) ou le SIRET rattaché à votre compte API Entreprise.
                 </p>
               </div>
 
               {/* Zone de test */}
-              <div className="p-4 bg-slate-50/80 border border-slate-200 rounded-xl space-y-3">
+              <div className="p-4 bg-neutral-50/80 border border-neutral-200 rounded-xl space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="block font-bold text-slate-800 text-[11px] uppercase tracking-wider">
+                  <span className="block font-bold text-neutral-800 text-[11px] uppercase tracking-wider">
                     Tester le jeton sur un numéro SIRET (14 chiffres)
                   </span>
                   <span className="text-[10px] text-emerald-700 font-mono font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
@@ -664,7 +664,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                         setTestIdentifier(cleanSiret(text));
                       }}
                       placeholder="Numéro SIRET (14 chiffres)"
-                      className="w-full px-3 pr-20 py-2 text-xs font-mono bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-600 font-bold"
+                      className="w-full px-3 pr-20 py-2 text-xs font-mono bg-white border border-neutral-300 rounded-lg focus:ring-1 focus:ring-prune-600 font-bold"
                     />
                     <div className="absolute right-2.5 top-2 flex items-center gap-1.5">
                       {testIdentifier && (
@@ -672,7 +672,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                           type="button"
                           onClick={() => setTestIdentifier('')}
                           title="Effacer"
-                          className="p-0.5 text-slate-400 hover:text-slate-600 rounded transition text-xs"
+                          className="p-0.5 text-neutral-400 hover:text-neutral-600 rounded transition text-xs"
                         >
                           ✕
                         </button>
@@ -680,7 +680,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                       <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
                         (testIdentifier || '').length === 14
                           ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-slate-100 text-slate-500'
+                          : 'bg-neutral-100 text-neutral-500'
                       }`}>
                         {(testIdentifier || '').length}/14
                       </span>
@@ -690,7 +690,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                     type="button"
                     onClick={handleTestToken}
                     disabled={isTesting || !testIdentifier.trim()}
-                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition disabled:opacity-50 shrink-0 flex items-center gap-1.5 shadow-2xs"
+                    className="px-3.5 py-2 bg-prune-600 hover:bg-prune-700 text-white font-semibold text-xs rounded-lg transition disabled:opacity-50 shrink-0 flex items-center gap-1.5 shadow-2xs"
                   >
                     {isTesting ? (
                       <>
@@ -699,7 +699,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-3.5 h-3.5 text-sky-300" />
+                        <Sparkles className="w-3.5 h-3.5 text-petrole-300" />
                         Tester via l'API v4
                       </>
                     )}
@@ -708,18 +708,18 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
 
                 {/* Boutons d'exemples rapides */}
                 <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                  <span className="text-[10px] text-slate-500 font-semibold mr-1">Exemples :</span>
+                  <span className="text-[10px] text-neutral-500 font-semibold mr-1">Exemples :</span>
                   <button
                     type="button"
                     onClick={() => setTestIdentifier('40001662200013')}
-                    className="text-[10px] font-mono px-2 py-1 bg-white hover:bg-blue-50 text-slate-700 rounded border border-slate-200 transition"
+                    className="text-[10px] font-mono px-2 py-1 bg-white hover:bg-prune-50 text-neutral-700 rounded border border-neutral-200 transition"
                   >
                     Brasserie Pietra (40001662200013)
                   </button>
                   <button
                     type="button"
                     onClick={() => setTestIdentifier('39217556800022')}
-                    className="text-[10px] font-mono px-2 py-1 bg-white hover:bg-blue-50 text-slate-700 rounded border border-slate-200 transition"
+                    className="text-[10px] font-mono px-2 py-1 bg-white hover:bg-prune-50 text-neutral-700 rounded border border-neutral-200 transition"
                   >
                     ADEC Ajaccio (39217556800022)
                   </button>
@@ -750,7 +750,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                       <span>{testResult.message}</span>
                     </div>
                     {testResult.source && (
-                      <p className="text-[10px] text-slate-500 font-mono">
+                      <p className="text-[10px] text-neutral-500 font-mono">
                         Source de réponse : {testResult.source}
                       </p>
                     )}
@@ -764,39 +764,39 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
               </div>
 
               {/* Inspecteur de la Requête HTTP envoyée */}
-              <div className="p-4 bg-slate-900 text-slate-200 rounded-xl space-y-2 border border-slate-800">
+              <div className="p-4 bg-neutral-900 text-neutral-200 rounded-xl space-y-2 border border-neutral-800">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-[11px] font-mono font-bold text-petrole-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Server className="w-3.5 h-3.5" />
                     Requête HTTP exacte transmise à l'API Entreprise (v4)
                   </span>
-                  <span className="text-[10px] bg-slate-800 text-emerald-400 px-2 py-0.5 rounded font-mono font-bold border border-slate-700">
+                  <span className="text-[10px] bg-neutral-800 text-emerald-400 px-2 py-0.5 rounded font-mono font-bold border border-neutral-700">
                     v4 INSEE Sirene
                   </span>
                 </div>
 
-                <div className="bg-slate-950 p-3 rounded-lg font-mono text-[11px] text-slate-300 overflow-x-auto space-y-1.5 border border-slate-800">
+                <div className="bg-neutral-950 p-3 rounded-lg font-mono text-[11px] text-neutral-300 overflow-x-auto space-y-1.5 border border-neutral-800">
                   <div className="text-emerald-400 font-bold break-all">
                     GET {displayTarget}?context=Instruction%20dossier%20aide&recipient={cleanRecipient}&object=Diagnostic%20ADEC%202026 HTTP/1.1
                   </div>
-                  <div className="text-slate-400">Host: entreprise.api.gouv.fr</div>
-                  <div className="text-slate-400">
+                  <div className="text-neutral-400">Host: entreprise.api.gouv.fr</div>
+                  <div className="text-neutral-400">
                     Authorization: Bearer {token.trim() ? (showToken ? token.trim() : `${token.trim().slice(0, 8)}...${token.trim().slice(-6)}`) : '<VOTRE_TOKEN_API_ENTREPRISE>'}
                   </div>
-                  <div className="text-slate-400">User-Agent: ADEC-Corse-Diagnostic/1.0 (https://www.adec.corsica)</div>
-                  <div className="text-slate-400">Accept: application/json</div>
+                  <div className="text-neutral-400">User-Agent: ADEC-Corse-Diagnostic/1.0 (https://www.adec.corsica)</div>
+                  <div className="text-neutral-400">Accept: application/json</div>
                 </div>
 
-                <p className="text-[10px] text-slate-400 leading-relaxed">
+                <p className="text-[10px] text-neutral-400 leading-relaxed">
                   <strong>Point d'accès v4 actif :</strong><br />
-                  • Point d'accès officiel : <code className="text-sky-300">https://entreprise.api.gouv.fr/v4/insee/sirene/etablissements/&#123;siret&#125;</code><br />
-                  • Paramètre <code className="text-sky-300">recipient</code> (SIRET demandeur) : <code>{cleanRecipient}</code>
+                  • Point d'accès officiel : <code className="text-petrole-300">https://entreprise.api.gouv.fr/v4/insee/sirene/etablissements/&#123;siret&#125;</code><br />
+                  • Paramètre <code className="text-petrole-300">recipient</code> (SIRET demandeur) : <code>{cleanRecipient}</code>
                 </p>
               </div>
             </div>
 
             {/* Footer déverrouillé */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+            <div className="p-4 bg-neutral-50 border-t border-neutral-200 flex items-center justify-between gap-3">
               {isConfirmingClear ? (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-red-700 font-medium">Confirmer la suppression du jeton ?</span>
@@ -810,7 +810,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsConfirmingClear(false)}
-                    className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs transition"
+                    className="px-2 py-1 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-lg text-xs transition"
                   >
                     Annuler
                   </button>
@@ -829,14 +829,14 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition"
+                  className="px-4 py-2 text-xs font-semibold text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-100 transition"
                 >
                   Fermer
                 </button>
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="px-4 py-2 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-xs"
+                  className="px-4 py-2 text-xs font-bold text-white bg-prune-600 rounded-lg hover:bg-prune-700 transition shadow-xs"
                 >
                   Enregistrer les paramètres
                 </button>

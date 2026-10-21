@@ -12,9 +12,9 @@ import { ATTESTATIONS_REGISTRY, downloadCertificateFile } from '../../utils/comp
 import { getOfficialRneDownloadUrl } from '../../utils/rneDownloader';
 import { ComplianceRow } from '../Questionnaire/ComplianceRow';
 
-export const primaryActionClass = 'inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[11px] font-semibold transition shadow-2xs cursor-pointer';
-export const secondaryActionClass = 'inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-md text-[11px] font-semibold transition cursor-pointer';
-const disabledActionClass = 'inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[11px] font-semibold cursor-not-allowed';
+export const primaryActionClass = 'inline-flex items-center gap-1 px-2.5 py-1.5 bg-prune-600 hover:bg-prune-700 text-white rounded-md text-[11px] font-semibold transition shadow-2xs cursor-pointer';
+export const secondaryActionClass = 'inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-neutral-50 text-neutral-700 border border-neutral-200 rounded-md text-[11px] font-semibold transition cursor-pointer';
+const disabledActionClass = 'inline-flex items-center gap-1 px-2.5 py-1.5 bg-neutral-100 text-neutral-400 border border-neutral-200 rounded-md text-[11px] font-semibold cursor-not-allowed';
 
 /** Mandataires saisis, sinon ceux remontés par les registres */
 export function getCurrentMandataires(data: CompanyProfile): MandataireSocial[] {
@@ -103,7 +103,7 @@ export const AttestationsList: React.FC<AttestationsListProps> = ({
       )}
 
       <div>
-        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+        <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider flex items-center gap-1.5">
           <ShieldCheck className="w-4 h-4 text-emerald-600" />
           <span>Conformité & justificatifs</span>
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border normal-case tracking-normal ${
@@ -114,12 +114,12 @@ export const AttestationsList: React.FC<AttestationsListProps> = ({
             {verifiedCount}/4 pièces vérifiées
           </span>
         </h4>
-        <p className="text-[11px] text-slate-500 mt-0.5">
+        <p className="text-[11px] text-neutral-500 mt-0.5">
           Pièces exigées par l'ADEC pour l'instruction et le versement des aides.
         </p>
       </div>
 
-      <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 bg-white">
+      <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-100 bg-white">
         <ComplianceRow
           icon={<Building2 className="w-3.5 h-3.5" />}
           title="Immatriculation RNE"
@@ -152,13 +152,13 @@ export const AttestationsList: React.FC<AttestationsListProps> = ({
             <div className="md:pl-[15.75rem] text-[11px]">
               <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-900 space-y-1">
                 <p><strong>Extrait RNE indisponible auprès de l’INPI.</strong> {rnePdfError}</p>
-                <p className="text-slate-700">
+                <p className="text-neutral-700">
                   Réessayez dans quelques minutes, ou ouvrez le{' '}
                   <a
                     href={getOfficialRneDownloadUrl(activeSiren)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-semibold text-blue-700 underline hover:text-blue-900"
+                    className="font-semibold text-prune-700 underline hover:text-prune-900"
                   >
                     justificatif d’immatriculation public (Annuaire des Entreprises)
                   </a>

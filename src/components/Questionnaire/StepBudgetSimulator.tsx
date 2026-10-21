@@ -39,12 +39,12 @@ export const StepBudgetSimulator: React.FC<StepBudgetSimulatorProps> = ({
   return (
     <div className="space-y-6">
       {!embedded && (
-        <div className="border-b border-slate-200 pb-4">
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Calculator className="w-5 h-5 text-slate-700" />
+        <div className="border-b border-neutral-200 pb-4">
+          <h2 className="text-xl font-bold text-neutral-900 tracking-tight flex items-center gap-2">
+            <Calculator className="w-5 h-5 text-neutral-700" />
             5. Budget Prévisionnel du Projet & Simulateur de Dépenses
           </h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-neutral-500 mt-1">
             Renseignez le montant prévisionnel hors taxes des investissements envisagés pour calculer l’assiette éligible et les taux d’intervention.
           </p>
         </div>
@@ -52,9 +52,9 @@ export const StepBudgetSimulator: React.FC<StepBudgetSimulatorProps> = ({
 
       {/* Budget Global HT (intégré à l’étape Projet : le total vient du tableau des dépenses) */}
       {!embedded && (
-        <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white rounded-xl p-5 shadow-sm space-y-4 border border-blue-900/60">
+        <div className="bg-prune-900 text-white rounded-xl p-5 shadow-sm space-y-4 border border-prune-950">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <label className="text-xs font-bold tracking-wider text-blue-200 uppercase">
+            <label className="text-xs font-bold tracking-wider text-prune-200 uppercase">
               Montant total prévisionnel du projet d’investissement
             </label>
             <span className="text-xs font-mono text-emerald-400 font-semibold bg-emerald-950/70 border border-emerald-800/80 px-2.5 py-0.5 rounded-full">
@@ -70,14 +70,14 @@ export const StepBudgetSimulator: React.FC<StepBudgetSimulatorProps> = ({
               value={data.totalEstimatedBudgetHT || ''}
               onChange={(e) => onChange({ totalEstimatedBudgetHT: Math.max(0, parseFloat(e.target.value) || 0) })}
               placeholder="0"
-              className="w-full bg-slate-800/90 border border-blue-800/70 text-white text-2xl font-bold font-mono px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+              className="w-full bg-neutral-800/90 border border-prune-800/70 text-white text-2xl font-bold font-mono px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-400 transition"
             />
-            <span className="absolute right-4 top-3.5 text-lg font-mono text-blue-300 font-bold">
+            <span className="absolute right-4 top-3.5 text-lg font-mono text-prune-300 font-bold">
               € HT
             </span>
           </div>
   
-          <div className="text-xs text-blue-200/80 flex items-center gap-2">
+          <div className="text-xs text-prune-200/80 flex items-center gap-2">
             <Euro className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>
               Règle générale ADEC : Les dépenses doivent être présentées hors taxes (HT) pour les assujettis à la TVA. Les dépenses engagées avant la date de dépôt sont formellement inéligibles.
@@ -88,17 +88,17 @@ export const StepBudgetSimulator: React.FC<StepBudgetSimulatorProps> = ({
 
       {/* Prise en compte des assurances pour Sinistre (Rinascita) */}
       {hasSinistre && (
-        <div className="p-4 bg-sky-50 border border-sky-200 rounded-xl space-y-3">
-          <div className="flex items-center gap-2 text-sky-950 font-bold text-sm">
-            <ShieldCheck className="w-5 h-5 text-sky-700 shrink-0" />
+        <div className="p-4 bg-petrole-50 border border-petrole-200 rounded-xl space-y-3">
+          <div className="flex items-center gap-2 text-petrole-950 font-bold text-sm">
+            <ShieldCheck className="w-5 h-5 text-petrole-700 shrink-0" />
             Mesure Rinascita : Déduction stricte des indemnités d’assurance (Non-surcompensation)
           </div>
-          <p className="text-xs text-sky-900 leading-relaxed">
+          <p className="text-xs text-petrole-900 leading-relaxed">
             Conformément au point 11 du règlement Rinascita, les dépenses éligibles sont retenues <strong>nettes de toute indemnisation d’assurance versée ou à verser</strong>, ainsi que de toute autre compensation publique ou privée.
           </p>
 
           <div className="max-w-md">
-            <label className="block text-xs font-semibold text-sky-950 mb-1">
+            <label className="block text-xs font-semibold text-petrole-950 mb-1">
               Montant des indemnités d’assurance perçues ou à percevoir (€)
             </label>
             <input
@@ -106,7 +106,7 @@ export const StepBudgetSimulator: React.FC<StepBudgetSimulatorProps> = ({
               min="0"
               value={data.insuranceCompensationAmount || 0}
               onChange={(e) => onChange({ insuranceCompensationAmount: Math.max(0, parseFloat(e.target.value) || 0) })}
-              className="w-full px-3 py-2 text-sm bg-white border border-sky-300 rounded-lg font-mono focus:ring-1 focus:ring-sky-900"
+              className="w-full px-3 py-2 text-sm bg-white border border-petrole-300 rounded-lg font-mono focus:ring-1 focus:ring-petrole-900"
             />
           </div>
         </div>
@@ -184,11 +184,11 @@ export const StepBudgetSimulator: React.FC<StepBudgetSimulatorProps> = ({
 
       {/* Conditions Reprise / Transmission */}
       {hasReprise && (
-        <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl space-y-3">
-          <div className="text-purple-950 font-bold text-sm">
+        <div className="p-4 bg-aubergine-50 border border-aubergine-200 rounded-xl space-y-3">
+          <div className="text-aubergine-950 font-bold text-sm">
             Conditions d'éligibilité strictes à la Reprise-Transmission (Impresa Sì)
           </div>
-          <ul className="text-xs text-purple-900 space-y-1.5 list-disc pl-4">
+          <ul className="text-xs text-aubergine-900 space-y-1.5 list-disc pl-4">
             <li>Le repreneur doit détenir la <strong>majorité du capital</strong> à l'issue de l'opération.</li>
             <li>L’aide est conditionnée à l’intervention d’un partenaire bancaire ou outil financier.</li>
             <li>L’entreprise cible doit avoir au moins 12 mois d’existence officielle.</li>
@@ -198,12 +198,12 @@ export const StepBudgetSimulator: React.FC<StepBudgetSimulatorProps> = ({
           </ul>
 
           <div className="flex items-center gap-2 pt-2">
-            <label className="flex items-center gap-2 text-xs text-purple-950 cursor-pointer">
+            <label className="flex items-center gap-2 text-xs text-aubergine-950 cursor-pointer">
               <input
                 type="checkbox"
                 checked={data.hasBankPartnerCommitted ?? false}
                 onChange={(e) => onChange({ hasBankPartnerCommitted: e.target.checked })}
-                className="w-4 h-4 text-purple-900 rounded"
+                className="w-4 h-4 text-aubergine-900 rounded"
               />
               <span className="font-semibold">Partenaire bancaire ou outil financier déjà engagé sur le dossier</span>
             </label>
@@ -212,11 +212,11 @@ export const StepBudgetSimulator: React.FC<StepBudgetSimulatorProps> = ({
       )}
 
       {/* Rappel d'encadrement des seuils */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-600 space-y-2">
-        <span className="font-semibold text-slate-800 uppercase tracking-wider block">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4 text-xs text-neutral-600 space-y-2">
+        <span className="font-semibold text-neutral-800 uppercase tracking-wider block">
           Plafonds & Seuils d'intervention de l'ADEC
         </span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-neutral-700">
           <div>
             • <strong>Seuil plancher d’aide :</strong> 5 000 € (les dossiers générant une aide inférieure sont irrecevables).
           </div>

@@ -12,6 +12,8 @@ import { DatabaseManagerView } from './components/DatabaseManager/DatabaseManage
 import { HomePage } from './components/Home/HomePage';
 import { AttestationsPage } from './components/Attestations/AttestationsPage';
 import { ProjectSheetPreloader } from './components/Dossier/ProjectSheetPreloader';
+import { PageHero } from './components/Layout/PageHero';
+import { Footer } from './components/Layout/Footer';
 import { CompanyProfile, FullQuestionnaireState } from './types';
 import { AnalyseFicheProjetResponse } from './types/ficheProjet';
 import { AppPage, APP_PAGES } from './types/navigation';
@@ -134,7 +136,7 @@ const MainAppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col font-sans">
       <Header
         activePage={activePage}
         onNavigate={navigate}
@@ -186,18 +188,12 @@ const MainAppContent: React.FC = () => {
         {activePage === 'guide' && <DocumentaryExplorerView />}
 
         {activePage === 'simulation' && (
-          <div className="space-y-6">
-            {/* Context Banner : sobre, institutionnel et aéré */}
-            <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 text-white border-b border-blue-900/60 shadow-xs">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                  Simulation à partir de la fiche projet
-                </h1>
-                <p className="text-xs sm:text-sm text-blue-100/80 mt-1 max-w-3xl leading-relaxed">
-                  Déposez le PDF de la fiche projet ADEC : le simulateur est pré-rempli, vérifie les critères d'accès et calcule la proposition de mesures.
-                </p>
-              </div>
-            </div>
+          <div>
+            <PageHero
+              eyebrow="Simulateur & diagnostic d'éligibilité"
+              title="Simulation à partir de la fiche projet"
+              description="Déposez le PDF de la fiche projet ADEC : le simulateur est pré-rempli, vérifie les critères d'accès et calcule la proposition de mesures."
+            />
 
             {dossier || isManualSimulation ? (
               <QuestionnaireWizard
@@ -209,14 +205,14 @@ const MainAppContent: React.FC = () => {
                 onRemoveDossier={handleResetQuestionnaire}
               />
             ) : (
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-3">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-3">
                 <ProjectSheetPreloader dossier={null} onFicheAnalysee={handleFicheAnalysee} onRemoveDossier={handleResetQuestionnaire} />
-                <p className="text-xs text-slate-500 text-center">
+                <p className="text-xs text-neutral-500 text-center">
                   Pas de fiche projet ?{' '}
                   <button
                     type="button"
                     onClick={() => setIsManualSimulation(true)}
-                    className="font-semibold text-blue-700 underline hover:text-blue-900 cursor-pointer"
+                    className="font-semibold text-prune-700 underline hover:text-prune-900 cursor-pointer"
                   >
                     Saisir la simulation manuellement
                   </button>
@@ -229,29 +225,7 @@ const MainAppContent: React.FC = () => {
         {activePage === 'textes' && <DatabaseManagerView />}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6 mt-12 text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800">ADEC Corse Aides 2026</span>
-            <span>·</span>
-            <span>Outil d’aide à la décision conforme aux délibérations territoriales</span>
-          </div>
-
-          <div className="flex items-center gap-4 text-[11px]">
-            <a
-              href="https://www.adec.corsica"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-slate-600 hover:text-slate-900 underline"
-            >
-              Portail Officiel ADEC
-            </a>
-            <span>·</span>
-            <span>Moteur d’analyse documentaire extensible</span>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

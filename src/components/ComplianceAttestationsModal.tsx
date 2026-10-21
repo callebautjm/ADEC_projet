@@ -154,7 +154,7 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
         <div>
           <div className="flex items-center gap-1.5 mb-1">
             <span className="w-2.5 h-6 bg-[#000091] inline-block rounded-xs" />
-            <span className="w-2.5 h-6 bg-white border border-slate-300 inline-block rounded-xs" />
+            <span className="w-2.5 h-6 bg-white border border-neutral-300 inline-block rounded-xs" />
             <span className="w-2.5 h-6 bg-[#e1000f] inline-block rounded-xs" />
             <div className="ml-1 leading-none">
               <div className="text-[10px] font-black uppercase text-[#000091] tracking-wider">
@@ -165,18 +165,18 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
               </div>
             </div>
           </div>
-          <div className="text-[10px] text-slate-700 mt-1">
+          <div className="text-[10px] text-neutral-700 mt-1">
             <div>{authority}</div>
-            <strong className="text-slate-900">{subAuthority}</strong>
+            <strong className="text-neutral-900">{subAuthority}</strong>
           </div>
         </div>
 
         <div className="text-right">
-          <div className="inline-block px-2.5 py-1 bg-slate-100 border border-slate-300 rounded font-mono text-[10px] font-bold text-slate-800">
+          <div className="inline-block px-2.5 py-1 bg-neutral-100 border border-neutral-300 rounded font-mono text-[10px] font-bold text-neutral-800">
             Réf. : {refCode}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">
-            Délivrée le <strong className="text-slate-700">{date}</strong> à {hour}
+          <div className="text-[10px] text-neutral-500 mt-1">
+            Délivrée le <strong className="text-neutral-700">{date}</strong> à {hour}
           </div>
           <div className="text-[10px] font-bold text-emerald-700 mt-0.5 flex items-center justify-end gap-1">
             <Check className="w-3 h-3 text-emerald-600" />
@@ -189,8 +189,8 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
 
   // Sceau électronique commun
   const renderSeal = (authorityName: string, serviceTitle: string, hashRef: string, qrSub: string, portalUrl: string) => (
-    <div className="mt-5 p-3 rounded-lg border border-dashed border-slate-300 bg-slate-50/80 flex items-center justify-between gap-3 flex-wrap">
-      <div className="text-[10px] text-slate-600 space-y-0.5 max-w-lg">
+    <div className="mt-5 p-3 rounded-lg border border-dashed border-neutral-300 bg-neutral-50/80 flex items-center justify-between gap-3 flex-wrap">
+      <div className="text-[10px] text-neutral-600 space-y-0.5 max-w-lg">
         <div className="flex items-center gap-1.5 font-bold text-[#000091]">
           <Lock className="w-3 h-3" />
           <span>CERTIFICATION ÉLECTRONIQUE RÉGALIENNE ({authorityName})</span>
@@ -198,32 +198,32 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
         <p className="leading-relaxed">
           Attestation émise par interconnexion directe avec {serviceTitle}. Conforme aux exigences d'instruction des aides économiques régionales de l'ADEC.
         </p>
-        <div className="font-mono text-[9px] text-slate-500 font-bold">
+        <div className="font-mono text-[9px] text-neutral-500 font-bold">
           Empreinte numérique : SHA256:{hashRef}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 border-l border-dashed border-slate-300 pl-3">
-        <div className="w-12 h-12 bg-white border border-slate-200 rounded p-1 flex flex-col items-center justify-center text-center shadow-2xs">
-          <QrCode className="w-8 h-8 text-slate-800" />
+      <div className="flex items-center gap-2 border-l border-dashed border-neutral-300 pl-3">
+        <div className="w-12 h-12 bg-white border border-neutral-200 rounded p-1 flex flex-col items-center justify-center text-center shadow-2xs">
+          <QrCode className="w-8 h-8 text-neutral-800" />
         </div>
-        <div className="text-[9px] leading-tight text-slate-600 font-mono">
+        <div className="text-[9px] leading-tight text-neutral-600 font-mono">
           <div className="font-bold text-[#000091]">VÉRIFICATION</div>
           <div>{portalUrl}</div>
-          <div className="text-slate-800 font-bold">{siren}</div>
+          <div className="text-neutral-800 font-bold">{siren}</div>
         </div>
       </div>
     </div>
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-neutral-950/80 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-neutral-900 border border-neutral-700 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh]">
         
         {/* Header de la modale */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+        <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-950/80">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+            <div className="w-10 h-10 rounded-xl bg-prune-500/10 border border-prune-500/30 flex items-center justify-center text-prune-400">
               <ShieldCheck className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
@@ -235,8 +235,8 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                   4/4 Certifiées
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                {d.name} · SIREN : <span className="font-mono font-bold text-slate-300">{siren}</span> · Justificatifs régalienne d'État pour l'ADEC
+              <p className="text-xs text-neutral-400">
+                {d.name} · SIREN : <span className="font-mono font-bold text-neutral-300">{siren}</span> · Justificatifs régalienne d'État pour l'ADEC
               </p>
             </div>
           </div>
@@ -244,7 +244,7 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
               title="Fermer"
             >
               <X className="w-5 h-5" />
@@ -253,17 +253,17 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
         </div>
 
         {/* Navigation par Onglets Homogènes */}
-        <div className="bg-slate-950/50 px-4 pt-2 border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <div className="bg-neutral-950/50 px-4 pt-2 border-b border-neutral-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => { setSelectedType('bundle'); setNotice(null); }}
             className={`px-3 py-2 rounded-t-lg text-xs font-semibold flex items-center gap-1.5 border-b-2 transition whitespace-nowrap ${
               selectedType === 'bundle'
-                ? 'border-blue-500 text-blue-400 bg-slate-800/60'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                ? 'border-prune-500 text-prune-400 bg-neutral-800/60'
+                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/30'
             }`}
           >
-            <FolderDown className="w-3.5 h-3.5 text-blue-400" />
+            <FolderDown className="w-3.5 h-3.5 text-prune-400" />
             <span>Pack Complet (4-en-1)</span>
           </button>
 
@@ -272,11 +272,11 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
             onClick={() => { setSelectedType('rne'); setNotice(null); }}
             className={`px-3 py-2 rounded-t-lg text-xs font-semibold flex items-center gap-1.5 border-b-2 transition whitespace-nowrap ${
               selectedType === 'rne'
-                ? 'border-blue-500 text-blue-400 bg-slate-800/60'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                ? 'border-prune-500 text-prune-400 bg-neutral-800/60'
+                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/30'
             }`}
           >
-            <Building2 className="w-3.5 h-3.5 text-sky-400" />
+            <Building2 className="w-3.5 h-3.5 text-petrole-400" />
             <span>1. RNE (Immatriculation)</span>
           </button>
 
@@ -285,11 +285,11 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
             onClick={() => { setSelectedType('dgfip'); setNotice(null); }}
             className={`px-3 py-2 rounded-t-lg text-xs font-semibold flex items-center gap-1.5 border-b-2 transition whitespace-nowrap ${
               selectedType === 'dgfip'
-                ? 'border-indigo-500 text-indigo-400 bg-slate-800/60'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                ? 'border-aubergine-500 text-aubergine-400 bg-neutral-800/60'
+                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/30'
             }`}
           >
-            <Landmark className="w-3.5 h-3.5 text-indigo-400" />
+            <Landmark className="w-3.5 h-3.5 text-aubergine-400" />
             <span>2. DGFiP (Fiscalité)</span>
           </button>
 
@@ -298,8 +298,8 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
             onClick={() => { setSelectedType('urssaf'); setNotice(null); }}
             className={`px-3 py-2 rounded-t-lg text-xs font-semibold flex items-center gap-1.5 border-b-2 transition whitespace-nowrap ${
               selectedType === 'urssaf'
-                ? 'border-emerald-500 text-emerald-400 bg-slate-800/60'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                ? 'border-emerald-500 text-emerald-400 bg-neutral-800/60'
+                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/30'
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
@@ -311,20 +311,20 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
             onClick={() => { setSelectedType('infogreffe'); setNotice(null); }}
             className={`px-3 py-2 rounded-t-lg text-xs font-semibold flex items-center gap-1.5 border-b-2 transition whitespace-nowrap ${
               selectedType === 'infogreffe'
-                ? 'border-purple-500 text-purple-400 bg-slate-800/60'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                ? 'border-aubergine-500 text-aubergine-400 bg-neutral-800/60'
+                : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/30'
             }`}
           >
-            <UserCheck className="w-3.5 h-3.5 text-purple-400" />
+            <UserCheck className="w-3.5 h-3.5 text-aubergine-400" />
             <span>4. Infogreffe (Gouvernance)</span>
           </button>
         </div>
 
         {/* Corps de la modale */}
-        <div className="p-4 sm:p-5 space-y-4 overflow-y-auto text-xs text-slate-300">
+        <div className="p-4 sm:p-5 space-y-4 overflow-y-auto text-xs text-neutral-300">
           
           {/* Barre d'action supérieure pour l'attestation en cours */}
-          <div className="bg-slate-800/70 border border-slate-700/80 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-neutral-800/70 border border-neutral-700/80 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-white uppercase tracking-wider">
@@ -337,7 +337,7 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                   Conforme & Valide
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">
+              <p className="text-[11px] text-neutral-400 mt-0.5">
                 {selectedType === 'bundle'
                   ? 'Contient les 4 attestations certifiées (RNE, DGFiP, URSSAF, Infogreffe) avec page de garde ADEC.'
                   : ATTESTATIONS_REGISTRY[selectedType as keyof typeof ATTESTATIONS_REGISTRY].legalBase}
@@ -350,7 +350,7 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                 <button
                   type="button"
                   onClick={handleDownloadOfficialRne}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 active:scale-98"
+                  className="px-3 py-1.5 bg-prune-600 hover:bg-prune-500 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 active:scale-98"
                   title={`Télécharger le PDF officiel depuis ${getOfficialRneDownloadUrl(siren)}`}
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -360,7 +360,7 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                 <button
                   type="button"
                   onClick={() => handleDownload(selectedType)}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-sm transition flex items-center gap-1.5 active:scale-98"
+                  className="px-3 py-1.5 bg-prune-600 hover:bg-prune-500 text-white rounded-lg text-xs font-semibold shadow-sm transition flex items-center gap-1.5 active:scale-98"
                   title="Télécharger le document certifié au format PDF autonome"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -371,10 +371,10 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
               <button
                 type="button"
                 onClick={handlePrint}
-                className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5"
                 title="Imprimer ou enregistrer au format PDF"
               >
-                <Printer className="w-3.5 h-3.5 text-sky-300" />
+                <Printer className="w-3.5 h-3.5 text-petrole-300" />
                 <span>Imprimer / PDF</span>
               </button>
 
@@ -382,10 +382,10 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                 href={officialPortalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition flex items-center gap-1"
+                className="px-2.5 py-1.5 bg-neutral-800 hover:bg-slate-750 text-neutral-300 hover:text-white rounded-lg text-xs font-medium border border-neutral-700 transition flex items-center gap-1"
                 title="Accéder au portail officiel d'État"
               >
-                <ExternalLink className="w-3 h-3 text-slate-400" />
+                <ExternalLink className="w-3 h-3 text-neutral-400" />
                 <span>Source officielle</span>
               </a>
             </div>
@@ -399,37 +399,37 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
           )}
 
           {/* Cadre de Prévisualisation Haute Définition du Document Officiel (Rendu React Direct) */}
-          <div className="border border-slate-700 rounded-xl overflow-hidden bg-slate-950 shadow-inner">
-            <div className="bg-slate-850 px-3.5 py-2 border-b border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-              <span className="flex items-center gap-1.5 font-medium text-slate-300">
-                <FileText className="w-3.5 h-3.5 text-sky-400" />
+          <div className="border border-neutral-700 rounded-xl overflow-hidden bg-neutral-950 shadow-inner">
+            <div className="bg-slate-850 px-3.5 py-2 border-b border-neutral-800 flex items-center justify-between text-[11px] text-neutral-400">
+              <span className="flex items-center gap-1.5 font-medium text-neutral-300">
+                <FileText className="w-3.5 h-3.5 text-petrole-400" />
                 Aperçu officiel certifié conforme · Format A4
               </span>
-              <span className="font-mono text-[10px] text-slate-400">
+              <span className="font-mono text-[10px] text-neutral-400">
                 SIREN {siren} · Réf. Officielle
               </span>
             </div>
             
-            <div className="p-3 sm:p-5 bg-slate-900/60 max-h-[58vh] overflow-y-auto">
-              <div className="bg-white text-slate-900 rounded-xl p-6 sm:p-8 shadow-xl max-w-2xl mx-auto border border-slate-200 printable-document">
+            <div className="p-3 sm:p-5 bg-neutral-900/60 max-h-[58vh] overflow-y-auto">
+              <div className="bg-white text-neutral-900 rounded-xl p-6 sm:p-8 shadow-xl max-w-2xl mx-auto border border-neutral-200 printable-document">
                 
                 {/* 1. ATTESTATION RNE */}
                 {selectedType === 'rne' && (
                   <div className="space-y-4">
                     {/* Bannière de téléchargement direct depuis annuaire-entreprises.data.gouv.fr */}
-                    <div className="p-3 bg-blue-50 border-2 border-blue-400 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+                    <div className="p-3 bg-prune-50 border-2 border-prune-400 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 font-black text-blue-950 text-xs">
-                          <Download className="w-4 h-4 text-blue-700" />
+                        <div className="flex items-center gap-1.5 font-black text-prune-950 text-xs">
+                          <Download className="w-4 h-4 text-prune-700" />
                           <span>Justificatif d'immatriculation officiel RNE (PDF INPI)</span>
                         </div>
-                        <p className="text-[11px] text-blue-900/90 leading-relaxed">
+                        <p className="text-[11px] text-prune-900/90 leading-relaxed">
                           Document légal opposable téléchargeable directement à l'adresse officielle de l'État :<br />
                           <a
                             href={getOfficialRneDownloadUrl(siren)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-mono font-bold text-blue-700 underline hover:text-blue-950 inline-flex items-center gap-1 mt-0.5"
+                            className="font-mono font-bold text-prune-700 underline hover:text-prune-950 inline-flex items-center gap-1 mt-0.5"
                             title="Lien permanent de téléchargement"
                           >
                             <span>{getOfficialRneDownloadUrl(siren)}</span>
@@ -440,7 +440,7 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                       <button
                         type="button"
                         onClick={handleDownloadOfficialRne}
-                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-2xs cursor-pointer"
+                        className="px-3 py-1.5 bg-prune-600 hover:bg-prune-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-2xs cursor-pointer"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>Télécharger le PDF</span>
@@ -460,48 +460,48 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                       <h3 className="text-base font-black text-[#000091] uppercase tracking-tight">
                         Justificatif d'Immatriculation au RNE
                       </h3>
-                      <p className="text-xs font-bold text-slate-700 mt-0.5">
+                      <p className="text-xs font-bold text-neutral-700 mt-0.5">
                         Extrait officiel du Registre National des Entreprises · Équivalence légale Kbis
                       </p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">
+                      <p className="text-[10px] text-neutral-500 mt-0.5">
                         Délivré en application de l'article L. 123-36 du Code de commerce et du Décret n° 2021-631 du 21 mai 2021
                       </p>
                     </div>
 
-                    <div className="p-3 bg-blue-50/80 border-l-4 border-[#000091] rounded-r text-[11px] text-slate-800 leading-relaxed">
+                    <div className="p-3 bg-prune-50/80 border-l-4 border-[#000091] rounded-r text-[11px] text-neutral-800 leading-relaxed">
                       <strong className="text-[#000091]">Valeur probante équivalente au Kbis : </strong>
                       Conformément à la loi PACTE et au principe <em>« Dites-le-nous une fois »</em>, le Registre National des Entreprises (RNE) unifie les registres légaux. Cette attestation constitue la preuve légale opposable de l'existence juridique de l'entreprise auprès de toutes les administrations publiques, y compris l'<strong>ADEC (Agence de Développement Économique de la Corse)</strong>.
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         1. Identification de l'Unité Légale
                       </div>
-                      <table className="w-full text-[11px] border-collapse border border-slate-200 mb-3">
+                      <table className="w-full text-[11px] border-collapse border border-neutral-200 mb-3">
                         <tbody>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Dénomination Sociale</th>
-                            <td className="p-2 font-bold text-slate-900 w-1/4 border-r border-slate-200">{d.name}</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Numéro SIREN</th>
-                            <td className="p-2 font-mono font-bold text-slate-900 w-1/4">{d.siren}</td>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Dénomination Sociale</th>
+                            <td className="p-2 font-bold text-neutral-900 w-1/4 border-r border-neutral-200">{d.name}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Numéro SIREN</th>
+                            <td className="p-2 font-mono font-bold text-neutral-900 w-1/4">{d.siren}</td>
                           </tr>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Forme Juridique</th>
-                            <td className="p-2 text-slate-800 border-r border-slate-200">{d.legalForm}</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Capital Social</th>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Forme Juridique</th>
+                            <td className="p-2 text-neutral-800 border-r border-neutral-200">{d.legalForm}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Capital Social</th>
                             <td className="p-2 font-black text-amber-950">{d.capitalSocialFormatted}</td>
                           </tr>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Date d'Immatriculation</th>
-                            <td className="p-2 font-bold text-slate-900 border-r border-slate-200">
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Date d'Immatriculation</th>
+                            <td className="p-2 font-bold text-neutral-900 border-r border-neutral-200">
                               {d.companyAge.isDateKnown ? d.companyAge.dateFormattedFr : 'Enregistrée (RNE)'}
                             </td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Catégorie</th>
-                            <td className="p-2 font-bold text-slate-800">{d.category} ({company.administrativeStatus || 'Actif'})</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Catégorie</th>
+                            <td className="p-2 font-bold text-neutral-800">{d.category} ({company.administrativeStatus || 'Actif'})</td>
                           </tr>
                           <tr>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Activité Principale (NAF)</th>
-                            <td colSpan={3} className="p-2 text-slate-800">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Activité Principale (NAF)</th>
+                            <td colSpan={3} className="p-2 text-neutral-800">
                               <span className="font-mono font-bold">{d.nafCode}</span> — {d.nafLabel}
                             </td>
                           </tr>
@@ -510,22 +510,22 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         2. Établissement d'Exploitation (Corse)
                       </div>
-                      <table className="w-full text-[11px] border-collapse border border-slate-200 mb-3">
+                      <table className="w-full text-[11px] border-collapse border border-neutral-200 mb-3">
                         <tbody>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Numéro SIRET</th>
-                            <td className="p-2 font-mono font-bold text-[#000091] w-1/4 border-r border-slate-200">{d.siret}</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Type d'Établissement</th>
-                            <td className="p-2 font-bold text-slate-800 w-1/4">
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Numéro SIRET</th>
+                            <td className="p-2 font-mono font-bold text-[#000091] w-1/4 border-r border-neutral-200">{d.siret}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Type d'Établissement</th>
+                            <td className="p-2 font-bold text-neutral-800 w-1/4">
                               {company.isHeadOffice ? 'Siège Social & Établissement Principal' : 'Établissement Secondaire'}
                             </td>
                           </tr>
                           <tr>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Adresse</th>
-                            <td colSpan={3} className="p-2 text-slate-800">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Adresse</th>
+                            <td colSpan={3} className="p-2 text-neutral-800">
                               {d.address} — <strong>{d.postalCode} {d.city}</strong> (Code INSEE : <span className="font-mono">{d.communeCode}</span>)
                             </td>
                           </tr>
@@ -534,20 +534,20 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         3. Gouvernance & Mandataires Déclarés
                       </div>
-                      <table className="w-full text-[11px] border-collapse border border-slate-200 mb-3">
+                      <table className="w-full text-[11px] border-collapse border border-neutral-200 mb-3">
                         <tbody>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Représentants Légaux</th>
-                            <td colSpan={3} className="p-2 text-slate-800 font-medium">{d.mandatairesStr}</td>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Représentants Légaux</th>
+                            <td colSpan={3} className="p-2 text-neutral-800 font-medium">{d.mandatairesStr}</td>
                           </tr>
                           <tr>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Gestionnaire du Registre</th>
-                            <td className="p-2 text-slate-800 border-r border-slate-200">Institut National de la Propriété Industrielle (INPI)</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Immatriculation RNE</th>
-                            <td className="p-2 font-mono text-slate-900">{d.siren} (RNE)</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Gestionnaire du Registre</th>
+                            <td className="p-2 text-neutral-800 border-r border-neutral-200">Institut National de la Propriété Industrielle (INPI)</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Immatriculation RNE</th>
+                            <td className="p-2 font-mono text-neutral-900">{d.siren} (RNE)</td>
                           </tr>
                         </tbody>
                       </table>
@@ -555,7 +555,7 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
 
                     {renderSeal('INPI · RNE', "l'INPI et l'INSEE", `RNE-${siren}-${Date.now().toString(16).toUpperCase()}`, 'data.gouv.fr', 'data.gouv.fr')}
 
-                    <div className="mt-4 pt-2 border-t border-slate-200 text-center text-[9px] text-slate-400">
+                    <div className="mt-4 pt-2 border-t border-neutral-200 text-center text-[9px] text-neutral-400">
                       Attestation d'Immatriculation RNE (INPI) · Pour faire valoir ce que de droit auprès de l'ADEC et de la Collectivité de Corse
                     </div>
                   </div>
@@ -574,55 +574,55 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                     )}
 
                     <div className="text-center my-3">
-                      <h3 className="text-base font-black text-indigo-900 uppercase tracking-tight">
+                      <h3 className="text-base font-black text-aubergine-900 uppercase tracking-tight">
                         Attestation de Régularité Fiscale
                       </h3>
-                      <p className="text-xs font-bold text-slate-700 mt-0.5">
+                      <p className="text-xs font-bold text-neutral-700 mt-0.5">
                         Situation déclarative et de paiement en matière de TVA et d'impôts directs sur les bénéfices
                       </p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">
+                      <p className="text-[10px] text-neutral-500 mt-0.5">
                         Délivrée en application de l'article L. 2141-2 du Code de la commande publique et de l'article 39-II du Décret n° 2016-360
                       </p>
                     </div>
 
-                    <div className="p-3 bg-indigo-50/80 border-l-4 border-indigo-700 rounded-r text-[11px] text-slate-800 leading-relaxed">
-                      <strong className="text-indigo-900">Attestation officielle opposable aux tiers et acheteurs publics : </strong>
+                    <div className="p-3 bg-aubergine-50/80 border-l-4 border-aubergine-700 rounded-r text-[11px] text-neutral-800 leading-relaxed">
+                      <strong className="text-aubergine-900">Attestation officielle opposable aux tiers et acheteurs publics : </strong>
                       Le Directeur Départemental des Finances Publiques certifie que l'entreprise mentionnée ci-après est à jour de ses obligations fiscales de déclaration et de paiement (TVA, Impôt sur les Sociétés ou sur le Revenu, CFE/CVAE).
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         1. Identification du Contribuable
                       </div>
-                      <table className="w-full text-[11px] border-collapse border border-slate-200 mb-3">
+                      <table className="w-full text-[11px] border-collapse border border-neutral-200 mb-3">
                         <tbody>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Dénomination</th>
-                            <td className="p-2 font-bold text-slate-900 w-1/4 border-r border-slate-200">{d.name}</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Numéro SIREN</th>
-                            <td className="p-2 font-mono font-bold text-slate-900 w-1/4">{d.siren}</td>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Dénomination</th>
+                            <td className="p-2 font-bold text-neutral-900 w-1/4 border-r border-neutral-200">{d.name}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Numéro SIREN</th>
+                            <td className="p-2 font-mono font-bold text-neutral-900 w-1/4">{d.siren}</td>
                           </tr>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Numéro SIRET</th>
-                            <td className="p-2 font-mono font-bold text-indigo-900 border-r border-slate-200">{d.siret}</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Forme Juridique</th>
-                            <td className="p-2 text-slate-800">{d.legalForm}</td>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Numéro SIRET</th>
+                            <td className="p-2 font-mono font-bold text-aubergine-900 border-r border-neutral-200">{d.siret}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Forme Juridique</th>
+                            <td className="p-2 text-neutral-800">{d.legalForm}</td>
                           </tr>
                           <tr>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Adresse Principale</th>
-                            <td colSpan={3} className="p-2 text-slate-800">{d.address}, {d.postalCode} {d.city}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Adresse Principale</th>
+                            <td colSpan={3} className="p-2 text-neutral-800">{d.address}, {d.postalCode} {d.city}</td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         2. Situation Déclarative et de Paiement
                       </div>
-                      <table className="w-full text-[11px] border-collapse border border-slate-200 mb-3">
+                      <table className="w-full text-[11px] border-collapse border border-neutral-200 mb-3">
                         <thead>
-                          <tr className="bg-slate-100 text-slate-700 border-b border-slate-200">
+                          <tr className="bg-neutral-100 text-neutral-700 border-b border-neutral-200">
                             <th className="p-2 text-left font-bold">Impôt / Taxe</th>
                             <th className="p-2 text-left font-bold">Obligations déclaratives</th>
                             <th className="p-2 text-left font-bold">Paiement</th>
@@ -630,22 +630,22 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                           </tr>
                         </thead>
                         <tbody>
-                          <tr className="border-b border-slate-200">
-                            <td className="p-2 font-bold text-slate-900">Taxe sur la Valeur Ajoutée (TVA)</td>
-                            <td className="p-2 text-slate-700">Déclarations CA3 / CA12 à jour</td>
-                            <td className="p-2 text-slate-700">Acquittée à échéance</td>
+                          <tr className="border-b border-neutral-200">
+                            <td className="p-2 font-bold text-neutral-900">Taxe sur la Valeur Ajoutée (TVA)</td>
+                            <td className="p-2 text-neutral-700">Déclarations CA3 / CA12 à jour</td>
+                            <td className="p-2 text-neutral-700">Acquittée à échéance</td>
                             <td className="p-2"><span className="text-emerald-700 font-extrabold flex items-center gap-1"><Check className="w-3 h-3" /> CONFORME</span></td>
                           </tr>
-                          <tr className="border-b border-slate-200">
-                            <td className="p-2 font-bold text-slate-900">Impôt sur les Sociétés (IS) / Revenu</td>
-                            <td className="p-2 text-slate-700">Liasses fiscales déposées</td>
-                            <td className="p-2 text-slate-700">Acomptes & soldes réglés</td>
+                          <tr className="border-b border-neutral-200">
+                            <td className="p-2 font-bold text-neutral-900">Impôt sur les Sociétés (IS) / Revenu</td>
+                            <td className="p-2 text-neutral-700">Liasses fiscales déposées</td>
+                            <td className="p-2 text-neutral-700">Acomptes & soldes réglés</td>
                             <td className="p-2"><span className="text-emerald-700 font-extrabold flex items-center gap-1"><Check className="w-3 h-3" /> CONFORME</span></td>
                           </tr>
                           <tr>
-                            <td className="p-2 font-bold text-slate-900">Cotisation Territoriale (CFE/CVAE)</td>
-                            <td className="p-2 text-slate-700">Déclarations enregistrées</td>
-                            <td className="p-2 text-slate-700">Régularisée</td>
+                            <td className="p-2 font-bold text-neutral-900">Cotisation Territoriale (CFE/CVAE)</td>
+                            <td className="p-2 text-neutral-700">Déclarations enregistrées</td>
+                            <td className="p-2 text-neutral-700">Régularisée</td>
                             <td className="p-2"><span className="text-emerald-700 font-extrabold flex items-center gap-1"><Check className="w-3 h-3" /> CONFORME</span></td>
                           </tr>
                         </tbody>
@@ -653,17 +653,17 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         3. Portée et Validité pour l'ADEC (Corse)
                       </div>
-                      <p className="text-[11px] text-slate-700 leading-relaxed">
+                      <p className="text-[11px] text-neutral-700 leading-relaxed">
                         La présente attestation est délivrée pour justifier de la régularité fiscale de l'entreprise dans le cadre de l'instruction d'une demande de subvention ou d'aide publique auprès de l'<strong>ADEC (Agence de Développement Économique de la Corse)</strong>. Elle est valable pour une durée de <strong>6 mois</strong> à compter de sa date de délivrance (validité jusqu'au <strong>{d.validUntilDate}</strong>).
                       </p>
                     </div>
 
                     {renderSeal('DGFiP', 'les services fiscaux de la DGFiP', `DGFIP-${siren}-${Date.now().toString(16).toUpperCase()}`, 'impots.gouv.fr', 'impots.gouv.fr')}
 
-                    <div className="mt-4 pt-2 border-t border-slate-200 text-center text-[9px] text-slate-400">
+                    <div className="mt-4 pt-2 border-t border-neutral-200 text-center text-[9px] text-neutral-400">
                       Direction Générale des Finances Publiques · Ministère de l'Économie, des Finances et de la Souveraineté Industrielle et Numérique
                     </div>
                   </div>
@@ -685,15 +685,15 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                       <h3 className="text-base font-black text-emerald-900 uppercase tracking-tight">
                         Attestation de Vigilance Sociale
                       </h3>
-                      <p className="text-xs font-bold text-slate-700 mt-0.5">
+                      <p className="text-xs font-bold text-neutral-700 mt-0.5">
                         Obligation de vigilance relative aux cotisations sociales et à la lutte contre le travail dissimulé
                       </p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">
+                      <p className="text-[10px] text-neutral-500 mt-0.5">
                         Délivrée en application des articles L. 243-15 et L. 8222-1 du Code de la sécurité sociale
                       </p>
                     </div>
 
-                    <div className="p-3 bg-emerald-50/80 border-l-4 border-emerald-600 rounded-r text-[11px] text-slate-800 leading-relaxed">
+                    <div className="p-3 bg-emerald-50/80 border-l-4 border-emerald-600 rounded-r text-[11px] text-neutral-800 leading-relaxed">
                       <strong className="text-emerald-900">Attestation sécurisée et opposable aux tiers et acheteurs publics : </strong>
                       Le Directeur de l'organisme de recouvrement certifie que l'entreprise mentionnée ci-après est à jour de ses déclarations et du paiement de ses cotisations et contributions sociales, et n'a fait l'objet d'aucune verbalisation pour travail dissimulé.
                       <div className="mt-1 font-mono text-[10px] font-bold text-emerald-800">
@@ -702,59 +702,59 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         1. Identification du Cotisant
                       </div>
-                      <table className="w-full text-[11px] border-collapse border border-slate-200 mb-3">
+                      <table className="w-full text-[11px] border-collapse border border-neutral-200 mb-3">
                         <tbody>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Dénomination</th>
-                            <td className="p-2 font-bold text-slate-900 w-1/4 border-r border-slate-200">{d.name}</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Numéro SIREN</th>
-                            <td className="p-2 font-mono font-bold text-slate-900 w-1/4">{d.siren}</td>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Dénomination</th>
+                            <td className="p-2 font-bold text-neutral-900 w-1/4 border-r border-neutral-200">{d.name}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Numéro SIREN</th>
+                            <td className="p-2 font-mono font-bold text-neutral-900 w-1/4">{d.siren}</td>
                           </tr>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Numéro SIRET</th>
-                            <td className="p-2 font-mono font-bold text-emerald-800 border-r border-slate-200">{d.siret}</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Code NAF</th>
-                            <td className="p-2 font-mono text-slate-800">{d.nafCode}</td>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Numéro SIRET</th>
+                            <td className="p-2 font-mono font-bold text-emerald-800 border-r border-neutral-200">{d.siret}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Code NAF</th>
+                            <td className="p-2 font-mono text-neutral-800">{d.nafCode}</td>
                           </tr>
                           <tr>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Effectif Salarié</th>
-                            <td className="p-2 font-bold text-slate-800 border-r border-slate-200">{d.headcount} ETP déclaré(s)</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Organisme</th>
-                            <td className="p-2 text-slate-800">{d.urssafAgency}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Effectif Salarié</th>
+                            <td className="p-2 font-bold text-neutral-800 border-r border-neutral-200">{d.headcount} ETP déclaré(s)</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Organisme</th>
+                            <td className="p-2 text-neutral-800">{d.urssafAgency}</td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         2. Situation au Regard des Cotisations et Contributions Sociales
                       </div>
-                      <table className="w-full text-[11px] border-collapse border border-slate-200 mb-3">
+                      <table className="w-full text-[11px] border-collapse border border-neutral-200 mb-3">
                         <thead>
-                          <tr className="bg-slate-100 text-slate-700 border-b border-slate-200">
+                          <tr className="bg-neutral-100 text-neutral-700 border-b border-neutral-200">
                             <th className="p-2 text-left font-bold w-1/2">Critère Réglementaire</th>
                             <th className="p-2 text-left font-bold w-1/4">Constat Officiel</th>
                             <th className="p-2 text-left font-bold w-1/4">Statut</th>
                           </tr>
                         </thead>
                         <tbody>
-                          <tr className="border-b border-slate-200">
-                            <td className="p-2 font-bold text-slate-900">Déclarations Sociales Nominatives (DSN)</td>
-                            <td className="p-2 text-slate-700">Déclarations mensuelles transmises</td>
+                          <tr className="border-b border-neutral-200">
+                            <td className="p-2 font-bold text-neutral-900">Déclarations Sociales Nominatives (DSN)</td>
+                            <td className="p-2 text-neutral-700">Déclarations mensuelles transmises</td>
                             <td className="p-2"><span className="text-emerald-700 font-extrabold flex items-center gap-1"><Check className="w-3 h-3" /> CONFORME</span></td>
                           </tr>
-                          <tr className="border-b border-slate-200">
-                            <td className="p-2 font-bold text-slate-900">Paiement des cotisations et contributions</td>
-                            <td className="p-2 text-slate-700">Cotisations exigibles acquittées à ce jour</td>
+                          <tr className="border-b border-neutral-200">
+                            <td className="p-2 font-bold text-neutral-900">Paiement des cotisations et contributions</td>
+                            <td className="p-2 text-neutral-700">Cotisations exigibles acquittées à ce jour</td>
                             <td className="p-2"><span className="text-emerald-700 font-extrabold flex items-center gap-1"><Check className="w-3 h-3" /> CONFORME</span></td>
                           </tr>
                           <tr>
-                            <td className="p-2 font-bold text-slate-900">Lutte contre le travail dissimulé</td>
-                            <td className="p-2 text-slate-700">Aucune infraction constatée (L. 8221-1)</td>
+                            <td className="p-2 font-bold text-neutral-900">Lutte contre le travail dissimulé</td>
+                            <td className="p-2 text-neutral-700">Aucune infraction constatée (L. 8221-1)</td>
                             <td className="p-2"><span className="text-emerald-700 font-extrabold flex items-center gap-1"><Check className="w-3 h-3" /> CONFORME</span></td>
                           </tr>
                         </tbody>
@@ -762,17 +762,17 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         3. Portée et Validité pour l'ADEC (Corse)
                       </div>
-                      <p className="text-[11px] text-slate-700 leading-relaxed">
+                      <p className="text-[11px] text-neutral-700 leading-relaxed">
                         Cette attestation de vigilance est directement opposable aux services instructeurs de la Collectivité de Corse et de l'<strong>ADEC</strong> pour l'octroi des subventions régionales 2026. Elle est valable 6 mois à compter de sa délivrance (validité jusqu'au <strong>{d.validUntilDate}</strong>).
                       </p>
                     </div>
 
                     {renderSeal('URSSAF', 'les registres nationaux de la Sécurité Sociale (ACOSS/URSSAF)', `URSSAF-${siren}-${Date.now().toString(16).toUpperCase()}`, 'urssaf.fr', 'urssaf.fr')}
 
-                    <div className="mt-4 pt-2 border-t border-slate-200 text-center text-[9px] text-slate-400">
+                    <div className="mt-4 pt-2 border-t border-neutral-200 text-center text-[9px] text-neutral-400">
                       Union de Recouvrement des Cotisations de Sécurité Sociale et d'Allocations Familiales (URSSAF) · Sécurité Sociale
                     </div>
                   </div>
@@ -791,61 +791,61 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                     )}
 
                     <div className="text-center my-3">
-                      <h3 className="text-base font-black text-purple-950 uppercase tracking-tight">
+                      <h3 className="text-base font-black text-aubergine-950 uppercase tracking-tight">
                         Extrait de Gouvernance & Mandataires Sociaux
                       </h3>
-                      <p className="text-xs font-bold text-slate-700 mt-0.5">
+                      <p className="text-xs font-bold text-neutral-700 mt-0.5">
                         Registre National des Entreprises · Représentation Légale & Pouvoirs Statutaires
                       </p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">
+                      <p className="text-[10px] text-neutral-500 mt-0.5">
                         Délivré en application de l'article L. 123-36 et R. 123-37 du Code de commerce (RNE opéré par l'INPI)
                       </p>
                     </div>
 
-                    <div className="p-3 bg-purple-50/80 border-l-4 border-purple-800 rounded-r text-[11px] text-slate-800 leading-relaxed">
-                      <strong className="text-purple-950">Certificat de représentation légale : </strong>
+                    <div className="p-3 bg-aubergine-50/80 border-l-4 border-aubergine-800 rounded-r text-[11px] text-neutral-800 leading-relaxed">
+                      <strong className="text-aubergine-950">Certificat de représentation légale : </strong>
                       Il est certifié que les personnes mentionnées ci-dessous sont régulièrement enregistrées au Registre National des Entreprises (RNE) en qualité de mandataires sociaux investis du pouvoir d'engager juridiquement la personne morale, notamment pour toute convention de subvention avec l'<strong>ADEC</strong>.
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         1. Identification de la Société
                       </div>
-                      <table className="w-full text-[11px] border-collapse border border-slate-200 mb-3">
+                      <table className="w-full text-[11px] border-collapse border border-neutral-200 mb-3">
                         <tbody>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Dénomination Sociale</th>
-                            <td className="p-2 font-bold text-slate-900 w-1/4 border-r border-slate-200">{d.name}</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Numéro SIREN</th>
-                            <td className="p-2 font-mono font-bold text-slate-900 w-1/4">{d.siren}</td>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Dénomination Sociale</th>
+                            <td className="p-2 font-bold text-neutral-900 w-1/4 border-r border-neutral-200">{d.name}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Numéro SIREN</th>
+                            <td className="p-2 font-mono font-bold text-neutral-900 w-1/4">{d.siren}</td>
                           </tr>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Immatriculation RNE</th>
-                            <td className="p-2 font-mono font-bold text-purple-950 border-r border-slate-200">{d.siren} (RNE · INPI)</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Forme Juridique</th>
-                            <td className="p-2 text-slate-800">{d.legalForm}</td>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Immatriculation RNE</th>
+                            <td className="p-2 font-mono font-bold text-aubergine-950 border-r border-neutral-200">{d.siren} (RNE · INPI)</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Forme Juridique</th>
+                            <td className="p-2 text-neutral-800">{d.legalForm}</td>
                           </tr>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Siège Social</th>
-                            <td colSpan={3} className="p-2 text-slate-800">{d.address}, <strong>{d.postalCode} ${d.city}</strong></td>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Siège Social</th>
+                            <td colSpan={3} className="p-2 text-neutral-800">{d.address}, <strong>{d.postalCode} ${d.city}</strong></td>
                           </tr>
                           <tr>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Gestionnaire Registre</th>
-                            <td className="p-2 text-slate-800 border-r border-slate-200">Institut National de la Propriété Industrielle (INPI)</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Date d'Enregistrement</th>
-                            <td className="p-2 text-slate-800">{d.companyAge.isDateKnown ? d.companyAge.dateFormattedFr : 'En activité'}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Gestionnaire Registre</th>
+                            <td className="p-2 text-neutral-800 border-r border-neutral-200">Institut National de la Propriété Industrielle (INPI)</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Date d'Enregistrement</th>
+                            <td className="p-2 text-neutral-800">{d.companyAge.isDateKnown ? d.companyAge.dateFormattedFr : 'En activité'}</td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         2. Mandataires Sociaux & Organes de Gestion
                       </div>
-                      <table className="w-full text-[11px] border-collapse border border-slate-200 mb-3">
+                      <table className="w-full text-[11px] border-collapse border border-neutral-200 mb-3">
                         <thead>
-                          <tr className="bg-slate-100 text-slate-700 border-b border-slate-200">
+                          <tr className="bg-neutral-100 text-neutral-700 border-b border-neutral-200">
                             <th className="p-2 text-left font-bold w-2/5">Nom & Prénom / Dénomination</th>
                             <th className="p-2 text-left font-bold w-2/5">Fonction / Qualité</th>
                             <th className="p-2 text-left font-bold w-1/5">Pouvoir d'engagement</th>
@@ -854,18 +854,18 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                         <tbody>
                           {d.mandatairesList.length > 0 ? (
                             d.mandatairesList.map((m, idx) => (
-                              <tr key={idx} className="border-b border-slate-200">
-                                <td className="p-2 font-bold text-slate-900">
+                              <tr key={idx} className="border-b border-neutral-200">
+                                <td className="p-2 font-bold text-neutral-900">
                                   {m.prenom ? `${m.prenom} ` : ''}{m.nom || m.denomination || 'Dirigeant'}
                                 </td>
-                                <td className="p-2 text-slate-700">{m.fonction || 'Représentant Légal'}</td>
+                                <td className="p-2 text-neutral-700">{m.fonction || 'Représentant Légal'}</td>
                                 <td className="p-2"><span className="text-emerald-700 font-extrabold flex items-center gap-1"><Check className="w-3 h-3" /> Habilité à signer</span></td>
                               </tr>
                             ))
                           ) : (
                             <tr>
-                              <td className="p-2 font-bold text-slate-900">Représentant Légal en fonction</td>
-                              <td className="p-2 text-slate-700">Direction / Gérance statutaire</td>
+                              <td className="p-2 font-bold text-neutral-900">Représentant Légal en fonction</td>
+                              <td className="p-2 text-neutral-700">Direction / Gérance statutaire</td>
                               <td className="p-2"><span className="text-emerald-700 font-extrabold flex items-center gap-1"><Check className="w-3 h-3" /> Habilité à signer</span></td>
                             </tr>
                           )}
@@ -874,20 +874,20 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         3. Situation Juridique & Procédures Collectives
                       </div>
-                      <table className="w-full text-[11px] border-collapse border border-slate-200 mb-3">
+                      <table className="w-full text-[11px] border-collapse border border-neutral-200 mb-3">
                         <tbody>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/2 border-r border-slate-200">Procédures Collectives en cours</th>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/2 border-r border-neutral-200">Procédures Collectives en cours</th>
                             <td className="p-2 font-bold text-emerald-700 flex items-center gap-1">
                               <Check className="w-3 h-3 text-emerald-600" />
                               AUCUNE MENTION (Absence de sauvegarde, redressement ou liquidation)
                             </td>
                           </tr>
                           <tr>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Sanctions ou Faillite Personnelle</th>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Sanctions ou Faillite Personnelle</th>
                             <td className="p-2 font-bold text-emerald-700 flex items-center gap-1">
                               <Check className="w-3 h-3 text-emerald-600" />
                               NÉANT (Aucune interdiction de gérer enregistrée)
@@ -899,7 +899,7 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
 
                     {renderSeal('INPI · RNE', 'les écritures officielles du Registre National des Entreprises', `GOUV-${siren}-${Date.now().toString(16).toUpperCase()}`, 'data.gouv.fr', 'annuaire-entreprises.data.gouv.fr')}
 
-                    <div className="mt-4 pt-2 border-t border-slate-200 text-center text-[9px] text-slate-400">
+                    <div className="mt-4 pt-2 border-t border-neutral-200 text-center text-[9px] text-neutral-400">
                       Institut National de la Propriété Industrielle (INPI) · Pour faire valoir ce que de droit auprès de l'ADEC
                     </div>
                   </div>
@@ -909,14 +909,14 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                 {selectedType === 'bundle' && (
                   <div className="space-y-6">
                     {/* Page de Garde ADEC */}
-                    <div className="bg-gradient-to-br from-[#000091] to-indigo-950 text-white p-5 rounded-xl shadow-md">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-sky-200">
+                    <div className="bg-gradient-to-br from-[#000091] to-aubergine-950 text-white p-5 rounded-xl shadow-md">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-petrole-200">
                         Collectivité de Corse · Agence de Développement Économique de la Corse (ADEC)
                       </div>
                       <h3 className="text-xl font-black tracking-tight text-white uppercase mt-1 mb-1">
                         Dossier Unique de Conformité Administrative
                       </h3>
-                      <p className="text-xs text-sky-100">
+                      <p className="text-xs text-petrole-100">
                         Recueil certifié des 4 attestations régaliennes d'État pour l'instruction des aides publiques
                       </p>
                       <div className="mt-3 pt-3 border-t border-white/20 flex items-center justify-between text-[11px] font-mono flex-wrap gap-2">
@@ -935,30 +935,30 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
 
                     {/* Synthèse Candidat */}
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         1. Récapitulatif de l'Entreprise Candidate
                       </div>
-                      <table className="w-full text-[11px] border-collapse border border-slate-200 mb-3">
+                      <table className="w-full text-[11px] border-collapse border border-neutral-200 mb-3">
                         <tbody>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Dénomination Sociale</th>
-                            <td className="p-2 font-bold text-slate-900 w-1/4 border-r border-slate-200">{d.name}</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 w-1/4 border-r border-slate-200">Numéro SIREN</th>
-                            <td className="p-2 font-mono font-bold text-slate-900 w-1/4">{d.siren}</td>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Dénomination Sociale</th>
+                            <td className="p-2 font-bold text-neutral-900 w-1/4 border-r border-neutral-200">{d.name}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 w-1/4 border-r border-neutral-200">Numéro SIREN</th>
+                            <td className="p-2 font-mono font-bold text-neutral-900 w-1/4">{d.siren}</td>
                           </tr>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">SIRET Établissement</th>
-                            <td className="p-2 font-mono font-bold text-[#000091] border-r border-slate-200">{d.siret}</td>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Forme Juridique</th>
-                            <td className="p-2 text-slate-800">{d.legalForm}</td>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">SIRET Établissement</th>
+                            <td className="p-2 font-mono font-bold text-[#000091] border-r border-neutral-200">{d.siret}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Forme Juridique</th>
+                            <td className="p-2 text-neutral-800">{d.legalForm}</td>
                           </tr>
-                          <tr className="border-b border-slate-200">
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Implantation Corse</th>
-                            <td colSpan={3} className="p-2 text-slate-800">{d.address}, <strong>{d.postalCode} {d.city}</strong></td>
+                          <tr className="border-b border-neutral-200">
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Implantation Corse</th>
+                            <td colSpan={3} className="p-2 text-neutral-800">{d.address}, <strong>{d.postalCode} {d.city}</strong></td>
                           </tr>
                           <tr>
-                            <th className="bg-slate-50 p-2 text-left font-semibold text-slate-600 border-r border-slate-200">Gouvernance</th>
-                            <td colSpan={3} className="p-2 text-slate-800 font-medium">{d.mandatairesStr}</td>
+                            <th className="bg-neutral-50 p-2 text-left font-semibold text-neutral-600 border-r border-neutral-200">Gouvernance</th>
+                            <td colSpan={3} className="p-2 text-neutral-800 font-medium">{d.mandatairesStr}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -966,38 +966,38 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
 
                     {/* Tableau Synthèse 4 Piliers */}
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-900 border-b border-neutral-200 pb-1 mb-2">
                         2. Tableau de Synthèse des 4 Piliers Régaliens
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
                         <div
                           onClick={() => setSelectedType('rne')}
-                          className="p-3 rounded-lg border border-sky-200 bg-sky-50/70 hover:bg-sky-100/70 transition cursor-pointer flex flex-col justify-between"
+                          className="p-3 rounded-lg border border-petrole-200 bg-petrole-50/70 hover:bg-petrole-100/70 transition cursor-pointer flex flex-col justify-between"
                         >
                           <div>
                             <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold uppercase text-sky-800">1. Immatriculation & Kbis</span>
+                              <span className="text-[10px] font-bold uppercase text-petrole-800">1. Immatriculation & Kbis</span>
                               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">✓ Actif</span>
                             </div>
-                            <h4 className="text-xs font-bold text-slate-900 mt-1">INPI · Registre National des Entreprises</h4>
-                            <p className="text-[10px] text-slate-600 mt-0.5">Preuve d'existence juridique opposable à l'ADEC (Décret 2021-631).</p>
+                            <h4 className="text-xs font-bold text-neutral-900 mt-1">INPI · Registre National des Entreprises</h4>
+                            <p className="text-[10px] text-neutral-600 mt-0.5">Preuve d'existence juridique opposable à l'ADEC (Décret 2021-631).</p>
                           </div>
-                          <span className="text-[10px] font-semibold text-sky-700 mt-2 block">Cliquer pour voir l'attestation RNE &rarr;</span>
+                          <span className="text-[10px] font-semibold text-petrole-700 mt-2 block">Cliquer pour voir l'attestation RNE &rarr;</span>
                         </div>
 
                         <div
                           onClick={() => setSelectedType('dgfip')}
-                          className="p-3 rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/70 transition cursor-pointer flex flex-col justify-between"
+                          className="p-3 rounded-lg border border-aubergine-200 bg-aubergine-50/70 hover:bg-aubergine-100/70 transition cursor-pointer flex flex-col justify-between"
                         >
                           <div>
                             <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold uppercase text-indigo-800">2. Régularité Fiscale</span>
+                              <span className="text-[10px] font-bold uppercase text-aubergine-800">2. Régularité Fiscale</span>
                               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">✓ À jour</span>
                             </div>
-                            <h4 className="text-xs font-bold text-slate-900 mt-1">DGFiP · Fiscalité & TVA</h4>
-                            <p className="text-[10px] text-slate-600 mt-0.5">Régularité TVA, IS/IR et absence d'arriérés (Art. L. 2141-2 CCP).</p>
+                            <h4 className="text-xs font-bold text-neutral-900 mt-1">DGFiP · Fiscalité & TVA</h4>
+                            <p className="text-[10px] text-neutral-600 mt-0.5">Régularité TVA, IS/IR et absence d'arriérés (Art. L. 2141-2 CCP).</p>
                           </div>
-                          <span className="text-[10px] font-semibold text-indigo-700 mt-2 block">Cliquer pour voir l'attestation DGFiP &rarr;</span>
+                          <span className="text-[10px] font-semibold text-aubergine-700 mt-2 block">Cliquer pour voir l'attestation DGFiP &rarr;</span>
                         </div>
 
                         <div
@@ -1009,32 +1009,32 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
                               <span className="text-[10px] font-bold uppercase text-emerald-800">3. Vigilance Sociale</span>
                               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">✓ Conforme</span>
                             </div>
-                            <h4 className="text-xs font-bold text-slate-900 mt-1">URSSAF · Sécurité Sociale</h4>
-                            <p className="text-[10px] text-slate-600 mt-0.5">Cotisations acquittées et absence de travail dissimulé (L. 243-15 CSS).</p>
+                            <h4 className="text-xs font-bold text-neutral-900 mt-1">URSSAF · Sécurité Sociale</h4>
+                            <p className="text-[10px] text-neutral-600 mt-0.5">Cotisations acquittées et absence de travail dissimulé (L. 243-15 CSS).</p>
                           </div>
                           <span className="text-[10px] font-semibold text-emerald-700 mt-2 block">Cliquer pour voir l'attestation URSSAF &rarr;</span>
                         </div>
 
                         <div
                           onClick={() => setSelectedType('infogreffe')}
-                          className="p-3 rounded-lg border border-purple-200 bg-purple-50/70 hover:bg-purple-100/70 transition cursor-pointer flex flex-col justify-between"
+                          className="p-3 rounded-lg border border-aubergine-200 bg-aubergine-50/70 hover:bg-aubergine-100/70 transition cursor-pointer flex flex-col justify-between"
                         >
                           <div>
                             <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold uppercase text-purple-800">4. Gouvernance RNE</span>
+                              <span className="text-[10px] font-bold uppercase text-aubergine-800">4. Gouvernance RNE</span>
                               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">✓ Habilité</span>
                             </div>
-                            <h4 className="text-xs font-bold text-slate-900 mt-1">INPI · Registre des Entreprises</h4>
-                            <p className="text-[10px] text-slate-600 mt-0.5">Mandataires habilités à engager la société (Art. L. 123-36 CC).</p>
+                            <h4 className="text-xs font-bold text-neutral-900 mt-1">INPI · Registre des Entreprises</h4>
+                            <p className="text-[10px] text-neutral-600 mt-0.5">Mandataires habilités à engager la société (Art. L. 123-36 CC).</p>
                           </div>
-                          <span className="text-[10px] font-semibold text-purple-700 mt-2 block">Cliquer pour voir l'extrait de gouvernance &rarr;</span>
+                          <span className="text-[10px] font-semibold text-aubergine-700 mt-2 block">Cliquer pour voir l'extrait de gouvernance &rarr;</span>
                         </div>
                       </div>
                     </div>
 
                     {renderSeal('ADEC & RÉPERTOIRES D\'ÉTAT', "les services de l'INSEE, INPI, DGFiP et URSSAF", `BUNDLE-${siren}-${Date.now().toString(16).toUpperCase()}`, 'data.gouv.fr', 'annuaire-entreprises.data.gouv.fr')}
 
-                    <div className="mt-4 pt-2 border-t border-slate-200 text-center text-[9px] text-slate-400">
+                    <div className="mt-4 pt-2 border-t border-neutral-200 text-center text-[9px] text-neutral-400">
                       Page 1/5 · Dossier Unique de Conformité Administrative ADEC · Collectivité de Corse
                     </div>
                   </div>
@@ -1045,8 +1045,8 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
           </div>
 
           {/* Informations sur l'acceptation par l'ADEC */}
-          <div className="p-3 bg-blue-950/30 border border-blue-900/50 rounded-xl flex items-start gap-2 text-[11px] text-blue-200/80">
-            <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+          <div className="p-3 bg-prune-950/30 border border-prune-900/50 rounded-xl flex items-start gap-2 text-[11px] text-prune-200/80">
+            <ShieldCheck className="w-4 h-4 text-prune-400 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
               <strong>Valeur juridique probante ADEC :</strong> L'ensemble des 4 attestations générées sont issues des flux certifiés de l'INSEE, de l'INPI, de la DGFiP et de l'URSSAF. Elles respectent le principe légal <em>« Dites-le-nous une fois »</em> (Décret n° 2021-631) et sont directement recevables par l'ADEC et la Collectivité de Corse pour l'instruction des dossiers de subvention 2026.
             </p>
@@ -1054,7 +1054,7 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-3">
+        <div className="p-4 bg-neutral-950 border-t border-neutral-800 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => handleDownload('bundle')}
@@ -1068,7 +1068,7 @@ export const ComplianceAttestationsModal: React.FC<ComplianceAttestationsModalPr
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition"
+            className="px-4 py-2 text-xs font-semibold text-neutral-300 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg transition"
           >
             Fermer
           </button>

@@ -29,7 +29,7 @@ const FORMES_AIDE: Array<{ id: FormeAide; label: string }> = [
 const NATURES = ['Investissement matériel', 'Investissement immatériel', 'Investissement immobilier', 'Prestation externe', 'Frais de fonctionnement', 'Autre'];
 
 const euro = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
-const inputClass = 'w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900';
+const inputClass = 'w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-prune-500';
 
 export const StepProjet: React.FC<StepProjetProps> = ({
   projet,
@@ -54,21 +54,21 @@ export const StepProjet: React.FC<StepProjetProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-slate-200 pb-4">
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-          <Target className="w-5 h-5 text-slate-700" />
+      <div className="border-b border-neutral-200 pb-4">
+        <h2 className="text-xl font-bold text-neutral-900 tracking-tight flex items-center gap-2">
+          <Target className="w-5 h-5 text-neutral-700" />
           3. Projet & dépenses
         </h2>
-        <p className="text-sm text-slate-500 mt-1">
+        <p className="text-sm text-neutral-500 mt-1">
           Le projet, son programme de dépenses et l’aide sollicitée. Le total des dépenses sert de base au calcul des aides.
         </p>
       </div>
 
       {/* Le projet */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
+      <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-3">
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Intitulé du projet</label>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1">Intitulé du projet</label>
             <input
               type="text"
               value={projet.libelle || ''}
@@ -78,7 +78,7 @@ export const StepProjet: React.FC<StepProjetProps> = ({
             />
           </div>
           <div className="md:col-span-3">
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1">Description</label>
             <textarea
               value={financials.projectDescription}
               onChange={(e) => onFinancialsChange({ projectDescription: e.target.value })}
@@ -87,26 +87,26 @@ export const StepProjet: React.FC<StepProjetProps> = ({
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Début</label>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1">Début</label>
             <input type="text" value={projet.dateDebut || ''} onChange={(e) => onProjetChange({ dateDebut: e.target.value })} placeholder="jj/mm/aaaa" className={`${inputClass} font-mono`} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Fin</label>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1">Fin</label>
             <input type="text" value={projet.dateFin || ''} onChange={(e) => onProjetChange({ dateFin: e.target.value })} placeholder="jj/mm/aaaa" className={`${inputClass} font-mono`} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Appel à projets visé</label>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1">Appel à projets visé</label>
             <input type="text" value={projet.appelAProjet || ''} onChange={(e) => onProjetChange({ appelAProjet: e.target.value || undefined })} placeholder="Aucun" className={inputClass} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Forme d’aide sollicitée</label>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1">Forme d’aide sollicitée</label>
             <select value={projet.formeAide || ''} onChange={(e) => onProjetChange({ formeAide: (e.target.value || undefined) as FormeAide | undefined })} className={inputClass}>
               <option value="">Non précisée</option>
               {FORMES_AIDE.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Montant d’aide sollicité</label>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1">Montant d’aide sollicité</label>
             <input
               type="number"
               min="0"
@@ -115,18 +115,18 @@ export const StepProjet: React.FC<StepProjetProps> = ({
               className={`${inputClass} font-mono`}
             />
             {tauxDemande !== undefined && (
-              <p className={`text-[11px] mt-1 ${tauxDemande > 0.7 ? 'text-amber-700 font-semibold' : 'text-slate-500'}`}>
+              <p className={`text-[11px] mt-1 ${tauxDemande > 0.7 ? 'text-amber-700 font-semibold' : 'text-neutral-500'}`}>
                 Soit {new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(tauxDemande * 100)} % des dépenses
               </p>
             )}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Emplois créés</label>
+              <label className="block text-xs font-semibold text-neutral-700 mb-1">Emplois créés</label>
               <input type="number" min="0" value={projet.emploisCrees ?? ''} onChange={(e) => onProjetChange({ emploisCrees: e.target.value === '' ? undefined : parseInt(e.target.value, 10) })} className={`${inputClass} font-mono`} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Maintenus</label>
+              <label className="block text-xs font-semibold text-neutral-700 mb-1">Maintenus</label>
               <input type="number" min="0" value={projet.emploisMaintenus ?? ''} onChange={(e) => onProjetChange({ emploisMaintenus: e.target.value === '' ? undefined : parseInt(e.target.value, 10) })} className={`${inputClass} font-mono`} />
             </div>
           </div>
@@ -134,13 +134,13 @@ export const StepProjet: React.FC<StepProjetProps> = ({
       </div>
 
       {/* Programme de dépenses */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3 shadow-xs">
-        <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 pb-2.5">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
-            <ListChecks className="w-4 h-4 text-slate-600" />
+      <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5 space-y-3 shadow-xs">
+        <div className="flex items-center justify-between flex-wrap gap-2 border-b border-neutral-100 pb-2.5">
+          <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5 uppercase tracking-wider">
+            <ListChecks className="w-4 h-4 text-neutral-600" />
             Programme de dépenses (HT)
           </h3>
-          <span className="text-xs font-bold px-2.5 py-1 rounded bg-slate-900 text-white">Total : {euro(totalDepenses)}</span>
+          <span className="text-xs font-bold px-2.5 py-1 rounded bg-neutral-900 text-white">Total : {euro(totalDepenses)}</span>
         </div>
 
         {depenses.length > 0 ? (
@@ -162,7 +162,7 @@ export const StepProjet: React.FC<StepProjetProps> = ({
                   type="button"
                   onClick={() => setDepenses(depenses.filter((_, i) => i !== idx))}
                   title="Supprimer la ligne"
-                  className="col-span-1 p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer justify-self-center"
+                  className="col-span-1 p-2 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer justify-self-center"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -170,13 +170,13 @@ export const StepProjet: React.FC<StepProjetProps> = ({
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-500">Aucune dépense saisie.</p>
+          <p className="text-xs text-neutral-500">Aucune dépense saisie.</p>
         )}
 
         <button
           type="button"
           onClick={() => setDepenses([...depenses, { nature: 'Investissement matériel', description: '', montantHT: 0 }])}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-md text-[11px] font-semibold transition cursor-pointer"
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-neutral-50 text-neutral-700 border border-neutral-200 rounded-md text-[11px] font-semibold transition cursor-pointer"
         >
           <Plus className="w-3 h-3" />
           <span>Ajouter une dépense</span>

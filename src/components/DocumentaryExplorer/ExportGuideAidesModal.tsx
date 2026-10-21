@@ -77,11 +77,11 @@ export const ExportGuideAidesModal: React.FC<ExportGuideAidesModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-neutral-950/80 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-neutral-900 border border-neutral-700 w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh]">
         
         {/* Header Modal */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+        <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-950/80">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
               <BookOpen className="w-5 h-5 text-emerald-400" />
@@ -95,7 +95,7 @@ export const ExportGuideAidesModal: React.FC<ExportGuideAidesModalProps> = ({
                   Synthèse Communication
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-neutral-400">
                 Une page par dispositif, au format de la fiche de communication ADEC
               </p>
             </div>
@@ -104,7 +104,7 @@ export const ExportGuideAidesModal: React.FC<ExportGuideAidesModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
               title="Fermer"
             >
               <X className="w-5 h-5" />
@@ -113,15 +113,15 @@ export const ExportGuideAidesModal: React.FC<ExportGuideAidesModalProps> = ({
         </div>
 
         {/* Toolbar & Filters */}
-        <div className="bg-slate-850 px-4 py-3 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="bg-slate-850 px-4 py-3 border-b border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-slate-400 font-medium">Périmètre de l'export :</span>
-            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
+            <span className="text-neutral-400 font-medium">Périmètre de l'export :</span>
+            <div className="flex items-center gap-1 bg-neutral-900 p-1 rounded-lg border border-neutral-800">
               <button
                 type="button"
                 onClick={() => setActiveCategory('ALL')}
                 className={`px-2.5 py-1 rounded text-xs font-semibold transition ${
-                  activeCategory === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400 hover:text-white'
+                  activeCategory === 'ALL' ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-400 hover:text-white'
                 }`}
               >
                 Tous ({schemes.length} fiches)
@@ -130,7 +130,7 @@ export const ExportGuideAidesModal: React.FC<ExportGuideAidesModalProps> = ({
                 type="button"
                 onClick={() => setActiveCategory('ANNEXE1')}
                 className={`px-2.5 py-1 rounded text-xs font-semibold transition ${
-                  activeCategory === 'ANNEXE1' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400 hover:text-white'
+                  activeCategory === 'ANNEXE1' ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-400 hover:text-white'
                 }`}
               >
                 Annexe 1 : Risilienzia (4)
@@ -139,7 +139,7 @@ export const ExportGuideAidesModal: React.FC<ExportGuideAidesModalProps> = ({
                 type="button"
                 onClick={() => setActiveCategory('GUIDE2026')}
                 className={`px-2.5 py-1 rounded text-xs font-semibold transition ${
-                  activeCategory === 'GUIDE2026' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400 hover:text-white'
+                  activeCategory === 'GUIDE2026' ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-400 hover:text-white'
                 }`}
               >
                 Guide 2026 : Éval. Qual. (12)
@@ -151,7 +151,7 @@ export const ExportGuideAidesModal: React.FC<ExportGuideAidesModalProps> = ({
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-xs transition active:scale-98"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-prune-600 hover:bg-aubergine-600 text-white rounded-full text-xs font-bold shadow-xs transition active:scale-98"
               title="Générer et ouvrir l'aperçu avant impression pour enregistrement en PDF"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -161,7 +161,7 @@ export const ExportGuideAidesModal: React.FC<ExportGuideAidesModalProps> = ({
             <button
               type="button"
               onClick={handleDownload}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 rounded-lg text-xs font-semibold transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white border border-neutral-700 rounded-lg text-xs font-semibold transition"
               title="Télécharger le fichier autonome au format HTML/PDF complet"
             >
               <Download className="w-3.5 h-3.5" />
@@ -178,20 +178,20 @@ export const ExportGuideAidesModal: React.FC<ExportGuideAidesModalProps> = ({
         )}
 
         {/* Aperçu : le document exact qui sera imprimé (une page A4 par dispositif) */}
-        <div className="bg-slate-950/70 flex-1 min-h-0">
+        <div className="bg-neutral-950/70 flex-1 min-h-0">
           <iframe
             title="Aperçu des fiches dispositifs"
             srcDoc={generateGuideAidesHtml(filteredSchemes)}
-            className="w-full h-[65vh] border-0 bg-slate-200"
+            className="w-full h-[65vh] border-0 bg-neutral-200"
           />
         </div>
 
         {/* Footer Modal */}
-        <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-3">
+        <div className="p-4 bg-neutral-950 border-t border-neutral-800 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={handleDownload}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-prune-600 hover:bg-aubergine-600 text-white rounded-full text-xs font-semibold shadow-sm transition"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Télécharger les fiches (HTML)</span>
@@ -200,7 +200,7 @@ export const ExportGuideAidesModal: React.FC<ExportGuideAidesModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition"
+            className="px-4 py-2 text-xs font-semibold text-neutral-300 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg transition"
           >
             Fermer
           </button>
