@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { ShieldCheck, Calculator, BookOpen, Library, ChevronRight, ExternalLink } from 'lucide-react';
+import { ShieldCheck, Calculator, BookOpen, Library, ChevronRight, ExternalLink, FileSpreadsheet } from 'lucide-react';
 import { CompanyProfile } from '../../types';
 import { AnalyseFicheProjetResponse } from '../../types/ficheProjet';
 import { AppPage } from '../../types/navigation';
@@ -27,7 +27,11 @@ interface HomePageProps {
   ongoingSimulation?: string;
 }
 
-const TOOLS: { page: AppPage; icon: React.ElementType; title: string; description: string }[] = [
+type ToolItem =
+  | { page: AppPage; icon: React.ElementType; title: string; description: string; externalUrl?: never }
+  | { page?: never; icon: React.ElementType; title: string; description: string; externalUrl: string };
+
+const TOOLS: ToolItem[] = [
   {
     page: 'attestations',
     icon: ShieldCheck,
@@ -39,6 +43,12 @@ const TOOLS: { page: AppPage; icon: React.ElementType; title: string; descriptio
     icon: Calculator,
     title: 'Simulation',
     description: 'Lecture de la fiche projet, contrôle des critères d’accès, évaluation qualitative et proposition de mesures.'
+  },
+  {
+    externalUrl: 'https://analyseur-de-liasse-fiscale.ai.studio/',
+    icon: FileSpreadsheet,
+    title: 'Liasse fiscale',
+    description: 'Numérisation et extraction des liasses Cerfa 2050 à 2053 (Réel Normal) et 2033 (Simplifié), bilan, compte de résultat et export vers Excel.'
   },
   {
     page: 'guide',
@@ -55,6 +65,7 @@ const TOOLS: { page: AppPage; icon: React.ElementType; title: string; descriptio
 ];
 
 const USEFUL_LINKS: { href: string; label: string; hint: string }[] = [
+  { href: 'https://analyseur-de-liasse-fiscale.ai.studio/', label: 'Analyseur de Liasse Fiscale', hint: 'Extraction Cerfa 2050/2033 et export Excel' },
   { href: 'https://annuaire-entreprises.data.gouv.fr', label: 'Annuaire des Entreprises', hint: 'Fiche publique, dirigeants, annonces légales' },
   { href: 'https://entreprise.api.gouv.fr', label: 'API Entreprise', hint: 'Habilitations et jetons d’accès' },
   {
@@ -161,22 +172,45 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
 
         {/* Outils */}
-        <Panel title="Outils" bodyClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 divide-neutral-200">
-          {TOOLS.map(({ page, icon: Icon, title, description }) => (
-            <button
-              key={page}
-              type="button"
-              onClick={() => onNavigate(page)}
-              className="group text-left px-4 py-3 hover:bg-neutral-50 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-prune-600"
-            >
-              <span className="flex items-center gap-2 text-sm font-medium text-neutral-900 group-hover:text-prune-800">
-                <Icon className="w-4 h-4 text-neutral-400 group-hover:text-prune-700" />
-                {title}
-                <ChevronRight className="w-3.5 h-3.5 ml-auto text-neutral-300 group-hover:text-prune-700" />
-              </span>
-              <span className="block mt-1 text-xs text-neutral-500 leading-relaxed">{description}</span>
-            </button>
-          ))}
+        <Panel title="Outils" bodyClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 divide-neutral-200">
+          {TOOLS.map((tool) => {
+            const Icon = tool.icon;
+            if (tool.externalUrl) {
+              return (
+                <a
+                  key={tool.title}
+                  href={tool.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Ouvrir l'analyseur de liasse fiscale (dans un nouvel onglet)"
+                  className="group text-left px-4 py-3 hover:bg-neutral-50 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-prune-600 block"
+                >
+                  <span className="flex items-center gap-2 text-sm font-medium text-neutral-900 group-hover:text-prune-800">
+                    <Icon className="w-4 h-4 text-neutral-400 group-hover:text-prune-700" />
+                    {tool.title}
+                    <ExternalLink className="w-3.5 h-3.5 ml-auto text-neutral-300 group-hover:text-prune-700" />
+                  </span>
+                  <span className="block mt-1 text-xs text-neutral-500 leading-relaxed">{tool.description}</span>
+                </a>
+              );
+            }
+
+            return (
+              <button
+                key={tool.page || tool.title}
+                type="button"
+                onClick={() => tool.page && onNavigate(tool.page)}
+                className="group text-left px-4 py-3 hover:bg-neutral-50 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-prune-600"
+              >
+                <span className="flex items-center gap-2 text-sm font-medium text-neutral-900 group-hover:text-prune-800">
+                  <Icon className="w-4 h-4 text-neutral-400 group-hover:text-prune-700" />
+                  {tool.title}
+                  <ChevronRight className="w-3.5 h-3.5 ml-auto text-neutral-300 group-hover:text-prune-700" />
+                </span>
+                <span className="block mt-1 text-xs text-neutral-500 leading-relaxed">{tool.description}</span>
+              </button>
+            );
+          })}
         </Panel>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Home, ShieldCheck, Calculator, BookOpen, Library, KeyRound } from 'lucide-react';
+import { Home, ShieldCheck, Calculator, BookOpen, Library, KeyRound, FileSpreadsheet, ExternalLink } from 'lucide-react';
 import { AppPage } from '../../types/navigation';
 import { useHasApiEntrepriseToken } from '../../hooks/useHasApiEntrepriseToken';
 import { StatusDot } from './ui';
@@ -16,7 +16,9 @@ interface AppNavProps {
   schemesCount: number;
 }
 
-type NavItem = { page: AppPage; label: string; icon: React.ElementType };
+type NavItem =
+  | { page: AppPage; label: string; icon: React.ElementType; externalUrl?: never }
+  | { page?: never; label: string; icon: React.ElementType; externalUrl: string };
 
 const NAV_GROUPS: { label?: string; items: NavItem[] }[] = [
   { items: [{ page: 'accueil', label: 'Accueil', icon: Home }] },
@@ -24,7 +26,12 @@ const NAV_GROUPS: { label?: string; items: NavItem[] }[] = [
     label: 'Instruction',
     items: [
       { page: 'attestations', label: 'Attestations', icon: ShieldCheck },
-      { page: 'simulation', label: 'Simulation', icon: Calculator }
+      { page: 'simulation', label: 'Simulation', icon: Calculator },
+      {
+        label: 'Liasse fiscale',
+        icon: FileSpreadsheet,
+        externalUrl: 'https://analyseur-de-liasse-fiscale.ai.studio/'
+      }
     ]
   },
   {
@@ -65,7 +72,30 @@ export const AppNav: React.FC<AppNavProps> = ({ activePage, onNavigate, onOpenTo
             <div key={group.label || idx}>
               {group.label && <p className="px-2 mb-1 text-[11px] font-medium text-neutral-400">{group.label}</p>}
               <ul className="space-y-px">
-                {group.items.map(({ page, label, icon: Icon }) => {
+                {group.items.map((item) => {
+                  if (item.externalUrl) {
+                    const Icon = item.icon;
+                    return (
+                      <li key={item.label}>
+                        <a
+                          href={item.externalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Ouvrir l'analyseur de liasse fiscale (dans un nouvel onglet)"
+                          className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-sm text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 transition-colors cursor-pointer group"
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <Icon className="w-4 h-4 shrink-0 text-neutral-400 group-hover:text-prune-700" />
+                            {item.label}
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-600 shrink-0" />
+                        </a>
+                      </li>
+                    );
+                  }
+
+                  const { page, label, icon: Icon } = item;
+                  if (!page) return null;
                   const isActive = activePage === page;
                   return (
                     <li key={page}>
@@ -126,7 +156,23 @@ export const AppNav: React.FC<AppNavProps> = ({ activePage, onNavigate, onOpenTo
           </button>
         </div>
         <nav className="flex overflow-x-auto px-2" aria-label="Navigation principale">
-          {ALL_ITEMS.map(({ page, label }) => {
+          {ALL_ITEMS.map((item) => {
+            if (item.externalUrl) {
+              return (
+                <a
+                  key={item.label}
+                  href={item.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 inline-flex items-center gap-1 px-3 py-2 text-sm whitespace-nowrap border-b-2 border-transparent text-neutral-500 hover:text-neutral-800 transition-colors"
+                >
+                  {item.label}
+                  <ExternalLink className="w-3 h-3 text-neutral-400" />
+                </a>
+              );
+            }
+            const { page, label } = item;
+            if (!page) return null;
             const isActive = activePage === page;
             return (
               <button
