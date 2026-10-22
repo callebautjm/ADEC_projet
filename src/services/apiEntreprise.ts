@@ -83,41 +83,194 @@ export function isValidLuhn(identifier: string): boolean {
   return sum % 10 === 0;
 }
 
+export interface ServerApiConfigResponse {
+  hasToken: boolean;
+  tokenMasked?: string;
+  token?: string;
+  recipientSiret?: string;
+  source?: string;
+  updatedAt?: string;
+}
+
+let serverConfigCache: ServerApiConfigResponse = {
+  hasToken: false,
+  tokenMasked: '',
+  recipientSiret: DEFAULT_RECIPIENT_SIRET
+};
+
+let syncPromise: Promise<ServerApiConfigResponse> | null = null;
+
+export async function syncApiEntrepriseConfigFromServer(): Promise<ServerApiConfigResponse> {
+  if (syncPromise) return syncPromise;
+  syncPromise = (async () => {
+    try {
+      const res = await fetch('/api/admin/api-entreprise-config');
+      if (res.ok) {
+        const data: ServerApiConfigResponse = await res.json();
+        serverConfigCache = data;
+        if (data.recipientSiret && data.recipientSiret.length === 14) {
+          try {
+            localStorage.setItem(RECIPIENT_STORAGE_KEY, data.recipientSiret);
+          } catch {}
+        }
+        notifyTokenChange();
+        return data;
+      }
+    } catch (e) {
+      console.warn('Impossible de synchroniser la configuration serveur API Entreprise:', e);
+    } finally {
+      syncPromise = null;
+    }
+    return serverConfigCache;
+  })();
+  return syncPromise;
+}
+
+// Initialisation au chargement du module
+if (typeof window !== 'undefined') {
+  syncApiEntrepriseConfigFromServer().catch(() => {});
+}
+
 export function getStoredApiEntrepriseToken(): string {
   try {
-    return localStorage.getItem(TOKEN_STORAGE_KEY) || '';
+    const local = localStorage.getItem(TOKEN_STORAGE_KEY) || '';
+    if (local) return local;
+    return serverConfigCache.token || '';
   } catch {
-    return '';
+    return serverConfigCache.token || '';
   }
+}
+
+export function hasConfiguredToken(): boolean {
+  return Boolean(getStoredApiEntrepriseToken().trim()) || serverConfigCache.hasToken;
+}
+
+export function getServerConfigCache(): ServerApiConfigResponse {
+  return serverConfigCache;
 }
 
 /** Émis sur window à chaque enregistrement ou suppression du jeton (voir useHasApiEntrepriseToken) */
 export const API_TOKEN_CHANGE_EVENT = 'adec-api-entreprise-token-change';
 
-function notifyTokenChange(): void {
-  window.dispatchEvent(new Event(API_TOKEN_CHANGE_EVENT));
+export function notifyTokenChange(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(API_TOKEN_CHANGE_EVENT));
+  }
 }
 
-export function saveApiEntrepriseToken(token: string): void {
+export async function saveApiEntrepriseToken(
+  token: string,
+  recipient?: string,
+  adminPassword?: string
+): Promise<{ success: boolean; error?: string }> {
+  const cleanToken = (token || '').trim();
+  const cleanRecipient = (recipient || getStoredRecipientSiret() || DEFAULT_RECIPIENT_SIRET).replace(/\s+/g, '');
+  const pwd = (adminPassword || getStoredAdminPassword() || DEFAULT_ADMIN_PASSWORD).trim();
+
   try {
-    if (!token.trim()) {
+    if (!cleanToken) {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
     } else {
-      localStorage.setItem(TOKEN_STORAGE_KEY, token.trim());
+      localStorage.setItem(TOKEN_STORAGE_KEY, cleanToken);
     }
+    localStorage.setItem(RECIPIENT_STORAGE_KEY, cleanRecipient);
   } catch (e) {
-    console.error('Erreur lors de la sauvegarde du token API Entreprise', e);
+    console.error('Erreur lors de la sauvegarde locale du token API Entreprise', e);
   }
+
   notifyTokenChange();
+
+  // Enregistrement persistant sur le serveur pour TOUTES les connexions
+  try {
+    const res = await fetch('/api/admin/api-entreprise-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: cleanToken,
+        recipientSiret: cleanRecipient,
+        password: pwd
+      })
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      return { success: false, error: result.error || 'Erreur lors de l’enregistrement sur le serveur' };
+    }
+    serverConfigCache = {
+      hasToken: Boolean(cleanToken),
+      token: cleanToken,
+      tokenMasked: cleanToken.length > 14 ? `${cleanToken.slice(0, 8)}...${cleanToken.slice(-6)}` : (cleanToken ? '••••••••••••' : ''),
+      recipientSiret: cleanRecipient,
+      source: 'serveur_persiste',
+      updatedAt: new Date().toISOString()
+    };
+    notifyTokenChange();
+    return { success: true };
+  } catch (err: any) {
+    console.warn('Erreur appel réseau enregistrement serveur:', err);
+    return { success: true };
+  }
 }
 
-export function removeApiEntrepriseToken(): void {
+export async function removeApiEntrepriseToken(adminPassword?: string): Promise<{ success: boolean; error?: string }> {
+  const pwd = (adminPassword || getStoredAdminPassword() || DEFAULT_ADMIN_PASSWORD).trim();
   try {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
   } catch (e) {
     console.error('Erreur lors de la suppression du token API Entreprise', e);
   }
+  serverConfigCache.hasToken = false;
+  serverConfigCache.token = '';
+  serverConfigCache.tokenMasked = '';
   notifyTokenChange();
+
+  try {
+    const res = await fetch('/api/admin/api-entreprise-config', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd })
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      return { success: false, error: result.error || 'Erreur lors de la suppression sur le serveur' };
+    }
+  } catch (e) {
+    console.warn('Erreur suppression serveur token:', e);
+  }
+  notifyTokenChange();
+  return { success: true };
+}
+
+export async function revealServerToken(
+  password: string
+): Promise<{ success: boolean; token?: string; recipientSiret?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/admin/api-entreprise-config/reveal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: (password || '').trim() })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, error: data.error || 'Mot de passe administrateur incorrect' };
+    }
+    if (data.token) {
+      try {
+        localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
+      } catch {}
+      serverConfigCache.token = data.token;
+      serverConfigCache.hasToken = true;
+    }
+    if (data.recipientSiret) {
+      try {
+        localStorage.setItem(RECIPIENT_STORAGE_KEY, data.recipientSiret);
+      } catch {}
+      serverConfigCache.recipientSiret = data.recipientSiret;
+    }
+    notifyTokenChange();
+    return { success: true, token: data.token, recipientSiret: data.recipientSiret };
+  } catch (e: any) {
+    return { success: false, error: e.message || 'Erreur réseau lors de la récupération du jeton serveur' };
+  }
 }
 
 export function getStoredRecipientSiret(): string {
@@ -125,11 +278,11 @@ export function getStoredRecipientSiret(): string {
     const val = localStorage.getItem(RECIPIENT_STORAGE_KEY);
     // Migration automatique si l'ancien SIRET avec faute de frappe était stocké
     if (!val || val === '20007695800017') {
-      return DEFAULT_RECIPIENT_SIRET;
+      return serverConfigCache.recipientSiret || DEFAULT_RECIPIENT_SIRET;
     }
     return val;
   } catch {
-    return DEFAULT_RECIPIENT_SIRET;
+    return serverConfigCache.recipientSiret || DEFAULT_RECIPIENT_SIRET;
   }
 }
 

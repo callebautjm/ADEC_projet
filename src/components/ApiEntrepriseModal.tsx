@@ -17,7 +17,8 @@ import {
   setAdminPassword,
   resetAdminPasswordToDefault,
   hasCustomAdminPassword,
-  DEFAULT_ADMIN_PASSWORD
+  revealServerToken,
+  syncApiEntrepriseConfigFromServer
 } from '../services/apiEntreprise';
 import { cleanSiret, isForbiddenSiretKey } from '../utils/siret';
 import {
@@ -97,7 +98,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleUnlock = (e?: React.FormEvent) => {
+  const handleUnlock = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setPasswordError('');
     if (!passwordInput.trim()) {
@@ -107,6 +108,12 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
     if (verifyAdminPassword(passwordInput)) {
       setIsUnlocked(true);
       setPasswordError('');
+      // Récupérer le jeton présent sur le serveur (partagé pour toutes les connexions)
+      const serverRes = await revealServerToken(passwordInput);
+      if (serverRes.success) {
+        if (serverRes.token) setToken(serverRes.token);
+        if (serverRes.recipientSiret) setRecipientSiret(serverRes.recipientSiret);
+      }
     } else {
       setPasswordError('Mot de passe administrateur incorrect.');
     }
@@ -156,7 +163,7 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
     resetAdminPasswordToDefault();
     setPasswordChangeNotice({
       success: true,
-      text: `Mot de passe réinitialisé à sa valeur d'origine : "${DEFAULT_ADMIN_PASSWORD}".`
+      text: "Mot de passe réinitialisé à sa valeur d'origine."
     });
     setTimeout(() => {
       setIsChangingPassword(false);
@@ -164,24 +171,27 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
     }, 2500);
   };
 
-  const handleSave = () => {
-    saveApiEntrepriseToken(token);
-    saveRecipientSiret(recipientSiret);
-    setSaveSuccessNotice(true);
-    if (onTokenUpdated) {
-      onTokenUpdated(Boolean(token.trim()));
+  const handleSave = async () => {
+    const res = await saveApiEntrepriseToken(token, recipientSiret, passwordInput);
+    if (res.success) {
+      setSaveSuccessNotice(true);
+      if (onTokenUpdated) {
+        onTokenUpdated(Boolean(token.trim()));
+      }
+      setTimeout(() => {
+        setSaveSuccessNotice(false);
+      }, 3500);
+    } else {
+      setPasswordError(res.error || 'Erreur lors de l’enregistrement sur le serveur.');
     }
-    setTimeout(() => {
-      setSaveSuccessNotice(false);
-    }, 2500);
   };
 
-  const handleClear = () => {
+  const handleClear = async () => {
     if (!isConfirmingClear) {
       setIsConfirmingClear(true);
       return;
     }
-    removeApiEntrepriseToken();
+    await removeApiEntrepriseToken(passwordInput);
     setToken('');
     setRecipientSiret(DEFAULT_RECIPIENT_SIRET);
     saveRecipientSiret(DEFAULT_RECIPIENT_SIRET);
@@ -294,24 +304,6 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
             </p>
           )}
         </form>
-
-        {/* Indication du mot de passe par défaut */}
-        <Notice
-          action={
-            <button
-              type="button"
-              onClick={() => {
-                setPasswordInput(DEFAULT_ADMIN_PASSWORD);
-                setPasswordError('');
-              }}
-              className={btn('secondary', 'sm')}
-            >
-              Insérer
-            </button>
-          }
-        >
-          Mot de passe initial : <code className="font-mono font-semibold">{DEFAULT_ADMIN_PASSWORD}</code>, modifiable une fois l’accès déverrouillé.
-        </Notice>
       </Modal>
     );
   }
@@ -390,10 +382,10 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
                 type="button"
                 onClick={handleResetPassword}
                 className={`inline-flex items-center gap-1 text-[11px] ${linkClass}`}
-                title={`Rétablir « ${DEFAULT_ADMIN_PASSWORD} »`}
+                title="Rétablir le mot de passe par défaut"
               >
                 <RefreshCw className="w-3 h-3" />
-                Rétablir le mot de passe par défaut ({DEFAULT_ADMIN_PASSWORD})
+                Rétablir le mot de passe par défaut
               </button>
             )}
           </div>
@@ -475,11 +467,14 @@ export const ApiEntrepriseModal: React.FC<ApiEntrepriseModalProps> = ({
           </button>
         </div>
         {saveSuccessNotice && (
-          <p className="text-[11px] text-emerald-700 font-medium flex items-center gap-1 mt-1">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Paramètres enregistrés.
+          <p className="text-[11px] text-emerald-700 font-medium flex items-center gap-1 mt-1.5 p-2 bg-emerald-50 rounded border border-emerald-200">
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            <span>Jeton enregistré sur le serveur : actif immédiatement pour toutes les connexions de tous les agents.</span>
           </p>
         )}
+        <p className="text-[11px] text-neutral-500 mt-1">
+          Enregistré sur le serveur : ce jeton est immédiatement partagé entre toutes les connexions et tous les postes sans ressaisie requise.
+        </p>
       </div>
 
       {/* SIRET de l'organisme demandeur */}

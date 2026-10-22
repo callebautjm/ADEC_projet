@@ -4,15 +4,22 @@
  */
 
 import { useEffect, useState } from 'react';
-import { API_TOKEN_CHANGE_EVENT, getStoredApiEntrepriseToken } from '../services/apiEntreprise';
-
-const readHasToken = () => Boolean(getStoredApiEntrepriseToken().trim());
+import { 
+  API_TOKEN_CHANGE_EVENT, 
+  hasConfiguredToken, 
+  syncApiEntrepriseConfigFromServer 
+} from '../services/apiEntreprise';
 
 export function useHasApiEntrepriseToken(): boolean {
-  const [hasToken, setHasToken] = useState<boolean>(readHasToken);
+  const [hasToken, setHasToken] = useState<boolean>(hasConfiguredToken);
 
   useEffect(() => {
-    const update = () => setHasToken(readHasToken());
+    // Synchroniser avec l'état du serveur pour toutes les connexions
+    syncApiEntrepriseConfigFromServer().then(() => {
+      setHasToken(hasConfiguredToken());
+    });
+
+    const update = () => setHasToken(hasConfiguredToken());
     window.addEventListener(API_TOKEN_CHANGE_EVENT, update);
     window.addEventListener('storage', update);
     return () => {
